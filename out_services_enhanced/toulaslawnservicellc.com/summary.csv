@@ -1,0 +1,11 @@
+field,value,confidence,source
+brand_name,Toula's Lawn Service,0.72,meta[property='og:title']
+location,,0.0,
+email,toulaslawn@gmail.com,1.0,a[href^='mailto:']
+phone,+15042595171,1.0,a[href^='tel:']
+socials,"{""facebook"": ""https://www.facebook.com/ToulasLawn"", ""instagram"": null, ""linkedin"": null, ""x"": ""https://x.com/tos"", ""youtube"": null, ""tiktok"": null, ""yelp"": null}",0.85,a[href*='facebook']
+services,"Pressure Washing, Lawn Care",0.77,services_section.taxonomy
+brand_colors,"#000000, #ABB8C3",1.0,css_var(--primary)
+logo,assets\logo.jpg,0.48,meta[property='og:image']
+background,"Toula’s is a Ponchatoula based Lawn Care Service Provider year round that covers the Ponchatoula, Louisiana and surrounding areas.",0.52,about_section.p
+slogan,Toula's Lawn Service LLC,0.42,title

@@ -1,0 +1,248 @@
+# Canonical service taxonomy for business classification
+# Each category has a canonical name and list of synonyms for matching
+
+services:
+  - canonical: "Drain Cleaning"
+    synonyms:
+      - "drain cleaning"
+      - "clogged drain"
+      - "drain unclogging"
+      - "sewer cleaning"
+      - "drain clearing"
+      - "blocked drain"
+
+  - canonical: "Leak Repair"
+    synonyms:
+      - "leak repair"
+      - "leak detection"
+      - "fix leaks"
+      - "water leak"
+      - "pipe leak"
+      - "leaking pipe"
+      - "leak service"
+
+  - canonical: "Installations"
+    synonyms:
+      - "installation"
+      - "new installation"
+      - "install"
+      - "plumbing installation"
+      - "fixture installation"
+      - "system installation"
+
+  - canonical: "Emergency Services"
+    synonyms:
+      - "emergency"
+      - "24/7"
+      - "24 hour"
+      - "urgent"
+      - "same day"
+      - "emergency plumbing"
+      - "emergency repair"
+
+  - canonical: "Maintenance"
+    synonyms:
+      - "maintenance"
+      - "preventive maintenance"
+      - "routine maintenance"
+      - "regular service"
+      - "upkeep"
+      - "servicing"
+
+  - canonical: "Inspections"
+    synonyms:
+      - "inspection"
+      - "camera inspection"
+      - "video inspection"
+      - "sewer inspection"
+      - "pipe inspection"
+      - "diagnostic"
+
+  - canonical: "Water Heater Service"
+    synonyms:
+      - "water heater"
+      - "hot water heater"
+      - "water heater repair"
+      - "water heater installation"
+      - "tankless water heater"
+      - "heater service"
+
+  - canonical: "Pipe Repair"
+    synonyms:
+      - "pipe repair"
+      - "pipe replacement"
+      - "broken pipe"
+      - "pipe fix"
+      - "repiping"
+      - "pipe work"
+
+  - canonical: "Sewer Services"
+    synonyms:
+      - "sewer"
+      - "sewer line"
+      - "sewer repair"
+      - "sewer replacement"
+      - "sewer cleaning"
+      - "sewage"
+
+  - canonical: "Fixture Installation"
+    synonyms:
+      - "fixture"
+      - "faucet"
+      - "sink"
+      - "toilet"
+      - "shower"
+      - "bathtub"
+      - "fixture repair"
+      - "faucet installation"
+
+  - canonical: "Gas Line Services"
+    synonyms:
+      - "gas line"
+      - "gas pipe"
+      - "gas leak"
+      - "gas repair"
+      - "gas installation"
+
+  - canonical: "Remodeling"
+    synonyms:
+      - "remodel"
+      - "renovation"
+      - "bathroom remodel"
+      - "kitchen remodel"
+      - "plumbing remodel"
+      - "upgrade"
+
+  - canonical: "Lawn Care"
+    synonyms:
+      - "lawn care"
+      - "lawn maintenance"
+      - "lawn mowing"
+      - "grass cutting"
+      - "yard care"
+      - "lawn service"
+      - "lawn care service"
+
+  - canonical: "Landscaping"
+    synonyms:
+      - "landscaping"
+      - "landscape design"
+      - "landscape maintenance"
+      - "garden design"
+      - "outdoor design"
+      - "yard design"
+
+  - canonical: "Pressure Washing"
+    synonyms:
+      - "pressure washing"
+      - "power washing"
+      - "house washing"
+      - "deck cleaning"
+      - "driveway cleaning"
+      - "siding cleaning"
+      - "pressure wash"
+      - "power wash"
+      - "exterior cleaning"
+      - "building washing"
+
+  - canonical: "Soft Washing"
+    synonyms:
+      - "soft washing"
+      - "soft wash"
+      - "low pressure washing"
+      - "chemical washing"
+      - "eco friendly washing"
+
+  - canonical: "Driveway Cleaning"
+    synonyms:
+      - "driveway cleaning"
+      - "driveway washing"
+      - "concrete cleaning"
+      - "concrete washing"
+      - "pavement cleaning"
+      - "oil stain removal"
+
+  - canonical: "Trash Can Cleaning"
+    synonyms:
+      - "trash can cleaning"
+      - "garbage can cleaning"
+      - "bin cleaning"
+      - "waste bin cleaning"
+      - "trash bin sanitizing"
+
+  - canonical: "Spring Cleanup"
+    synonyms:
+      - "spring cleanup"
+      - "spring cleaning"
+
+  # RESTAURANT & FOOD SERVICES
+  - canonical: "Food"
+    synonyms:
+      - "food"
+      - "meals"
+      - "dining"
+      - "restaurant"
+      - "restaurant services"
+      - "food service"
+      - "menu"
+      - "breakfast"
+      - "lunch"
+      - "dinner"
+      - "appetizers"
+      - "entrees"
+      - "desserts"
+      - "beverages"
+      - "drinks"
+
+  - canonical: "Catering"
+    synonyms:
+      - "catering"
+      - "event catering"
+      - "party catering"
+      - "wedding catering"
+      - "corporate catering"
+      - "catering services"
+
+  - canonical: "Takeout"
+    synonyms:
+      - "takeout"
+      - "take-out"
+      - "carryout"
+      - "carry-out"
+      - "to go"
+      - "pickup"
+      - "pick up"
+
+  - canonical: "Delivery"
+    synonyms:
+      - "delivery"
+      - "food delivery"
+      - "home delivery"
+      - "delivery service"
+
+  - canonical: "Fall Cleanup"
+    synonyms:
+      - "fall cleanup"
+      - "fall cleaning"
+      - "leaf removal"
+      - "yard cleanup"
+      - "property cleanup"
+      - "seasonal cleanup"
+
+  - canonical: "Tree Services"
+    synonyms:
+      - "tree service"
+      - "tree trimming"
+      - "tree removal"
+      - "tree pruning"
+      - "tree cutting"
+      - "tree care"
+
+  - canonical: "Mulching"
+    synonyms:
+      - "mulching"
+      - "mulch installation"
+      - "mulch spreading"
+      - "mulch delivery"
+      - "mulch service"
+
