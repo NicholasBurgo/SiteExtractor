@@ -12,6 +12,7 @@ from truth_extractor.crawl.fetcher import extract_domain
 from truth_extractor.extraction.brand_name import BrandNameExtractor
 from truth_extractor.extraction.colors import ColorExtractor
 from truth_extractor.extraction.contact import ContactExtractor
+from truth_extractor.extraction.images import ImageExtractor
 from truth_extractor.extraction.jsonld import JSONLDExtractor
 from truth_extractor.extraction.logo import LogoExtractor
 from truth_extractor.extraction.services import ServicesExtractor
@@ -160,6 +161,7 @@ class TruthExtractor:
             "services": [],
             "brand_colors": [],
             "logo": [],
+            "images": [],  # All images from all pages
             "background": [],
             "slogan": [],
         }
@@ -202,6 +204,12 @@ class TruthExtractor:
                 # Logo
                 logo_extractor = LogoExtractor(page.parser)
                 candidates["logo"].extend(logo_extractor.extract_logos())
+                
+                # All images
+                image_extractor = ImageExtractor(page.parser)
+                page_images = image_extractor.extract_all_images()
+                logger.info(f"Extracted {len(page_images)} images from {page.url}")
+                candidates["images"].extend(page_images)
                 
                 # Services (only from pages likely to contain them)
                 if any(keyword in page.url.lower() for keyword in ["service", "about", "home", "work"]):
@@ -301,6 +309,7 @@ class TruthExtractor:
         fields["services"] = self.resolver.resolve_services(candidates["services"])
         fields["brand_colors"] = self.resolver.resolve_colors(candidates["brand_colors"])
         fields["logo"] = self.resolver.resolve_logo(candidates["logo"])
+        fields["images"] = self.resolver.resolve_images(candidates["images"])
         fields["background"] = self.resolver.resolve_text(candidates["background"])
         fields["slogan"] = self.resolver.resolve_text(candidates["slogan"])
         

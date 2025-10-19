@@ -277,9 +277,9 @@ Examples:
     )
     
     parser.add_argument(
-        "--use-playwright",
+        "--no-playwright",
         action="store_true",
-        help="Use Playwright for JavaScript-rendered sites (requires: pip install playwright && playwright install chromium)"
+        help="Disable Playwright for JavaScript-rendered sites (Playwright is enabled by default)"
     )
     
     # Batch mode
@@ -326,7 +326,7 @@ Examples:
     config.output_dir = args.out
     config.crawl.max_pages = args.max_pages
     config.crawl.timeout = args.timeout
-    config.crawl.use_playwright = args.use_playwright
+    config.crawl.use_playwright = not args.no_playwright
     config.geocode_token = args.geocode_token
     config.custom_user_agent = args.user_agent
     

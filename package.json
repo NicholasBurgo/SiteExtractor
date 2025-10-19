@@ -1,0 +1,19 @@
+{
+  "name": "site-generator",
+  "private": true,
+  "packageManager": "pnpm@9.11.0",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "app:dev": "pnpm -C packages/site-app dev",
+    "app:build": "pnpm -C packages/site-app build",
+    "app:start": "pnpm -C packages/site-app start",
+    "app:fix": "pnpm -C packages/site-app install && pnpm -C packages/site-app exec electron-builder install-app-deps",
+    "dev": "pnpm app:dev",
+    "start": "pnpm app:start",
+    "pipeline:run": "python -m truth_extractor"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "@types/node": "^22.5.0"
+  }
+}

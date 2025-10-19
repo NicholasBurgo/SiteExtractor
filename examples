@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+
+/**
+ * Example usage of the Site Generator extraction and confirmation system
+ */
+
+import { extractFromHtml } from './packages/extractor/src/pipeline/extract.js';
+import { writePageJson } from './packages/extractor/src/pipeline/io.js';
+
+async function exampleExtraction() {
+  console.log('🚀 Site Generator - Example Usage\n');
+  
+  // Example HTML content
+  const exampleHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Welcome to Example Company</title>
+        <meta name="description" content="We provide amazing services for your business needs.">
+        <meta property="og:title" content="Example Company - Your Business Partner">
+        <meta property="og:description" content="Leading provider of business solutions">
+        <meta property="og:image" content="https://example.com/og-image.jpg">
+    </head>
+    <body>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/services">Services</a>
+            <a href="/contact">Contact</a>
+        </nav>
+        
+        <main>
+            <h1>Welcome to Our Amazing Company</h1>
+            <p>We are a leading provider of innovative business solutions that help companies grow and succeed in today's competitive market.</p>
+            
+            <h2>Our Services</h2>
+            <ul>
+                <li>Web Development</li>
+                <li>Digital Marketing</li>
+                <li>Consulting Services</li>
+                <li>Cloud Solutions</li>
+            </ul>
+            
+            <h2>Why Choose Us?</h2>
+            <p>With over 10 years of experience in the industry, we have helped hundreds of companies achieve their goals through our innovative solutions and dedicated support.</p>
+            
+            <blockquote>
+                "The best business partner we've ever worked with!"
+                <cite>— CEO, TechCorp Inc.</cite>
+            </blockquote>
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 Example Company. All rights reserved.</p>
+            <p>Contact us at: <a href="mailto:info@example.com">info@example.com</a></p>
+            <p>Call us: <a href="tel:+1234567890">(123) 456-7890</a></p>
+        </footer>
+    </body>
+    </html>
+  `;
+  
+  try {
+    console.log('📄 Extracting data from HTML...');
+    
+    // Extract data from HTML
+    const result = await extractFromHtml('https://example.com', exampleHtml);
+    
+    if (result.success && result.page) {
+      console.log('✅ Extraction successful!');
+      console.log(`📊 Extracted ${result.page.blocks.length} content blocks`);
+      console.log(`🖼️  Found ${result.page.images.length} images`);
+      console.log(`🔗 Discovered ${result.page.links.length} links`);
+      console.log(`🧭 Navigation items: ${result.page.navbar.length}`);
+      
+      // Write to file
+      const outputPath = await writePageJson(result.page, './build/extract');
+      console.log(`💾 Saved to: ${outputPath}`);
+      
+      // Show some extracted data
+      console.log('\n📋 Sample extracted data:');
+      console.log('Title:', result.page.meta.title);
+      console.log('Description:', result.page.meta.description);
+      console.log('Navigation:', result.page.navbar.map(item => item.text).join(' → '));
+      console.log('First heading:', result.page.blocks.find(b => b.kind === 'heading')?.text);
+      
+      if (result.warnings && result.warnings.length > 0) {
+        console.log('\n⚠️  Warnings:');
+        result.warnings.forEach(warning => console.log(`  - ${warning}`));
+      }
+      
+      console.log('\n🎉 Next steps:');
+      console.log('1. Run: pnpm x:confirm');
+      console.log('2. Open the confirmation app in your browser');
+      console.log('3. Review and approve the extracted content');
+      console.log('4. Create your site bundle!');
+      
+    } else {
+      console.error('❌ Extraction failed:', result.error);
+    }
+    
+  } catch (error) {
+    console.error('💥 Fatal error:', error);
+  }
+}
+
+// Run the example
+exampleExtraction();
+

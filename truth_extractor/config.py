@@ -33,7 +33,7 @@ class CrawlConfig:
     ])
     
     # Playwright support for JavaScript sites (optional)
-    use_playwright: bool = False  # Enable Playwright for JS-rendered sites
+    use_playwright: bool = True  # Enable Playwright for JS-rendered sites by default
     playwright_timeout: int = 30000  # milliseconds
 
 

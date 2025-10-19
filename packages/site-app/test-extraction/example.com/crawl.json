@@ -1,0 +1,22 @@
+{
+  "start_url": "https://example.com",
+  "domain": "https://example.com",
+  "pages_attempted": 1,
+  "pages_successful": 1,
+  "pages_failed": 0,
+  "pages_cached": 0,
+  "total_bytes": 513,
+  "total_time_ms": 798.9153861999512,
+  "failed_urls": [],
+  "pages": [
+    {
+      "url": "https://example.com",
+      "title": "Example Domain",
+      "success": true,
+      "status_code": 200,
+      "depth": 0,
+      "elapsed_ms": 798.9153861999512,
+      "from_cache": false
+    }
+  ]
+}

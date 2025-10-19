@@ -1,0 +1,61 @@
+{
+  "name": "@sg/site-app",
+  "version": "0.1.0",
+  "description": "Site Generator Desktop Application",
+  "author": "Site Generator Team",
+  "private": true,
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"tsc -p electron/tsconfig.json --watch\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron dist-electron/main.js\"",
+    "start": "electron dist-electron/main.js",
+    "build": "vite build && tsc -p electron/tsconfig.json",
+    "build-electron": "tsc -p electron/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.4.7",
+    "lucide-react": "^0.294.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "concurrently": "^8.2.2",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "wait-on": "^8.0.1",
+    "cross-env": "^7.0.3",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31"
+  },
+  "build": {
+    "appId": "com.sitegenerator.app",
+    "productName": "Site Generator",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
