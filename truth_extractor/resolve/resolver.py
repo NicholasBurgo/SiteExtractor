@@ -261,6 +261,53 @@ class FieldResolver:
             notes=winner.notes,
         )
     
+    def resolve_images(self, candidates: list[Candidate]) -> FieldResult:
+        """Resolve image candidates - return all images as a list."""
+        logger.info(f"Resolving {len(candidates)} image candidates")
+        if not candidates:
+            logger.info("No image candidates found, returning null result")
+            return self._null_result()
+        
+        # Deduplicate images by URL (normalized)
+        seen_urls = set()
+        unique_candidates = []
+        
+        for candidate in candidates:
+            # Normalize URL for comparison (remove query parameters, fragments)
+            normalized_url = self._normalize_image_url(candidate.value)
+            if normalized_url not in seen_urls:
+                seen_urls.add(normalized_url)
+                unique_candidates.append(candidate)
+        
+        candidates = score_candidates(unique_candidates)
+        
+        # Sort by score (highest first)
+        candidates.sort(key=lambda c: c.score, reverse=True)
+        
+        # Take top images (limit to prevent huge JSON files)
+        top_images = candidates[:50]  # Limit to top 50 images
+        
+        # Convert to list of image URLs
+        image_urls = [candidate.value for candidate in top_images if candidate.value]
+        
+        if not image_urls:
+            return self._null_result()
+        
+        # Calculate average confidence
+        avg_confidence = sum(c.score for c in top_images) / len(top_images)
+        
+        # Combine provenance from all candidates
+        all_provenance = []
+        for c in top_images:
+            all_provenance.extend(c.provenance)
+        
+        return FieldResult(
+            value=image_urls,
+            confidence=avg_confidence,
+            provenance=[p.to_dict() for p in all_provenance[:10]],  # Limit provenance
+            notes=f"extracted {len(image_urls)} images from {len(candidates)} candidates",
+        )
+    
     def resolve_text(self, candidates: list[Candidate]) -> FieldResult:
         """Resolve generic text candidates (background, slogan)."""
         if not candidates:
@@ -319,5 +366,27 @@ class FieldResolver:
             normalized = re.sub(suffix, "", normalized, flags=re.IGNORECASE)
         
         return normalized.strip()
+    
+    @staticmethod
+    def _normalize_image_url(url: str) -> str:
+        """
+        Normalize image URL for deduplication by removing query parameters and fragments.
+        
+        Args:
+            url: Image URL
+            
+        Returns:
+            Normalized URL
+        """
+        if not url:
+            return ""
+        
+        # Remove query parameters and fragments
+        from urllib.parse import urlparse, urlunparse
+        parsed = urlparse(url)
+        # Keep only scheme, netloc, and path
+        normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
+        
+        return normalized
 
 

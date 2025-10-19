@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-text font-sans;
+  }
+  
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent/90;
+  }
+  
+  .btn-secondary {
+    @apply bg-surface text-text hover:bg-surface/80 border border-border;
+  }
+  
+  .btn-success {
+    @apply bg-success text-white hover:bg-success/90;
+  }
+  
+  .btn-warning {
+    @apply bg-warning text-black hover:bg-warning/90;
+  }
+  
+  .btn-danger {
+    @apply bg-error text-white hover:bg-error/90;
+  }
+  
+  .card {
+    @apply bg-surface border border-border rounded-lg p-6;
+  }
+  
+  .input {
+    @apply bg-surface border border-border rounded-lg px-3 py-2 text-text placeholder:text-text/60 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent;
+  }
+  
+  .table {
+    @apply w-full border-collapse;
+  }
+  
+  .table th {
+    @apply bg-surface border-b border-border px-4 py-3 text-left font-medium text-text;
+  }
+  
+  .table td {
+    @apply border-b border-border px-4 py-3 text-text;
+  }
+  
+  .table tr:hover {
+    @apply bg-surface/50;
+  }
+}
+

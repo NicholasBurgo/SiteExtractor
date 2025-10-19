@@ -1,0 +1,133 @@
+{
+  "business_id": "example-com",
+  "domain": "example.com",
+  "crawled_at": "2025-10-19T03:39:50.558465Z",
+  "pages_visited": 1,
+  "fields": {
+    "brand_name": {
+      "value": "Example Domain",
+      "confidence": 0.6,
+      "provenance": [
+        {
+          "url": "https://example.com",
+          "path": "h1"
+        }
+      ],
+      "notes": "from h1 tag"
+    },
+    "location": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "email": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "phone": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "socials": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "found 0 platforms"
+    },
+    "services": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "brand_colors": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "logo": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "background": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "slogan": {
+      "value": "Example Domain",
+      "confidence": 0.42,
+      "provenance": [
+        {
+          "url": "https://example.com",
+          "path": "title"
+        }
+      ],
+      "notes": "from page title"
+    }
+  },
+  "candidates": {
+    "brand_name": [
+      {
+        "value": "Example Domain",
+        "score": 0.42,
+        "provenance": [
+          {
+            "url": "https://example.com",
+            "path": "title"
+          }
+        ],
+        "notes": "full page title"
+      },
+      {
+        "value": "Example Domain",
+        "score": 0.6000000000000001,
+        "provenance": [
+          {
+            "url": "https://example.com",
+            "path": "h1"
+          }
+        ],
+        "notes": "from h1 tag"
+      }
+    ],
+    "location": [],
+    "email": [],
+    "phone": [],
+    "socials": {
+      "facebook": [],
+      "instagram": [],
+      "linkedin": [],
+      "x": [],
+      "youtube": [],
+      "tiktok": [],
+      "yelp": []
+    },
+    "services": [],
+    "brand_colors": [],
+    "logo": [],
+    "background": [],
+    "slogan": [
+      {
+        "value": "Example Domain",
+        "score": 0.42,
+        "provenance": [
+          {
+            "url": "https://example.com",
+            "path": "title"
+          }
+        ],
+        "notes": "from page title"
+      }
+    ]
+  }
+}

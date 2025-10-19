@@ -1,0 +1,61 @@
+# Site Generator - Extractor Configuration
+
+# Crawler settings
+crawler:
+  user_agent: "SG-Extractor/1.0"
+  timeout: 30000  # milliseconds
+  max_redirects: 5
+  max_content_length: 10485760  # 10MB
+  use_playwright: true  # Enable Playwright by default
+  headless: true
+  wait_for_timeout: 2000  # milliseconds
+
+# Extraction settings
+extraction:
+  include_images: true
+  include_links: true
+  max_images: 50
+  max_image_size: 5242880  # 5MB
+  min_image_width: 50
+  min_image_height: 50
+  allowed_image_formats: ["jpg", "jpeg", "png", "gif", "webp", "svg"]
+  
+  # Paragraph extraction
+  paragraphs:
+    min_word_count: 10
+    max_word_count: 500
+    include_lists: true
+    include_tables: true
+    include_quotes: true
+    filter_empty: true
+  
+  # Navigation extraction
+  navbar:
+    max_depth: 3
+    include_external: false
+    normalize_text: true
+  
+  # Miscellaneous extraction
+  misc:
+    include_external_links: false
+    extract_schema_org: true
+    extract_open_graph: true
+    calculate_readability: true
+
+# Output settings
+output:
+  directory: "./build/extract"
+  format: "json"
+  pretty_print: true
+  include_diagnostics: true
+
+# Domain filtering
+domains:
+  allowed: []  # Empty means all domains allowed
+  blocked: []  # Domains to block
+
+# Truth table integration
+truth_table:
+  enabled: true
+  python_module: "truth_extractor.cli"
+  fallback_to_html: true
