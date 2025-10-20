@@ -1,222 +1,267 @@
-# 🏗️ Site Generator - Extraction & Confirmation System
+# SiteTestGenerator
 
-A robust, extensible **Extraction** module and lightweight **Confirmation/Packer** desktop-style app for human review. Built with **TypeScript + pnpm** for deterministic extraction with optional LLM assists.
+A comprehensive website data extraction and analysis platform with both desktop (Electron) and web interfaces. Features advanced truth table extraction, image analysis, and content processing capabilities.
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- **Python 3.11+**
-- **Node.js 18+**
-- **pnpm 9.11.0+**
-
-### Installation
 ```bash
 # Install dependencies
 pnpm install
 
-# Start the desktop app
+# Start development servers
 pnpm dev
 ```
 
-## 📁 Project Structure
-
-```
-SiteTestGenerator/
-├── 📚 docs/                    # All documentation
-├── 🔧 scripts/                 # Batch files and automation
-├── 🧪 tests/                   # Test files and examples
-├── 📦 packages/                # Application packages
-│   ├── site-app/              # 🖥️ Electron desktop app
-│   ├── extractor/             # 🔍 Extraction engine
-│   └── cli/                   # 💻 Command line interface
-├── 🐍 truth_extractor/         # Python extraction backend
-├── ⚙️ config/                  # Configuration files
-├── 🏗️ build/                   # Build outputs
-└── 📤 out/                     # Extraction results
-```
-
-## 🎯 Core Features
-
-### Extraction Engine
-- **10 Field Types**: Brand name, contact info, social links, services, colors, logo, etc.
-- **Deterministic**: Rule-based extraction (no LLMs required)
-- **Validation**: Email MX lookup, phone E.164, address parsing, WCAG color contrast
-- **Confidence Scoring**: 0-1 scores with provenance tracking
-- **Multi-format Output**: JSON, CSV, assets with metadata
-
-### Desktop Application
-- **Sleek Tech UI**: Modern dark theme with professional colors
-- **Real-time Progress**: Live extraction monitoring
-- **Confirmation Interface**: Human review and validation
-- **Cross-platform**: Windows, macOS, Linux support
-- **Full Window**: Maximized interface with fullscreen toggle
-
-### JavaScript Support
-- **Playwright Integration**: Handles React/Vue/Angular SPAs
-- **Automatic Detection**: Detects JavaScript-only pages
-- **Fallback Support**: Graceful degradation to static HTML
-
-## 🖥️ Desktop App Usage
-
-### Development
-```bash
-pnpm dev
-```
-
-### Production Build
-```bash
-pnpm build
-```
-
-### Start Built App
-```bash
-pnpm start
-```
-
-### Fix Build Issues
-```bash
-pnpm app:fix
-```
-
-## 🐍 Python Backend Usage
-
-### Command Line
-```bash
-# Extract from URL
-python -m truth_extractor https://example.com
-
-# Extract from file
-python -m truth_extractor --file ./page.html
-
-# Batch processing
-python -m truth_extractor --urls https://site1.com,https://site2.com
-```
-
-### Programmatic
-```python
-from truth_extractor import TruthExtractor
-
-extractor = TruthExtractor()
-result = extractor.extract("https://example.com")
-print(f"Brand: {result['brand_name']['value']}")
-```
+- **Web App**: http://localhost:3000
+- **API Server**: http://localhost:5174
+- **Desktop App**: Electron application with native OS integration
 
 ## 📚 Documentation
 
-- **[📖 Complete Documentation](docs/README.md)** - All project documentation
-- **[🚀 Quick Start Guide](docs/QUICKSTART.md)** - 5-minute setup
-- **[🪟 Windows Setup](docs/WINDOWS_QUICKSTART.md)** - Windows-specific guide
-- **[🔧 Scripts & Automation](scripts/README.md)** - Batch files and scripts
-- **[🧪 Tests & Examples](tests/README.md)** - Test files and examples
+All documentation is organized in the [`docs/`](./docs/) folder:
 
-## 🎨 UI Features
+- **[Documentation Index](./docs/README.md)** - Complete documentation overview
+- **[Setup Guide](./docs/SETUP_COMPLETE.md)** - Initial setup and configuration
+- **[Desktop App](./docs/DESKTOP_APP_READY.md)** - Desktop application features
+- **[Migration Guide](./docs/MONOREPO_MIGRATION.md)** - Project structure migration
+- **[Cleanup Summary](./docs/CLEANUP_COMPLETE.md)** - Project cleanup details
 
-### Sleek Tech Color Scheme
-- **Background**: `#0e0e10` - Deep dark background
-- **Surface**: `#1a1b20` - Card and panel backgrounds
-- **Primary Text**: `#e6e6eb` - High contrast text
-- **Accent**: `#7db2ff` - Primary actions and links
-- **Success**: `#5bd778` - Success states
-- **Warning**: `#ffcc66` - Warning states
-- **Error**: `#ff5c5c` - Error states
+## 🏗️ Project Structure
 
-### Window Management
-- **Auto-maximize**: Opens in maximized window
-- **Fullscreen Toggle**: Ctrl+F to toggle fullscreen
-- **Responsive Design**: Adapts to different screen sizes
-
-## 🔧 Configuration
-
-### Extraction Settings
-Edit `config/extractor.config.yaml`:
-```yaml
-max_pages: 10
-timeout: 30
-user_agent: "Site Generator Bot"
+```
+SiteTestGenerator/
+├─ apps/                           # Applications
+│  ├─ server/                     # Fastify API server
+│  │  ├─ src/
+│  │  │  ├─ config/              # Environment configuration
+│  │  │  ├─ routes/              # API endpoints
+│  │  │  │  └─ extract/          # Data extraction routes
+│  │  │  │     ├─ images.ts      # Image extraction API
+│  │  │  │     ├─ misc.ts        # Miscellaneous data
+│  │  │  │     ├─ navbar.ts      # Navigation extraction
+│  │  │  │     ├─ paragraphs.ts  # Content extraction
+│  │  │  │     └─ truth-table.ts # Truth table API
+│  │  │  ├─ index.ts             # Server entry point
+│  │  │  └─ lib/                 # Server utilities
+│  │  └─ package.json
+│  └─ web/                        # React web application
+│     ├─ src/
+│     │  ├─ api/                  # API client & endpoints
+│     │  ├─ components/           # React components
+│     │  │  ├─ ExtractionForm.tsx # Main extraction form
+│     │  │  └─ ImageExtraction.tsx # Image extraction UI
+│     │  ├─ pages/                # Page components
+│     │  │  ├─ ConfirmPage.tsx    # Confirmation page
+│     │  │  ├─ ImagesTab.tsx      # Images tab
+│     │  │  ├─ MiscTab.tsx        # Miscellaneous tab
+│     │  │  ├─ NavbarTab.tsx      # Navigation tab
+│     │  │  ├─ ParagraphsTab.tsx  # Content tab
+│     │  │  ├─ SummaryTab.tsx     # Summary tab
+│     │  │  └─ TruthTableTab.tsx  # Truth table tab
+│     │  ├─ hooks/                # Custom React hooks
+│     │  ├─ types/                # TypeScript types
+│     │  ├─ App.tsx               # Main app component
+│     │  └─ main.tsx              # App entry point
+│     ├─ electron/                # Electron desktop app
+│     │  ├─ main.ts               # Main process
+│     │  └─ preload.ts            # Preload script
+│     ├─ runs/                    # Extraction results
+│     ├─ image_extractions/       # Image extraction results
+│     ├─ truth_extractor.py       # Python truth extraction
+│     ├─ image_extractor.py       # Python image extraction
+│     ├─ image-extraction-demo.html # Demo interface
+│     └─ package.json
+├─ packages/                      # Shared packages
+│  ├─ types/                      # TypeScript types & Zod schemas
+│  │  ├─ src/
+│  │  │  ├─ index.ts              # Main exports
+│  │  │  ├─ manifest.ts           # Manifest types
+│  │  │  ├─ navbar.ts              # Navigation types
+│  │  │  ├─ packed.ts             # Packed data types
+│  │  │  ├─ text.ts               # Text content types
+│  │  │  └─ truth.ts              # Truth table types
+│  │  └─ dist/                    # Compiled types
+│  └─ utils/                      # Utility functions
+│     ├─ src/
+│     │  ├─ index.ts              # Main exports
+│     │  ├─ detect.ts             # Detection utilities
+│     │  ├─ files.ts              # File operations
+│     │  ├─ hashing.ts            # Hash functions
+│     │  ├─ html.ts               # HTML processing
+│     │  └─ strings.ts            # String utilities
+│     └─ dist/                    # Compiled utilities
+├─ docs/                          # Documentation
+├─ runs/                          # Global extraction results
+└─ Configuration files
 ```
 
-### Service Taxonomy
-Edit `truth_extractor/taxonomy/services.yaml`:
-```yaml
-services:
-  - canonical: "Web Development"
-    synonyms: ["web design", "website creation"]
-```
+## ✨ Core Features
 
-## 🧪 Testing
+### 🔍 **Truth Table Extraction**
+- **Enhanced Accuracy**: Strict validation with multiple extraction methods
+- **Business-Agnostic**: Works across all industries and business types
+- **Comprehensive Fields**: Brand name, location, email, phone, socials, services, colors, logo, background, slogan
+- **Confidence Scoring**: Accurate confidence levels based on source quality
+- **Provenance Tracking**: Full source tracking for each extracted field
 
-### Run All Tests
+### 🖼️ **Image Extraction System**
+- **Logo Detection**: Extracts logo from truth table with high confidence
+- **Page Organization**: Groups images by page with titles and metadata
+- **Image Categorization**: Automatically categorizes (content, background, logo, banner)
+- **Preview System**: Shows image thumbnails with download functionality
+- **Upload Integration**: Users can add additional images via URL
+- **Statistics Dashboard**: Real-time extraction statistics
+
+### 📄 **Content Processing**
+- **Real Data Extraction**: No mock data - extracts actual website content
+- **Paragraph Analysis**: Meaningful content extraction with boilerplate filtering
+- **Navigation Extraction**: Comprehensive navigation structure analysis
+- **Miscellaneous Data**: Colors, metadata, structured data extraction
+
+### 🖥️ **Multi-Platform Support**
+- **Web Interface**: Modern React application with responsive design
+- **Desktop App**: Electron application with native OS integration
+- **API Server**: Fastify-based REST API for programmatic access
+- **Python Backend**: Advanced extraction logic in Python
+
+## 🔧 Development Commands
+
 ```bash
-python -m pytest tests/
+# Development
+pnpm dev                    # Start all development servers
+pnpm dev:web               # Start web app only
+pnpm dev:server            # Start API server only
+
+# Building
+pnpm build                 # Build all packages
+pnpm build:web             # Build web app
+pnpm build:server          # Build server
+
+# Code Quality
+pnpm lint                  # Run ESLint
+pnpm format                # Format code with Prettier
+pnpm type-check            # Run TypeScript checks
+
+# Python Scripts
+py truth_extractor.py <url> [max_pages] [timeout] [use_playwright]
+py image_extractor.py <url> [max_pages] [output_dir]
 ```
 
-### Test Categories
-- **Color Validation**: HEX format, WCAG contrast
-- **Contact Validation**: Email MX, phone E.164
-- **Extraction**: HTML parsing, field extraction
-- **Scoring**: Confidence calculation, ranking
+## 🐍 Python Dependencies
 
-## 📊 Output Format
+The Python extraction scripts require these packages:
 
-### Truth Table
-```json
-{
-  "brand_name": {
-    "value": "Acme Corp",
-    "confidence": 0.95,
-    "provenance": [{"url": "https://acme.com", "method": "jsonld.Organization.name"}]
-  }
-}
-```
-
-### Assets
-- **Logos**: Downloaded and optimized
-- **Images**: Quality-scored and categorized
-- **Metadata**: Crawl logs, diagnostics, summaries
-
-## 🚀 Advanced Features
-
-### JavaScript SPA Support
 ```bash
-# Enable Playwright for JavaScript sites
-python -m truth_extractor https://react-app.com --use-playwright
+pip install beautifulsoup4 requests email-validator phonenumbers validators
 ```
 
-### Batch Processing
+## 📊 API Endpoints
+
+### Truth Table Extraction
+- `POST /api/truth-table` - Extract truth table data
+- `GET /api/truth-table/:runId` - Get extraction results
+
+### Image Extraction
+- `POST /api/image-extraction` - Extract images from website
+- `GET /api/image-extraction/:runId` - Get image extraction results
+- `POST /api/image-extraction/:runId/upload` - Upload additional images
+
+### Other Extractions
+- `POST /api/extract/navbar` - Extract navigation structure
+- `POST /api/extract/paragraphs` - Extract content paragraphs
+- `POST /api/extract/misc` - Extract miscellaneous data
+
+## 🎯 Usage Examples
+
+### Truth Table Extraction
 ```bash
-# Process multiple URLs
-python -m truth_extractor --urls https://site1.com,https://site2.com --max-pages 5
+# Command line
+py truth_extractor.py https://example.com 5 10 true
+
+# API call
+curl -X POST http://localhost:5174/api/truth-table \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com", "maxPages": 5}'
 ```
 
-### Custom Output
+### Image Extraction
 ```bash
-# Specify output directory
-python -m truth_extractor https://example.com --out ./my-extracts
+# Command line
+py image_extractor.py https://example.com 3 ./output
+
+# API call
+curl -X POST http://localhost:5174/api/image-extraction \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com", "maxPages": 3}'
 ```
 
-## 🎯 Use Cases
+## 🔄 Data Flow
 
-- **Business Intelligence**: Extract competitor information
-- **Lead Generation**: Collect contact details and services
-- **Brand Monitoring**: Track brand mentions and assets
-- **Data Migration**: Extract data from old websites
-- **Research**: Analyze website structures and content
+1. **Input**: User provides website URL and extraction parameters
+2. **Processing**: Python scripts perform web scraping and data extraction
+3. **Validation**: Strict validation ensures data accuracy and quality
+4. **Storage**: Results saved to JSON files in organized directory structure
+5. **API**: Fastify server provides REST endpoints for data access
+6. **UI**: React application displays results with interactive interface
+7. **Export**: Users can download individual files or complete datasets
 
-## 📞 Support
+## 📁 Output Structure
 
-- **Documentation**: Check `docs/` folder for detailed guides
-- **Issues**: Review implementation docs for troubleshooting
-- **Features**: See validation enhancements for latest improvements
-- **JavaScript Sites**: Read Playwright integration guide
+```
+runs/
+└─ {domain}-{timestamp}/
+   ├─ truth.json              # Truth table extraction results
+   ├─ images/                 # Image extraction results
+   ├─ navbar/                 # Navigation structure
+   ├─ text/                   # Text content
+   ├─ misc/                   # Miscellaneous data
+   └─ logs/                   # Extraction logs
+```
 
-## 🏆 Success Metrics
+## 🛠️ Technology Stack
 
-✅ **47/47 Tests Passing** - 100% test coverage  
-✅ **10 Field Types** - Comprehensive extraction  
-✅ **WCAG AA Compliance** - Accessible color validation  
-✅ **Cross-platform** - Windows, macOS, Linux support  
-✅ **Production Ready** - Robust error handling and validation  
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS
+- **Backend**: Fastify, Node.js, TypeScript
+- **Desktop**: Electron
+- **Extraction**: Python, BeautifulSoup, Requests
+- **Validation**: email-validator, phonenumbers, validators
+- **Build**: pnpm, TypeScript, ESLint, Prettier
+
+## 🚀 Future Development
+
+### Planned Features
+- **AI Integration**: Machine learning for better content classification
+- **Batch Processing**: Multiple URL extraction in parallel
+- **Export Formats**: PDF, Excel, CSV export options
+- **Real-time Monitoring**: Live extraction progress tracking
+- **Custom Extractors**: User-defined extraction rules
+- **Cloud Storage**: Integration with cloud storage providers
+
+### Extension Points
+- **Custom Validators**: Add domain-specific validation rules
+- **New Extractors**: Implement additional data extraction methods
+- **UI Themes**: Multiple interface themes and customization
+- **Plugin System**: Third-party plugin architecture
+- **API Versioning**: Backward-compatible API evolution
+
+## 📝 Development Notes
+
+### Key Files for Future Development
+- `apps/web/truth_extractor.py` - Main truth extraction logic
+- `apps/web/image_extractor.py` - Image extraction system
+- `apps/server/src/routes/extract/` - API endpoint implementations
+- `apps/web/src/components/` - React UI components
+- `packages/types/src/` - TypeScript type definitions
+- `packages/utils/src/` - Shared utility functions
+
+### Important Considerations
+- **Python Dependencies**: Ensure all Python packages are installed
+- **File Permissions**: Check write permissions for output directories
+- **Rate Limiting**: Implement rate limiting for production use
+- **Error Handling**: Comprehensive error handling throughout the stack
+- **Security**: Validate all inputs and sanitize outputs
+- **Performance**: Optimize for large-scale extraction operations
 
 ---
 
-**Built with ❤️ using TypeScript, Python, and Electron**
+For detailed documentation, see the [`docs/`](./docs/) folder.
