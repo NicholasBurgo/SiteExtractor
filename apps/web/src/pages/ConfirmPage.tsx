@@ -6,6 +6,7 @@ import { ParagraphsTab } from './ParagraphsTab';
 import { NavbarTab } from './NavbarTab';
 import { MiscTab } from './MiscTab';
 import { SummaryTab } from './SummaryTab';
+import { usePageManager, Page } from '../hooks/usePageManager';
 
 interface ConfirmPageProps {
   runId: string;
@@ -18,24 +19,35 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
   const [activeTab, setActiveTab] = useState<'truth-table' | 'images' | 'paragraphs' | 'navbar' | 'misc' | 'summary'>('truth-table');
   const [confirmedTabs, setConfirmedTabs] = useState<Set<string>>(new Set());
 
+  // Use shared page manager at the top level
+  const { pages, addPage, updatePage, removePage, isLoading: pagesLoading } = usePageManager(runId);
+
   const handleTabConfirm = (tabId: string) => {
-    setConfirmedTabs(prev => new Set(prev).add(tabId));
+    setConfirmedTabs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tabId)) {
+        newSet.delete(tabId);
+      } else {
+        newSet.add(tabId);
+      }
+      return newSet;
+    });
   };
 
   const handleApproveAll = () => {
     // Mark all tabs with confirm buttons as confirmed
-    setConfirmedTabs(new Set(['truth-table', 'navbar', 'paragraphs']));
+    setConfirmedTabs(new Set(['truth-table', 'navbar', 'paragraphs', 'images']));
   };
 
   const tabs = [
-    { id: 'truth-table', label: 'Truth Table', component: <TruthTableTab runId={runId} url={url} extractionOptions={extractionOptions} onConfirm={() => handleTabConfirm('truth-table')} /> },
-    { id: 'navbar', label: 'Navigation', component: <NavbarTab runId={runId} onConfirm={() => handleTabConfirm('navbar')} /> },
-    { id: 'images', label: 'Images', component: <ImagesTab runId={runId} onConfirm={() => handleTabConfirm('images')} /> },
-    { id: 'paragraphs', label: 'Paragraphs', component: <ParagraphsTab runId={runId} url={url} extractionOptions={extractionOptions} onConfirm={() => handleTabConfirm('paragraphs')} /> },
+    { id: 'truth-table', label: 'Truth Table', component: <TruthTableTab runId={runId} url={url} extractionOptions={extractionOptions} onConfirm={() => handleTabConfirm('truth-table')} onConfirmAll={handleApproveAll} isConfirmed={confirmedTabs.has('truth-table')} /> },
+    { id: 'navbar', label: 'Navigation', component: <NavbarTab runId={runId} pages={pages} addPage={addPage} updatePage={updatePage} removePage={removePage} isLoading={pagesLoading} onConfirm={() => handleTabConfirm('navbar')} onConfirmAll={handleApproveAll} isConfirmed={confirmedTabs.has('navbar')} /> },
+    { id: 'images', label: 'Images', component: <ImagesTab runId={runId} pages={pages} onConfirm={() => handleTabConfirm('images')} isConfirmed={confirmedTabs.has('images')} /> },
+    { id: 'paragraphs', label: 'Paragraphs', component: <ParagraphsTab runId={runId} url={url} extractionOptions={extractionOptions} pages={pages} onConfirm={() => handleTabConfirm('paragraphs')} isConfirmed={confirmedTabs.has('paragraphs')} /> },
     { id: 'misc', label: 'Misc', component: <MiscTab runId={runId} /> },
   ] as const;
 
-  const summaryTab = { id: 'summary', label: 'Summary', component: <SummaryTab runId={runId} onApproveAll={handleApproveAll} /> };
+  const summaryTab = { id: 'summary', label: 'Summary', component: <SummaryTab runId={runId} onApproveAll={handleApproveAll} isConfirmed={confirmedTabs.has('summary')} onConfirm={() => handleTabConfirm('summary')} /> };
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -77,7 +89,7 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
           
           {/* Right side - Summary tab with special styling */}
           <button
-            onClick={() => setActiveTab(summaryTab.id)}
+            onClick={() => setActiveTab(summaryTab.id as typeof activeTab)}
             className={`py-2 px-4 border-b-2 font-semibold text-sm flex items-center space-x-2 rounded-t-lg transition-all ${
               activeTab === summaryTab.id
                 ? 'border-blue-500 text-white bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg'

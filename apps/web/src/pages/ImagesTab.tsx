@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { usePageManager } from '../hooks/usePageManager';
+import { Page } from '../hooks/usePageManager';
+import { Check } from 'lucide-react';
 
 interface Image {
   id: string;
@@ -18,10 +19,12 @@ interface Image {
 
 interface ImagesTabProps {
   runId?: string;
+  pages: Page[];
   onConfirm?: () => void;
+  isConfirmed?: boolean;
 }
 
-export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
+export function ImagesTab({ runId, pages, onConfirm, isConfirmed = false }: ImagesTabProps) {
   const [images, setImages] = useState<Image[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -31,15 +34,203 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
   const [altText, setAltText] = useState('');
   const [title, setTitle] = useState('');
   const [draggedImage, setDraggedImage] = useState<string | null>(null);
+  const [confirmedSections, setConfirmedSections] = useState<Set<string>>(new Set());
+  const [isRetryingImages, setIsRetryingImages] = useState(false);
 
-  // Use shared page manager
-  const { pages, getPageNames, addPage } = usePageManager(runId);
+  // Debug logging
+  console.log('ImagesTab render:', { runId, pages, pagesCount: pages.length });
+
+  // Helper function to get page names
+  const getPageNames = () => {
+    return pages.map(page => page.name);
+  };
+
+  const handleRetryImageExtraction = async () => {
+    setIsRetryingImages(true);
+    try {
+      console.log('Retrying image extraction for runId:', runId);
+      
+      const response = await fetch('/api/extract/images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ runId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to retry image extraction: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.status === 'success' && result.images) {
+        setImages(result.images);
+        console.log('Image retry completed successfully');
+      } else {
+        throw new Error(result.message || 'Failed to retry image extraction');
+      }
+    } catch (error) {
+      console.error('Image retry failed:', error);
+      alert(`Image retry failed: ${error}`);
+    } finally {
+      setIsRetryingImages(false);
+    }
+  };
+
+  const handleSectionConfirm = (sectionId: string) => {
+    setConfirmedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+    saveImageData();
+  };
+
+  const handleConfirmAll = () => {
+    const allSections = new Set(['logos']);
+    pages.forEach(page => allSections.add(page.name));
+    
+    // Check if all sections are already confirmed
+    const allConfirmed = Array.from(allSections).every(section => confirmedSections.has(section));
+    
+    if (allConfirmed) {
+      // If all are confirmed, unconfirm all
+      setConfirmedSections(new Set());
+    } else {
+      // If not all are confirmed, confirm all
+      setConfirmedSections(allSections);
+    }
+    
+    saveImageData();
+    onConfirm?.();
+  };
+
+  const saveImageData = () => {
+    try {
+      console.log('Saving image data:', images);
+      
+      localStorage.setItem(`images-${runId}`, JSON.stringify({
+        images,
+        confirmedAt: new Date().toISOString(),
+        runId,
+        confirmedSections: Array.from(confirmedSections)
+      }));
+
+      // Also save confirmed sections separately for persistence
+      localStorage.setItem(`images-confirmed-sections-${runId}`, JSON.stringify({
+        confirmedSections: Array.from(confirmedSections),
+        savedAt: new Date().toISOString(),
+        runId
+      }));
+      
+      console.log('Image data saved successfully');
+    } catch (error) {
+      console.error('Failed to save image data:', error);
+    }
+  };
 
   useEffect(() => {
     if (runId) {
       loadImages();
+      loadConfirmedSections();
     }
   }, [runId]);
+
+  // Detect when new pages are added and unconfirm the tab
+  useEffect(() => {
+    if (pages.length > 0 && isConfirmed) {
+      const savedData = localStorage.getItem(`images-confirmed-sections-${runId}`);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        const savedConfirmedSections = new Set(parsed.confirmedSections || []);
+        
+        // Check if there are new pages that weren't confirmed before
+        const currentPageNames = new Set(pages.map(p => p.name));
+        const hasNewPages = Array.from(currentPageNames).some(pageName => !savedConfirmedSections.has(pageName));
+        
+        if (hasNewPages) {
+          console.log('ImagesTab - New pages detected, unconfirming tab');
+          onConfirm?.(); // This will unconfirm the tab
+        }
+      }
+    }
+  }, [pages, isConfirmed, runId, onConfirm]);
+
+  const loadConfirmedSections = () => {
+    try {
+      const savedData = localStorage.getItem(`images-confirmed-sections-${runId}`);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setConfirmedSections(new Set(parsed.confirmedSections || []));
+        console.log('ImagesTab - Loaded confirmed sections:', parsed.confirmedSections);
+      }
+    } catch (error) {
+      console.error('Failed to load confirmed sections:', error);
+    }
+  };
+
+  // Auto-confirm tab when all sections are confirmed
+  useEffect(() => {
+    if (confirmedSections.size > 0 && pages.length > 0 && !isConfirmed) {
+      const allSections = new Set(['logos', ...pages.map(p => p.name)]);
+      const allSectionsConfirmed = Array.from(allSections).every(section => confirmedSections.has(section));
+      
+      console.log('ImagesTab - Auto-confirm check:', {
+        allSectionsConfirmed,
+        sectionsCount: allSections.size,
+        confirmedSections: Array.from(confirmedSections),
+        allSections: Array.from(allSections),
+        isConfirmed
+      });
+      
+      if (allSectionsConfirmed && allSections.size > 0) {
+        console.log('ImagesTab - Auto-confirming tab!');
+        onConfirm?.();
+      }
+    }
+  }, [confirmedSections, pages, onConfirm, isConfirmed]);
+
+  // Remove tab check when not all sections are confirmed
+  useEffect(() => {
+    if (isConfirmed && confirmedSections.size > 0 && pages.length > 0) {
+      const allSections = new Set(['logos', ...pages.map(p => p.name)]);
+      const allSectionsConfirmed = Array.from(allSections).every(section => confirmedSections.has(section));
+      
+      console.log('ImagesTab - Auto-unconfirm check:', {
+        allSectionsConfirmed,
+        sectionsCount: allSections.size,
+        confirmedSections: Array.from(confirmedSections),
+        allSections: Array.from(allSections),
+        isConfirmed
+      });
+      
+      if (!allSectionsConfirmed) {
+        console.log('ImagesTab - Auto-unconfirming tab!');
+        onConfirm?.();
+      }
+    }
+  }, [confirmedSections, pages, onConfirm, isConfirmed]);
+
+  // Save confirmed sections whenever they change
+  useEffect(() => {
+    if (confirmedSections.size > 0 || runId) {
+      try {
+        localStorage.setItem(`images-confirmed-sections-${runId}`, JSON.stringify({
+          confirmedSections: Array.from(confirmedSections),
+          savedAt: new Date().toISOString(),
+          runId
+        }));
+        console.log('ImagesTab - Saved confirmed sections:', Array.from(confirmedSections));
+      } catch (error) {
+        console.error('Failed to save confirmed sections:', error);
+      }
+    }
+  }, [confirmedSections, runId]);
 
   const loadImages = async () => {
     if (!runId) return;
@@ -137,7 +328,8 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
   };
 
   const groupImagesByPage = (images: Image[]) => {
-    return images.reduce((groups, image) => {
+    // First group images by page
+    const imageGroups = images.reduce((groups, image) => {
       const page = image.page || 'Other';
       if (!groups[page]) {
         groups[page] = [];
@@ -145,6 +337,37 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
       groups[page].push(image);
       return groups;
     }, {} as Record<string, Image[]>);
+
+    // Get current page names from page manager
+    const currentPageNames = new Set(pages.map(page => page.name));
+    
+    // Find images that belong to removed pages (uncategorized)
+    const uncategorizedImages: Image[] = [];
+    Object.keys(imageGroups).forEach(pageName => {
+      if (!currentPageNames.has(pageName) && pageName !== 'logos') {
+        uncategorizedImages.push(...imageGroups[pageName]);
+        delete imageGroups[pageName];
+      }
+    });
+
+    // Ensure all current pages from page manager are represented, even if they have no images
+    const allPages = pages.reduce((acc, page) => {
+      if (!acc[page.name]) {
+        acc[page.name] = [];
+      }
+      return acc;
+    }, { ...imageGroups });
+
+    // Add uncategorized section at the top if there are uncategorized images
+    if (uncategorizedImages.length > 0) {
+      const orderedPages: Record<string, Image[]> = { 'Uncategorized': uncategorizedImages };
+      Object.entries(allPages).forEach(([key, value]) => {
+        orderedPages[key] = value;
+      });
+      return orderedPages;
+    }
+
+    return allPages;
   };
 
   const separateLogosFromImages = (images: Image[]) => {
@@ -154,6 +377,7 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
   };
 
   const handleImageStatusChange = (imageId: string, status: 'keep' | 'remove') => {
+    if (isConfirmed) return; // Prevent editing when confirmed
     setImages(prev => prev.map(img => 
       img.id === imageId ? { ...img, status } : img
     ));
@@ -197,6 +421,9 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
 
   const { logos, otherImages } = separateLogosFromImages(images);
   const groupedImages = groupImagesByPage(otherImages);
+  
+  // Get uncategorized images count
+  const uncategorizedImages = groupedImages['Uncategorized'] || [];
 
   return (
     <div className="p-6">
@@ -204,26 +431,54 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
         <h2 className="text-xl font-semibold text-gray-900">Images</h2>
         <div className="flex space-x-2">
           <button 
-            className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
-            onClick={() => setShowUploadModal(true)}
+            className="px-4 py-2 text-sm font-medium text-black bg-yellow-400 border border-transparent rounded-full hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleRetryImageExtraction}
+            disabled={isRetryingImages}
           >
-            Upload Image
+            {isRetryingImages ? 'Retrying...' : 'Retry'}
           </button>
           <button 
-            className="px-6 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-            onClick={handleConfirm}
+            className={`px-6 py-2 rounded-full transition-colors font-medium ${
+              isConfirmed 
+                ? 'bg-red-600 text-white hover:bg-red-700' 
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
+            onClick={handleConfirmAll}
           >
-            Confirm
+            {isConfirmed ? 'Unconfirm All' : 'Confirm All'}
           </button>
         </div>
       </div>
+
+      {uncategorizedImages.length > 0 && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Uncategorized Images Will Be Deleted
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>
+                  There are {uncategorizedImages.length} image(s) from removed pages that will be deleted when you confirm this tab. 
+                  These images are not associated with any current page and will be permanently removed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {images.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500">No images found for this run.</p>
           <p className="text-sm text-gray-400 mt-2">Run ID: {runId}</p>
           <button 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-medium"
             onClick={() => setShowUploadModal(true)}
           >
             Upload Your First Image
@@ -232,11 +487,43 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
       ) : (
         <div className="space-y-8">
           {/* Logo Section */}
-          {logos.length > 0 && (
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                🏢 Company Logos
-              </h3>
+          <div className={`border rounded-lg p-4 ${
+            confirmedSections.has('logos') 
+              ? 'border-green-200 bg-green-50' 
+              : 'border-gray-200 bg-white'
+          }`}>
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  🏢 Company Logos
+                </h3>
+              </div>
+              <div className="flex space-x-2">
+                <button 
+                  className={`px-4 py-2 text-sm rounded-full transition-colors font-medium ${
+                    isConfirmed 
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                  onClick={() => setShowUploadModal(true)}
+                  disabled={isConfirmed}
+                  title={isConfirmed ? "Section is locked - unconfirm to edit" : "Upload logo"}
+                >
+                  Upload Logo
+                </button>
+                <button 
+                  className={`px-4 py-2 text-sm text-white rounded-full transition-colors font-medium ${
+                    confirmedSections.has('logos') 
+                      ? 'bg-red-600 hover:bg-red-700' 
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                  onClick={() => handleSectionConfirm('logos')}
+                >
+                  {confirmedSections.has('logos') ? 'Unconfirm' : 'Confirm'}
+                </button>
+              </div>
+            </div>
+            {logos.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {logos.map((image) => (
                   <div 
@@ -282,21 +569,29 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleImageStatusChange(image.id, 'keep')}
+                          disabled={isConfirmed}
                           className={`px-3 py-1 text-xs rounded-full ${
-                            image.status === 'keep' || !image.status
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-600'
+                            isConfirmed 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : image.status === 'keep' || !image.status
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-600'
                           }`}
+                          title={isConfirmed ? "Section is locked - unconfirm to edit" : "Keep this image"}
                         >
                           Keep
                         </button>
                         <button
                           onClick={() => handleImageStatusChange(image.id, 'remove')}
+                          disabled={isConfirmed}
                           className={`px-3 py-1 text-xs rounded-full ${
-                            image.status === 'remove'
-                              ? 'bg-red-100 text-red-800' 
-                              : 'bg-gray-100 text-gray-600'
+                            isConfirmed 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : image.status === 'remove'
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-gray-100 text-gray-600'
                           }`}
+                          title={isConfirmed ? "Section is locked - unconfirm to edit" : "Remove this image"}
                         >
                           Remove
                         </button>
@@ -305,22 +600,78 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No logos found.</p>
+                <p className="text-sm text-gray-400 mt-1">Upload a logo to get started.</p>
+              </div>
+            )}
+          </div>
 
           {/* Other Images by Page */}
-          {Object.entries(groupedImages).map(([page, pageImages]) => (
-            <div 
-              key={page} 
-              className="border border-gray-200 rounded-lg p-4"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, page)}
-            >
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                {page} {draggedImage && '← Drop here'}
-              </h3>
+          {Object.entries(groupedImages).map(([page, pageImages]) => {
+            const isUncategorized = page === 'Uncategorized';
+            return (
+              <div 
+                key={page} 
+                className={`border rounded-lg p-4 ${
+                  isUncategorized
+                    ? 'border-red-200 bg-red-50'
+                    : confirmedSections.has(page) 
+                      ? 'border-green-200 bg-green-50' 
+                      : 'border-gray-200 bg-white'
+                }`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, page)}
+              >
+                <div className={`flex justify-between items-center mb-4 pb-2 ${isUncategorized ? 'border-b border-red-200' : 'border-b border-gray-200'}`}>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {isUncategorized ? 'Uncategorized' : page} {draggedImage && '← Drop here'}
+                    </h3>
+                    {isUncategorized && (
+                      <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-medium">
+                        Will be deleted
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex space-x-2">
+                    {!isUncategorized && (
+                      <button 
+                        className={`px-4 py-2 text-sm rounded-full transition-colors font-medium ${
+                          isConfirmed 
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                        onClick={() => setShowUploadModal(true)}
+                        disabled={isConfirmed}
+                        title={isConfirmed ? "Section is locked - unconfirm to edit" : "Upload image to this page"}
+                      >
+                        Upload Image
+                      </button>
+                    )}
+                    {!isUncategorized && (
+                      <button 
+                        className={`px-4 py-2 text-sm text-white rounded-full transition-colors font-medium ${
+                          confirmedSections.has(page) 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-green-600 hover:bg-green-700'
+                        }`}
+                        onClick={() => handleSectionConfirm(page)}
+                      >
+                        {confirmedSections.has(page) ? 'Unconfirm' : 'Confirm'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {pageImages.map((image) => (
+                {pageImages.length === 0 ? (
+                  <div className="col-span-full text-center py-8 text-gray-500">
+                    <p>No images found for this page.</p>
+                    <p className="text-sm text-gray-400 mt-1">Images will appear here when extracted or uploaded.</p>
+                  </div>
+                ) : (
+                  pageImages.map((image) => (
                   <div 
                     key={image.id} 
                     className={`border rounded-lg overflow-hidden cursor-move ${
@@ -364,31 +715,41 @@ export function ImagesTab({ runId, onConfirm }: ImagesTabProps) {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleImageStatusChange(image.id, 'keep')}
+                          disabled={isConfirmed}
                           className={`px-3 py-1 text-xs rounded-full ${
-                            image.status === 'keep' || !image.status
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-600'
+                            isConfirmed 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : image.status === 'keep' || !image.status
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-600'
                           }`}
+                          title={isConfirmed ? "Section is locked - unconfirm to edit" : "Keep this image"}
                         >
                           Keep
                         </button>
                         <button
                           onClick={() => handleImageStatusChange(image.id, 'remove')}
+                          disabled={isConfirmed}
                           className={`px-3 py-1 text-xs rounded-full ${
-                            image.status === 'remove'
-                              ? 'bg-red-100 text-red-800' 
-                              : 'bg-gray-100 text-gray-600'
+                            isConfirmed 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : image.status === 'remove'
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-gray-100 text-gray-600'
                           }`}
+                          title={isConfirmed ? "Section is locked - unconfirm to edit" : "Remove this image"}
                         >
                           Remove
                         </button>
                       </div>
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

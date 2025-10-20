@@ -6,6 +6,8 @@ export interface Page {
   url: string;
   order: number;
   status: 'extracted' | 'added' | 'modified';
+  qualityScore?: number;
+  originalLabel?: string;
 }
 
 export function usePageManager(runId?: string) {
@@ -78,7 +80,9 @@ export function usePageManager(runId?: string) {
           name: `${node.label} Page`,
           url: node.href,
           order: order,
-          status: 'extracted'
+          status: 'extracted',
+          qualityScore: node.quality_score || 50,
+          originalLabel: node.label
         });
       }
       
