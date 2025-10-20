@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Edit3, Sparkles } from 'lucide-react';
+import { usePageManager } from '../hooks/usePageManager';
 
 interface ParagraphsTabProps {
   runId: string;
@@ -26,24 +27,20 @@ export function ParagraphsTab({ runId, url, extractionOptions, onConfirm }: Para
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState<string>('');
 
+  // Use shared page manager
+  const { pages, getPageNames, addPage } = usePageManager(runId);
+
   useEffect(() => {
+    // Clear any existing localStorage data to prevent loading mock data
+    const keysToRemove = Object.keys(localStorage).filter(key => key.startsWith('paragraphs-'));
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
     loadParagraphData();
   }, [runId]);
 
   const loadParagraphData = async () => {
     setIsLoading(true);
     try {
-      // Check for saved data first
-      const savedData = localStorage.getItem(`paragraphs-${runId}`);
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        if (parsed.paragraphs) {
-          setParagraphs(parsed.paragraphs);
-          setIsLoading(false);
-          return;
-        }
-      }
-
       // Call the actual paragraph extraction API
       const response = await fetch('/api/extract/paragraphs', {
         method: 'POST',
@@ -54,24 +51,7 @@ export function ParagraphsTab({ runId, url, extractionOptions, onConfirm }: Para
       });
 
       if (!response.ok) {
-        // If the specific run ID doesn't exist, try to find any available run
-        console.warn(`Run ${runId} not found, checking for available runs...`);
-        
-        // Try to load from localStorage with a different run ID
-        const availableRuns = Object.keys(localStorage).filter(key => key.startsWith('paragraphs-'));
-        if (availableRuns.length > 0) {
-          const latestRun = availableRuns[availableRuns.length - 1];
-          const latestData = localStorage.getItem(latestRun);
-          if (latestData) {
-            const parsed = JSON.parse(latestData);
-            if (parsed.paragraphs) {
-              setParagraphs(parsed.paragraphs);
-              setIsLoading(false);
-              return;
-            }
-          }
-        }
-        
+        console.error(`Failed to load paragraphs for run ${runId}: ${response.statusText}`);
         throw new Error(`Failed to load paragraphs: ${response.statusText}`);
       }
 
@@ -81,7 +61,7 @@ export function ParagraphsTab({ runId, url, extractionOptions, onConfirm }: Para
         // Convert API response to frontend format
         const apiParagraphs: Paragraph[] = result.paragraphs.map((item: any) => ({
           id: item.id,
-          title: item.type === 'title' ? item.content : undefined,
+          title: item.title || (item.type === 'title' ? item.content : undefined),
           content: item.content,
           page: item.page,
           type: item.type,
@@ -136,7 +116,7 @@ export function ParagraphsTab({ runId, url, extractionOptions, onConfirm }: Para
         // Convert API response to frontend format
         const apiParagraphs: Paragraph[] = result.paragraphs.map((item: any) => ({
           id: item.id,
-          title: item.type === 'title' ? item.content : undefined,
+          title: item.title || (item.type === 'title' ? item.content : undefined),
           content: item.content,
           page: item.page,
           type: item.type,
@@ -277,7 +257,7 @@ export function ParagraphsTab({ runId, url, extractionOptions, onConfirm }: Para
             {Object.entries(groupedParagraphs).map(([page, pageParagraphs]) => (
               <div key={page} className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                  {page} Page
+                  {page}
                 </h3>
                 <div className="space-y-4">
                   {pageParagraphs.map((paragraph) => (
@@ -289,9 +269,21 @@ export function ParagraphsTab({ runId, url, extractionOptions, onConfirm }: Para
                               {paragraph.title}
                             </h4>
                           ) : (
-                            <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-                              Paragraph
-                            </span>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                                Paragraph
+                              </span>
+                              {(paragraph as any).subtitle && (
+                                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded font-medium">
+                                  {(paragraph as any).subtitle}
+                                </span>
+                              )}
+                              {paragraph.title && (
+                                <span className="text-sm font-medium text-gray-700">
+                                  {paragraph.title}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center space-x-2">

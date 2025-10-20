@@ -65,7 +65,7 @@ electron_1.ipcMain.handle('extract-truth-table', async (event, url, options) => 
                     // Read the truth.json file that was created
                     const fs = require('fs');
                     const path = require('path');
-                    const truthPath = path.join(process.cwd(), 'runs', runId, 'truth.json');
+                    const truthPath = path.join(process.cwd(), '..', '..', 'runs', runId, 'truth.json');
                     if (fs.existsSync(truthPath)) {
                         const truthData = JSON.parse(fs.readFileSync(truthPath, 'utf8'));
                         resolve({ success: true, runId, truthData });
@@ -112,7 +112,7 @@ electron_1.ipcMain.handle('retry-truth-table', async (event, url, options) => {
                     // Read the truth.json file that was created
                     const fs = require('fs');
                     const path = require('path');
-                    const truthPath = path.join(process.cwd(), 'runs', runId, 'truth.json');
+                    const truthPath = path.join(process.cwd(), '..', '..', 'runs', runId, 'truth.json');
                     if (fs.existsSync(truthPath)) {
                         const truthData = JSON.parse(fs.readFileSync(truthPath, 'utf8'));
                         resolve({ success: true, runId, truthData });
@@ -139,7 +139,7 @@ electron_1.ipcMain.handle('get-extraction-data', async (event, runId) => {
     const fs = require('fs').promises;
     const path = require('path');
     try {
-        const runPath = path.join(process.cwd(), 'runs', runId);
+        const runPath = path.join(process.cwd(), '..', '..', 'runs', runId);
         const truthPath = path.join(runPath, 'truth.json');
         const data = await fs.readFile(truthPath, 'utf-8');
         return JSON.parse(data);

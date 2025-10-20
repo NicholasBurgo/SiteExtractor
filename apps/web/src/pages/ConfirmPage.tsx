@@ -30,7 +30,7 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
   const tabs = [
     { id: 'truth-table', label: 'Truth Table', component: <TruthTableTab runId={runId} url={url} extractionOptions={extractionOptions} onConfirm={() => handleTabConfirm('truth-table')} /> },
     { id: 'navbar', label: 'Navigation', component: <NavbarTab runId={runId} onConfirm={() => handleTabConfirm('navbar')} /> },
-    { id: 'images', label: 'Images', component: <ImagesTab runId={runId} /> },
+    { id: 'images', label: 'Images', component: <ImagesTab runId={runId} onConfirm={() => handleTabConfirm('images')} /> },
     { id: 'paragraphs', label: 'Paragraphs', component: <ParagraphsTab runId={runId} url={url} extractionOptions={extractionOptions} onConfirm={() => handleTabConfirm('paragraphs')} /> },
     { id: 'misc', label: 'Misc', component: <MiscTab runId={runId} /> },
   ] as const;
