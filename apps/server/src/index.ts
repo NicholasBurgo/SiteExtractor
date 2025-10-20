@@ -29,7 +29,7 @@ async function start() {
     await fastify.register(multipart);
 
     await fastify.register(staticFiles, {
-      root: join(process.cwd(), config.DATA_DIR),
+      root: join(process.cwd(), '..', '..', 'runs'),
       prefix: '/runs/',
     });
 

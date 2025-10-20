@@ -1,4 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
 interface NavbarRequest {
   Body: {
@@ -11,11 +13,32 @@ export async function navbarRoute(fastify: FastifyInstance) {
     const { runId } = request.body;
     
     try {
-      // TODO: Implement navbar extraction
+      // Read the extracted navbar data from the run directory
+      const navbarFilePath = join(process.cwd(), '..', '..', 'runs', runId, 'navbar', 'navbar.json');
+      
+      fastify.log.info(`Looking for navbar file at: ${navbarFilePath}`);
+      
+      if (!existsSync(navbarFilePath)) {
+        fastify.log.warn(`Navbar file not found: ${navbarFilePath}`);
+        reply.code(404);
+        return {
+          status: 'error',
+          message: 'No navbar data found for this run',
+          runId,
+          debug: {
+            navbarFilePath,
+            cwd: process.cwd()
+          }
+        };
+      }
+      
+      const navbarData = JSON.parse(readFileSync(navbarFilePath, 'utf8'));
+      
       return {
         status: 'success',
         message: 'Navbar extraction completed',
         runId,
+        navbar: navbarData
       };
     } catch (error) {
       fastify.log.error(error);
