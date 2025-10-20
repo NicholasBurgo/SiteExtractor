@@ -50,6 +50,24 @@ export default function App() {
           console.log('Output path:', outputPathToUse);
           console.log('URL was:', opts.url);
           
+          // Extract domain from URL to construct the correct path
+          let domain = 'unknown';
+          try {
+            const urlObj = new URL(opts.url);
+            domain = urlObj.hostname;
+            // Remove www. prefix if present
+            if (domain.startsWith('www.')) {
+              domain = domain.substring(4);
+            }
+          } catch (e) {
+            console.warn('Failed to parse URL:', opts.url, e);
+          }
+          
+          console.log('Extracted domain:', domain);
+          console.log('=== PATH CONSTRUCTION DEBUG ===');
+          console.log('Output path to use:', outputPathToUse);
+          console.log('Domain extracted:', domain);
+          
           // First, try to load truth data directly (with retries)
           let truthData = null;
           let attempts = 0;
@@ -58,7 +76,11 @@ export default function App() {
           while (!truthData && attempts < maxAttempts) {
             attempts++;
             console.log(`Attempt ${attempts}/${maxAttempts} to load truth data...`);
-            truthData = await window.SG.loadTruthData(outputPathToUse);
+            // Construct the full path to the domain-specific truth.json
+            const truthDataPath = `${outputPathToUse}/${domain}/truth.json`;
+            console.log('Loading truth data from:', truthDataPath);
+            console.log('Full constructed path:', truthDataPath);
+            truthData = await window.SG.loadTruthData(truthDataPath);
             
             if (!truthData && attempts < maxAttempts) {
               console.log('Not found yet, waiting 500ms...');
@@ -69,6 +91,7 @@ export default function App() {
           console.log('Truth data loaded:', truthData ? 'SUCCESS' : 'FAILED');
           
           if (truthData) {
+            console.log('=== LOADED TRUTH DATA DEBUG ===');
             console.log('Truth data structure:', {
               business_id: truthData.business_id,
               domain: truthData.domain,
@@ -76,6 +99,8 @@ export default function App() {
               hasFields: !!truthData.fields,
               fieldKeys: truthData.fields ? Object.keys(truthData.fields) : []
             });
+            console.log('Brand name from loaded data:', truthData.fields?.brand_name?.value);
+            console.log('Email from loaded data:', truthData.fields?.email?.value);
             
             // Extract images from truth data
             const images = [];
@@ -120,6 +145,10 @@ export default function App() {
                     if (truthData.candidates?.logo && truthData.candidates.logo.length > 0) {
                       logoUrl = truthData.candidates.logo[0].value;
                       console.log('Using fallback URL from candidates:', logoUrl);
+                    } else {
+                      // Try to construct URL from domain and asset path
+                      logoUrl = `https://${truthData.domain}/${normalizedLogoPath}`;
+                      console.log('Using constructed URL:', logoUrl);
                     }
                   }
                 } catch (err) {
@@ -128,6 +157,10 @@ export default function App() {
                   if (truthData.candidates?.logo && truthData.candidates.logo.length > 0) {
                     logoUrl = truthData.candidates.logo[0].value;
                     console.log('Using fallback URL from candidates:', logoUrl);
+                  } else {
+                    // Try to construct URL from domain and asset path
+                    logoUrl = `https://${truthData.domain}/${normalizedLogoPath}`;
+                    console.log('Using constructed URL as final fallback:', logoUrl);
                   }
                 }
               } else if (logoValue.startsWith('/')) {
@@ -333,6 +366,48 @@ export default function App() {
             console.log('Total images to display:', images.length);
             console.log('Images array:', images);
             
+            // Extract crawled pages information
+            const crawledPages = [];
+            if (truthData.pages_visited > 0) {
+              // If we have page information in the truth data, use it
+              console.log('Pages visited from truth data:', truthData.pages_visited);
+              
+              // Create page entries based on the images we found
+              const pageMap = new Map();
+              images.forEach(img => {
+                const pageSlug = img.pageSlug || 'home';
+                if (!pageMap.has(pageSlug)) {
+                  pageMap.set(pageSlug, {
+                    slug: pageSlug,
+                    url: pageSlug === 'home' ? opts.url : `${opts.url}${pageSlug}/`,
+                    title: pageSlug === 'home' ? 'Home' : pageSlug.charAt(0).toUpperCase() + pageSlug.slice(1),
+                    depth: pageSlug === 'home' ? 0 : 1,
+                    success: true,
+                    statusCode: 200,
+                    imageCount: 0
+                  });
+                }
+                pageMap.get(pageSlug).imageCount++;
+              });
+              
+              crawledPages.push(...Array.from(pageMap.values()));
+            } else {
+              // Fallback: create a basic page entry
+              crawledPages.push({
+                slug: 'home',
+                url: opts.url,
+                title: 'Home',
+                depth: 0,
+                success: true,
+                statusCode: 200,
+                imageCount: images.length
+              });
+            }
+            
+            console.log('=== CRAWLED PAGES ===');
+            console.log('Total pages discovered:', crawledPages.length);
+            console.log('Pages array:', crawledPages);
+            
             // Create a properly formatted data structure with truth data
             const formattedData = {
               slug: truthData.business_id || 'extracted-data',
@@ -353,6 +428,12 @@ export default function App() {
                 status: 'ok',
                 confidence: 0.8,
                 notes: 'Extracted from truth data'
+              },
+              crawledPages: {
+                value: crawledPages,
+                status: 'ok',
+                confidence: 0.8,
+                notes: 'Pages discovered during crawling'
               },
               paragraphs: {
                 value: [
@@ -420,7 +501,9 @@ export default function App() {
           }
           
           // Fallback: try to load extracted data from .page.json files
-          const data = await window.SG.loadExtractedData(result.outputPath || opts.out);
+          const fallbackPath = `${outputPathToUse}/${domain}`;
+          console.log('Trying fallback path:', fallbackPath);
+          const data = await window.SG.loadExtractedData(fallbackPath);
           console.log('Loaded extracted data:', data);
           
           if (data) {
@@ -430,7 +513,7 @@ export default function App() {
           } else {
             // No data found - show error
             console.error('No extracted data found! Make sure Python extraction completed successfully.');
-            console.error('Expected to find truth.json in:', outputPathToUse);
+            console.error('Expected to find truth.json in:', `${outputPathToUse}/${domain}/truth.json`);
             
             // Create minimal structure with empty truth data
             const emptyData = {
@@ -469,6 +552,12 @@ export default function App() {
                 status: 'error',
                 confidence: 0,
                 notes: 'No images found - Python extraction may have failed'
+              },
+              crawledPages: {
+                value: [],
+                status: 'error',
+                confidence: 0,
+                notes: 'No pages crawled - Python extraction may have failed'
               },
               paragraphs: {
                 value: [],
