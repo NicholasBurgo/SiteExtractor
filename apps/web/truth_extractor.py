@@ -132,34 +132,271 @@ class EnhancedTruthExtractor:
         self.validator = StrictValidator()
         self.visited_urls = set()
         
-    def extract_from_url(self, url: str) -> Dict[str, Any]:
-        """Extract truth data from a single URL."""
-        try:
-            response = self.session.get(url, timeout=self.timeout)
-            response.raise_for_status()
+    def extract_from_multiple_pages(self, start_url: str) -> Dict[str, Any]:
+        """Extract truth data from multiple pages of a website."""
+        all_paragraphs = []
+        all_images = []
+        visited_urls = set()
+        urls_to_visit = [start_url]
+        global_seen_image_urls = set()  # Track image URLs across all pages
+        
+        while urls_to_visit and len(visited_urls) < self.max_pages:
+            current_url = urls_to_visit.pop(0)
             
+            # Normalize URL to avoid duplicates
+            normalized_url = self._normalize_url(current_url)
+            
+            if normalized_url in visited_urls:
+                continue
+                
+            try:
+                logger.info(f"Extracting from page: {current_url}")
+                response = self.session.get(current_url, timeout=self.timeout)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                visited_urls.add(normalized_url)
+                
+                # Extract paragraphs from this page
+                page_paragraphs = self._extract_paragraphs(soup, normalized_url, len(all_paragraphs))
+                all_paragraphs.extend(page_paragraphs)
+                
+                # Extract images from this page with global deduplication
+                page_images = self._extract_images(soup, normalized_url, len(all_images))
+                
+                # Filter out images we've already seen globally
+                unique_page_images = []
+                for img in page_images:
+                    if img['url'] not in global_seen_image_urls:
+                        global_seen_image_urls.add(img['url'])
+                        unique_page_images.append(img)
+                
+                all_images.extend(unique_page_images)
+                
+                # Find links to other pages on the same domain
+                if len(visited_urls) < self.max_pages:
+                    new_urls = self._find_internal_links(soup, start_url, visited_urls)
+                    urls_to_visit.extend(new_urls[:self.max_pages - len(visited_urls)])
+                
+            except Exception as e:
+                logger.error(f"Error extracting from {current_url}: {e}")
+                continue
+        
+        # Extract other data from the main page
+        try:
+            response = self.session.get(start_url, timeout=self.timeout)
+            response.raise_for_status()
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Extract different types of data
             extracted_data = {
-                'brand_name': self._extract_brand_name(soup, url),
-                'location': self._extract_location(soup, url),
-                'email': self._extract_email(soup, url),
-                'phone': self._extract_phone(soup, url),
-                'socials': self._extract_socials(soup, url),
-                'services': self._extract_services(soup, url),
-                'brand_colors': self._extract_colors(soup, url),
-                'logo': self._extract_logo(soup, url),
-                'background': self._extract_background(soup, url),
-                'slogan': self._extract_slogan(soup, url),
-                'paragraphs': self._extract_paragraphs(soup, url)
+                'brand_name': self._extract_brand_name(soup, start_url),
+                'location': self._extract_location(soup, start_url),
+                'email': self._extract_email(soup, start_url),
+                'phone': self._extract_phone(soup, start_url),
+                'socials': self._extract_socials(soup, start_url),
+                'services': self._extract_services(soup, start_url),
+                'brand_colors': self._extract_colors(soup, start_url),
+                'logo': self._extract_logo(soup, start_url),
+                'background': self._extract_background(soup, start_url),
+                'slogan': self._extract_slogan(soup, start_url),
+                'paragraphs': all_paragraphs,
+                'images': all_images,
+                'navbar': self._extract_navbar(soup, start_url)
             }
             
             return extracted_data
             
         except Exception as e:
-            logger.error(f"Error extracting from {url}: {e}")
-            return {}
+            logger.error(f"Error extracting main data from {start_url}: {e}")
+            return {'paragraphs': all_paragraphs, 'images': all_images}
+    
+    def _find_internal_links(self, soup: BeautifulSoup, base_url: str, visited_urls: set) -> List[str]:
+        """Find internal links to other pages on the same domain."""
+        from urllib.parse import urljoin, urlparse
+        
+        base_domain = urlparse(base_url).netloc
+        internal_links = []
+        
+        # Find all links
+        links = soup.find_all('a', href=True)
+        
+        for link in links:
+            href = link['href']
+            full_url = urljoin(base_url, href)
+            
+            # Check if it's an internal link
+            if urlparse(full_url).netloc == base_domain:
+                # Clean up the URL (remove fragments, query params for now)
+                clean_url = urlparse(full_url)._replace(fragment='', query='').geturl()
+                
+                # Normalize URLs to avoid duplicates (e.g., / and /home)
+                normalized_url = self._normalize_url(clean_url)
+                
+                if normalized_url not in visited_urls and normalized_url not in internal_links:
+                    # Skip common non-content pages
+                    skip_patterns = [
+                        '/admin', '/login', '/register', '/cart', '/checkout',
+                        '/account', '/profile', '/dashboard', '/api/', '/ajax/',
+                        '.pdf', '.doc', '.docx', '.jpg', '.png', '.gif', '.css', '.js'
+                    ]
+                    
+                    if not any(pattern in normalized_url.lower() for pattern in skip_patterns):
+                        internal_links.append(normalized_url)
+        
+        return internal_links[:10]  # Limit to 10 new URLs per page
+    
+    def _normalize_url(self, url: str) -> str:
+        """Normalize URLs to avoid duplicates (e.g., / and /home)."""
+        from urllib.parse import urlparse
+        
+        parsed = urlparse(url)
+        path = parsed.path
+        
+        # Handle empty path (no trailing slash) - treat as home page
+        if not path or path == '':
+            path = '/'
+        
+        # Normalize common home page variations
+        if path in ['/', '/home', '/index', '/index.html', '/index.php']:
+            return parsed._replace(path='/').geturl()
+        
+        # Remove trailing slashes for consistency
+        if path.endswith('/') and len(path) > 1:
+            path = path.rstrip('/')
+        
+        return parsed._replace(path=path).geturl()
+    
+    def _route_to_page_name(self, route: str) -> str:
+        """Convert route to human-readable page name."""
+        # Remove leading slash and normalize
+        route = route.strip('/')
+        
+        # Common route mappings
+        route_mappings = {
+            '': 'Home',
+            '/': 'Home',
+            'home': 'Home',
+            'index': 'Home',
+            'about': 'About',
+            'about-us': 'About',
+            'services': 'Services',
+            'our-services': 'Services',
+            'contact': 'Contact',
+            'contact-us': 'Contact',
+            'portfolio': 'Portfolio',
+            'our-work': 'Our Work',
+            'gallery': 'Gallery',
+            'blog': 'Blog',
+            'news': 'News',
+            'pricing': 'Pricing',
+            'testimonials': 'Testimonials',
+            'reviews': 'Reviews',
+            'faq': 'FAQ',
+            'help': 'Help',
+            'support': 'Support'
+        }
+        
+        # Check exact match first
+        if route in route_mappings:
+            return f"{route_mappings[route]} Page"
+        
+        # Check if it starts with any known pattern
+        for pattern, name in route_mappings.items():
+            if route.startswith(pattern + '/') or route.startswith(pattern + '-'):
+                return f"{name} Page"
+        
+        # Convert route to title case
+        if route:
+            # Replace hyphens and underscores with spaces
+            clean_route = route.replace('-', ' ').replace('_', ' ')
+            # Convert to title case
+            title_route = clean_route.title()
+            return f"{title_route} Page"
+        
+        return "Home Page"
+    
+    def _extract_navbar(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
+        """Extract navigation structure from the page."""
+        navbar_items = []
+        
+        # Look for common navigation elements
+        nav_selectors = [
+            'nav',
+            '.nav',
+            '.navbar',
+            '.navigation',
+            '.menu',
+            '.main-menu',
+            'header nav',
+            '.header-nav',
+            '.site-nav'
+        ]
+        
+        nav_element = None
+        for selector in nav_selectors:
+            nav_element = soup.select_one(selector)
+            if nav_element:
+                break
+        
+        if not nav_element:
+            # Fallback: look for any element with links that might be navigation
+            nav_element = soup.find('div', class_=lambda x: x and any(
+                nav_word in x.lower() for nav_word in ['nav', 'menu', 'header']
+            ))
+        
+        if nav_element:
+            # Extract links from navigation
+            links = nav_element.find_all('a', href=True)
+            for i, link in enumerate(links):
+                href = link.get('href', '')
+                text = link.get_text(strip=True)
+                
+                if text and href and len(text) < 50:  # Reasonable link text length
+                    # Convert relative URLs to absolute
+                    full_url = urljoin(url, href)
+                    parsed_url = urlparse(full_url)
+                    
+                    # Only include internal links
+                    if parsed_url.netloc == urlparse(url).netloc:
+                        navbar_items.append({
+                            'id': f"nav_{i}",
+                            'label': text,
+                            'href': parsed_url.path or '/',
+                            'order': i,
+                            'status': 'extracted',
+                            'children': [],
+                            'is_locked': False,
+                            'created_at': datetime.now().isoformat(),
+                            'updated_at': datetime.now().isoformat()
+                        })
+        
+        # If no navigation found, create a basic structure
+        if not navbar_items:
+            navbar_items = [
+                {
+                    'id': 'root',
+                    'label': 'Home',
+                    'href': '/',
+                    'order': 0,
+                    'status': 'extracted',
+                    'children': [],
+                    'is_locked': False,
+                    'created_at': datetime.now().isoformat(),
+                    'updated_at': datetime.now().isoformat()
+                }
+            ]
+        
+        return {
+            'id': 'root',
+            'label': 'Home',
+            'href': '/',
+            'order': 0,
+            'status': 'extracted',
+            'children': navbar_items,
+            'is_locked': False,
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat()
+        }
     
     def _extract_brand_name(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
         """Extract brand name with multiple validation methods and strict filtering."""
@@ -1223,8 +1460,157 @@ class EnhancedTruthExtractor:
             'candidates': candidates
         }
     
-    def _extract_paragraphs(self, soup: BeautifulSoup, url: str) -> List[Dict[str, Any]]:
-        """Extract all meaningful paragraphs from the page."""
+    def _extract_images(self, soup: BeautifulSoup, url: str, start_id: int = 0) -> List[Dict[str, Any]]:
+        """Extract images from a page with metadata."""
+        images = []
+        
+        def clean_text(text: str) -> str:
+            """Clean and normalize text content."""
+            if not text:
+                return ""
+            return re.sub(r'\s+', ' ', text.strip())
+        
+        def categorize_image(img_tag, alt_text: str, title: str) -> str:
+            """Categorize image based on context and attributes."""
+            alt_lower = alt_text.lower()
+            title_lower = title.lower()
+            src = img_tag.get('src', '').lower()
+            
+            # Logo detection - more comprehensive
+            logo_keywords = ['logo', 'brand', 'company', 'firm', 'corp', 'inc', 'llc', 'ltd']
+            logo_contexts = ['header', 'nav', 'navbar', 'branding', 'identity']
+            
+            # Check alt text and title
+            if any(word in alt_lower for word in logo_keywords):
+                return 'logo'
+            elif any(word in title_lower for word in logo_keywords):
+                return 'logo'
+            
+            # Check if image is in header/navigation context
+            parent = img_tag.parent
+            for _ in range(3):  # Check up to 3 levels up
+                if parent:
+                    parent_class = parent.get('class', [])
+                    parent_id = parent.get('id', '')
+                    if isinstance(parent_class, list):
+                        parent_class = ' '.join(parent_class).lower()
+                    else:
+                        parent_class = str(parent_class).lower()
+                    
+                    if any(context in parent_class or context in parent_id for context in logo_contexts):
+                        return 'logo'
+                    
+                    parent = parent.parent
+                else:
+                    break
+            
+            # Check filename patterns
+            if any(pattern in src for pattern in ['logo', 'brand', 'header']):
+                return 'logo'
+            
+            # Google Sites specific logo detection
+            # Often the first image on a page is the logo
+            if 'googleusercontent.com' in src and not alt_text and not title:
+                # Check if this is likely the first/main image
+                all_images = soup.find_all('img')
+                if img_tag == all_images[0]:  # First image
+                    return 'logo'
+                
+                # Check if image appears in typical logo locations
+                parent = img_tag.parent
+                for _ in range(2):  # Check up to 2 levels up
+                    if parent:
+                        parent_tag = parent.name.lower() if parent.name else ''
+                        if parent_tag in ['header', 'nav', 'div']:
+                            # Check if it's in a header-like structure
+                            parent_text = parent.get_text().lower()
+                            if any(word in parent_text for word in ['home', 'about', 'services', 'contact']):
+                                return 'logo'
+                        parent = parent.parent
+                    else:
+                        break
+            
+            # Hero/banner images
+            elif any(word in alt_lower for word in ['hero', 'banner', 'header', 'main']):
+                return 'hero'
+            elif any(word in title_lower for word in ['hero', 'banner', 'header', 'main']):
+                return 'hero'
+            
+            # Product/service images
+            elif any(word in alt_lower for word in ['service', 'product', 'work', 'portfolio', 'gallery']):
+                return 'service'
+            elif any(word in title_lower for word in ['service', 'product', 'work', 'portfolio', 'gallery']):
+                return 'service'
+            
+            # Team/staff images
+            elif any(word in alt_lower for word in ['team', 'staff', 'employee', 'person', 'people']):
+                return 'team'
+            elif any(word in title_lower for word in ['team', 'staff', 'employee', 'person', 'people']):
+                return 'team'
+            
+            # Default to content
+            else:
+                return 'content'
+        
+        # Extract regular img tags
+        img_tags = soup.find_all('img')
+        seen_urls = set()  # Track seen URLs to prevent duplicates
+        
+        for img_tag in img_tags:
+            src = img_tag.get('src')
+            if not src:
+                continue
+            
+            # Skip data URLs and very small images
+            if src.startswith('data:') or any(skip in src.lower() for skip in ['1x1', 'pixel', 'spacer', 'blank']):
+                continue
+            
+            # Convert relative URLs to absolute
+            img_url = urljoin(url, src)
+            
+            # Skip if we've already seen this URL
+            if img_url in seen_urls:
+                continue
+            seen_urls.add(img_url)
+            
+            # Extract metadata
+            alt_text = clean_text(img_tag.get('alt', ''))
+            title = clean_text(img_tag.get('title', ''))
+            width = img_tag.get('width', '')
+            height = img_tag.get('height', '')
+            
+            # Categorize image
+            image_type = categorize_image(img_tag, alt_text, title)
+            
+            # Convert route to page name
+            page_name = self._route_to_page_name(urlparse(url).path or '/')
+            
+            # Create image entry
+            image_data = {
+                'id': f"img_{start_id + len(images)}",
+                'url': img_url,
+                'alt_text': alt_text,
+                'title': title,
+                'page': page_name,
+                'type': image_type,
+                'width': width,
+                'height': height,
+                'uploaded_at': datetime.now().isoformat(),
+                'is_uploaded': False,
+                'filename': os.path.basename(urlparse(img_url).path) or f"image_{len(images)}.jpg",
+                'metadata': {
+                    'src_original': src,
+                    'page_url': url,
+                    'extracted_at': datetime.now().isoformat()
+                }
+            }
+            
+            images.append(image_data)
+        
+        return images
+
+    def _extract_paragraphs(self, soup: BeautifulSoup, url: str, start_id: int = 0) -> List[Dict[str, Any]]:
+        """Extract paragraphs with strict filtering and no duplicates."""
         paragraphs = []
         
         def clean_text(text: str) -> str:
@@ -1235,78 +1621,219 @@ class EnhancedTruthExtractor:
             # Remove extra whitespace and normalize
             text = re.sub(r'\s+', ' ', text.strip())
             
-            # Remove common boilerplate
-            boilerplate_patterns = [
-                r'cookie policy|privacy policy|terms of service|all rights reserved',
-                r'copyright \d{4}|© \d{4}',
-                r'follow us|connect with us|social media',
-                r'newsletter|subscribe|sign up',
-                r'loading\.\.\.|please wait|error|not found'
-            ]
-            
-            for pattern in boilerplate_patterns:
-                text = re.sub(pattern, '', text, flags=re.I)
+            # Split concatenated content
+            text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+            text = re.sub(r'\.([A-Z])', r'. \1', text)
+            text = re.sub(r'([?!])([A-Z])', r'\1 \2', text)
             
             return text.strip()
         
+        def is_navigation_or_boilerplate(text: str) -> bool:
+            """Check if text is navigation, boilerplate, or unwanted content."""
+            if not text or len(text.strip()) < 20:
+                return True
+            
+            text_lower = text.lower()
+            
+            # Navigation patterns
+            nav_patterns = [
+                'services • our work • contact us',
+                'call us at',
+                'search this site',
+                'skip to main content',
+                'skip to navigation',
+                'embedded files',
+                'google sites report abuse',
+                'page details page updated',
+                'home services our work contact us',
+                'more home services',
+                'services our work contact us'
+            ]
+            
+            for pattern in nav_patterns:
+                if pattern in text_lower:
+                    return True
+            
+            # Check for repetitive navigation content
+            words = text.split()
+            if len(words) <= 6:
+                nav_words = ['home', 'services', 'contact', 'about', 'call', 'us', 'more', 'our', 'work']
+                nav_count = sum(1 for word in words if word.lower() in nav_words)
+                if nav_count >= len(words) * 0.6:  # 60% navigation words
+                    return True
+            
+            # Check for contact-only content
+            if re.match(r'^[\d\s\-\(\)\+@\.:]+$', text.strip()):
+                return True
+            
+            # Check for very repetitive content
+            if text.count('•') > 5:  # Too many bullet points
+                return True
+            
+            return False
+        
         def is_meaningful_content(text: str) -> bool:
             """Check if text contains meaningful business content."""
-            if not text or len(text.strip()) < 20:
+            if not text or len(text.strip()) < 30:
+                return False
+            
+            if is_navigation_or_boilerplate(text):
                 return False
             
             text_lower = text.lower()
             
-            # Skip very short or generic content
-            skip_patterns = [
-                r'^[a-z\s]{1,20}$',  # Very short text
-                r'^(home|about|contact|services|blog|news)$',  # Single navigation words
-                r'^(click here|read more|learn more|view all)$',  # Generic CTAs
-                r'^(loading|error|not found|page not found)$'
-            ]
-            
-            for pattern in skip_patterns:
-                if re.match(pattern, text_lower):
-                    return False
-            
-            # Must contain some business-relevant content
-            business_keywords = [
-                'service', 'business', 'company', 'team', 'experience', 'quality',
+            # Must contain meaningful business keywords
+            meaningful_keywords = [
+                'about', 'company', 'service', 'business', 'team', 'experience', 'quality',
                 'professional', 'expert', 'solution', 'help', 'support', 'contact',
-                'about', 'mission', 'vision', 'value', 'client', 'customer'
+                'mission', 'vision', 'value', 'client', 'customer', 'pressure', 'wash',
+                'cleaning', 'maintenance', 'exterior', 'home', 'family', 'owned',
+                'passionate', 'restoring', 'louisiana', 'shine', 'mold', 'dirt', 'stains',
+                'property', 'value', 'estimate', 'welcome', 'provide', 'specialize',
+                'transform', 'today', 'free', 'best', 'looking', 'keep', 'important',
+                'build', 'result', 'bring', 'down', 'discoloring', 'fading', 'time',
+                'over', 'which', 'turn', 'driveway', 'sidewalk', 'window', 'trash',
+                'can', 'cleaning', 'surface', 'cleaner', 'oil', 'stain', 'concrete'
             ]
             
-            return any(keyword in text_lower for keyword in business_keywords)
+            return any(keyword in text_lower for keyword in meaningful_keywords)
         
-        # Extract headings and paragraphs
-        elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div'])
+        def find_associated_title(element) -> str:
+            """Find the most relevant title/heading for this element."""
+            # First, check if this element itself is a heading
+            if element.name and element.name.startswith('h'):
+                return element.get_text(strip=True)
+            
+            # Look for nearby headings in the same container
+            parent = element.parent
+            if parent:
+                # Look for headings in the same parent
+                headings = parent.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                if headings:
+                    # Find the heading that comes before this element
+                    for heading in headings:
+                        if heading.sourceline and element.sourceline:
+                            if heading.sourceline < element.sourceline:
+                                return heading.get_text(strip=True)
+                    # If no heading before, use the first one
+                    return headings[0].get_text(strip=True)
+                
+                # Look in parent's siblings
+                for sibling in parent.find_previous_siblings():
+                    if sibling.name and sibling.name.startswith('h'):
+                        return sibling.get_text(strip=True)
+            
+            # Look for headings in the broader context
+            current = element
+            for _ in range(3):  # Look up to 3 levels up
+                if current.parent:
+                    current = current.parent
+                    headings = current.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                    if headings:
+                        # Find the most recent heading
+                        for heading in headings:
+                            if heading.sourceline and element.sourceline:
+                                if heading.sourceline < element.sourceline:
+                                    return heading.get_text(strip=True)
+                        return headings[0].get_text(strip=True)
+            
+            return ""
+        
+        def extract_bullet_lists_with_titles(element) -> List[Dict[str, str]]:
+            """Extract bullet points with their associated titles."""
+            bullet_data = []
+            
+            # Find ul/ol elements
+            lists = element.find_all(['ul', 'ol'])
+            for list_elem in lists:
+                # Find the title for this list
+                list_title = find_associated_title(list_elem)
+                
+                items = list_elem.find_all('li')
+                if items:
+                    # Group all items in this list together
+                    list_items = []
+                    for item in items:
+                        item_text = clean_text(item.get_text())
+                        if item_text and len(item_text) > 5:
+                            list_items.append(item_text)
+                    
+                    if list_items:
+                        bullet_data.append({
+                            'title': list_title,
+                            'items': list_items
+                        })
+            
+            return bullet_data
+        
+        def generate_subtitle_label(text: str) -> str:
+            """Generate a subtitle label based on content."""
+            text_lower = text.lower()
+            
+            if any(word in text_lower for word in ['about', 'company', 'story', 'history', 'mission', 'vision', 'who are we']):
+                return "About Us"
+            elif any(word in text_lower for word in ['service', 'services', 'what we do', 'offer', 'provide', 'specialize', 'expertise', 'pressure washing', 'cleaning', 'driveway', 'sidewalk', 'window', 'trash']):
+                return "Services"
+            elif any(word in text_lower for word in ['contact', 'phone', 'email', 'address', 'location', 'call us', 'hours', 'operation', 'quote', 'estimate']):
+                return "Contact Information"
+            elif any(word in text_lower for word in ['team', 'staff', 'employees', 'people', 'professional', 'expert', 'family owned']):
+                return "Our Team"
+            elif any(word in text_lower for word in ['experience', 'years', 'established', 'since']):
+                return "Experience"
+            elif any(word in text_lower for word in ['quality', 'professional', 'expert', 'certified']):
+                return "Quality & Expertise"
+            elif any(word in text_lower for word in ['price', 'cost', 'affordable', 'estimate', 'quote']):
+                return "Pricing"
+            elif any(word in text_lower for word in ['testimonial', 'review', 'customer', 'client', 'satisfied', 'happy']):
+                return "Testimonials"
+            elif any(word in text_lower for word in ['process', 'how we work', 'method', 'approach']):
+                return "Our Process"
+            elif any(word in text_lower for word in ['benefit', 'advantage', 'why choose', 'feature']):
+                return "Benefits"
+            elif any(word in text_lower for word in ['work', 'project', 'portfolio', 'gallery', 'before', 'after', 'pride']):
+                return "Our Work"
+            else:
+                return "General Information"
+        
+        # Extract only meaningful elements
+        elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'])
         
         for element in elements:
-            text = clean_text(element.get_text())
+            text = element.get_text(strip=True)
+            text = clean_text(text)
             
             if not is_meaningful_content(text):
                 continue
+            
+            # Find the associated title for this element
+            title = find_associated_title(element)
+            
+            # Extract bullet points with titles
+            bullet_data = extract_bullet_lists_with_titles(element)
             
             # Determine element type and confidence
             tag_name = element.name.lower()
             if tag_name.startswith('h'):
                 element_type = 'title'
                 confidence = 0.9 if tag_name in ['h1', 'h2'] else 0.8
-            elif tag_name == 'p':
-                element_type = 'paragraph'
-                confidence = 0.7
             else:
                 element_type = 'paragraph'
-                confidence = 0.6
+                confidence = 0.7
             
-            # Skip if too short or too long
-            if len(text) < 30 or len(text) > 1000:
-                continue
+            # Generate subtitle label
+            subtitle = generate_subtitle_label(text)
             
-            paragraphs.append({
-                'id': f"{tag_name}_{len(paragraphs)}",
+            # Convert route to page name
+            page_name = self._route_to_page_name(urlparse(url).path or '/')
+            
+            # Create paragraph entry
+            paragraph_data = {
+                'id': f"{tag_name}_{start_id + len(paragraphs)}",
                 'type': element_type,
                 'content': text,
-                'page': urlparse(url).path or 'Home',
+                'title': title,
+                'subtitle': subtitle,
+                'page': page_name,
                 'status': 'keep',
                 'confidence': confidence,
                 'order': len(paragraphs),
@@ -1316,12 +1843,64 @@ class EnhancedTruthExtractor:
                 'labels': [],
                 'created_at': datetime.now().isoformat(),
                 'updated_at': datetime.now().isoformat()
-            })
+            }
+            
+            # Add bullet points with titles if found
+            if bullet_data:
+                paragraph_data['bullet_points'] = bullet_data
+                # Enhance content with bullet points
+                bullet_text = ""
+                for bullet_group in bullet_data:
+                    if bullet_group['title']:
+                        bullet_text += f"\n\n{bullet_group['title']}:\n"
+                    bullet_text += " • " + " • ".join(bullet_group['items'])
+                paragraph_data['content'] = text + bullet_text
+            
+            paragraphs.append(paragraph_data)
         
-        # Sort by order and type (titles first)
-        paragraphs.sort(key=lambda x: (x['type'] != 'title', x['order']))
+        # Strict deduplication - remove any content that's too similar
+        unique_paragraphs = []
+        seen_content = set()
         
-        return paragraphs[:50]  # Limit to 50 paragraphs
+        for para in paragraphs:
+            # Create normalized content for comparison
+            normalized_content = re.sub(r'\s+', ' ', para['content'].lower().strip())
+            
+            # Skip if exact duplicate
+            if normalized_content in seen_content:
+                continue
+            
+            # Skip if very similar to existing content
+            is_duplicate = False
+            for seen in seen_content:
+                if len(normalized_content) > 20 and len(seen) > 20:
+                    # Calculate word overlap
+                    words1 = set(normalized_content.split())
+                    words2 = set(seen.split())
+                    common_words = words1 & words2
+                    
+                    if len(common_words) > 0:
+                        similarity = len(common_words) / max(len(words1), len(words2))
+                        if similarity > 0.5:  # 50% word overlap
+                            is_duplicate = True
+                            break
+                    
+                    # Check for substring matches
+                    shorter = normalized_content if len(normalized_content) < len(seen) else seen
+                    longer = seen if len(normalized_content) < len(seen) else normalized_content
+                    
+                    if len(shorter) > 30 and shorter in longer:
+                        is_duplicate = True
+                        break
+            
+            if not is_duplicate:
+                unique_paragraphs.append(para)
+                seen_content.add(normalized_content)
+        
+        # Sort by subtitle for organization
+        unique_paragraphs.sort(key=lambda x: (x['subtitle'], -x['confidence']))
+        
+        return unique_paragraphs[:10]  # Limit to 10 unique paragraphs
     
     def _get_dom_selector(self, element) -> str:
         """Generate a simple DOM selector for an element."""
@@ -1631,7 +2210,8 @@ def extract_truth_table(url, max_pages=20, timeout=10, use_playwright=True):
     run_id = generate_run_id(url)
     
     # Create runs directory structure
-    runs_dir = "runs"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    runs_dir = os.path.join(script_dir, "..", "..", "runs")
     run_dir = os.path.join(runs_dir, run_id)
     
     os.makedirs(run_dir, exist_ok=True)
@@ -1647,9 +2227,9 @@ def extract_truth_table(url, max_pages=20, timeout=10, use_playwright=True):
     # Initialize extractor
     extractor = EnhancedTruthExtractor(max_pages, timeout)
     
-    # Extract data from the main URL
-    logger.info(f"Extracting data from {url}")
-    extracted_data = extractor.extract_from_url(url)
+    # Extract data from multiple pages
+    logger.info(f"Extracting data from {url} (max {max_pages} pages)")
+    extracted_data = extractor.extract_from_multiple_pages(url)
     
     # Create truth record with extracted data
     domain = urlparse(url).hostname
@@ -1710,24 +2290,24 @@ def extract_truth_table(url, max_pages=20, timeout=10, use_playwright=True):
         json.dump(truth_record, f, indent=2)
     
     # Create additional files
-    additional_files = {
-        "images/manifest.json": [],
-        "text/text.json": extracted_data.get('paragraphs', []),
-        "navbar/navbar.json": {
-            "id": "root",
-            "label": "Home",
-            "href": "/",
-            "order": 0,
-            "status": "pending",
-            "children": [],
-            "is_locked": False,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
-        },
-        "misc/colors.json": extracted_data.get('brand_colors', {}).get('value', ["#3B82F6", "#1E40AF"]),
-        "misc/og.json": {},
-        "misc/schema.json": {}
-    }
+        additional_files = {
+            "images/manifest.json": extracted_data.get('images', []),
+            "text/text.json": extracted_data.get('paragraphs', []),
+            "navbar/navbar.json": extracted_data.get('navbar', {
+                "id": "root",
+                "label": "Home",
+                "href": "/",
+                "order": 0,
+                "status": "extracted",
+                "children": [],
+                "is_locked": False,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }),
+            "misc/colors.json": extracted_data.get('brand_colors', {}).get('value', ["#3B82F6", "#1E40AF"]),
+            "misc/og.json": {},
+            "misc/schema.json": {}
+        }
     
     for file_path, content in additional_files.items():
         full_path = os.path.join(run_dir, file_path)
