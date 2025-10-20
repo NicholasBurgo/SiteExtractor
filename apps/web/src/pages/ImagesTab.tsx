@@ -450,6 +450,7 @@ export function ImagesTab({ runId, pages, onConfirm, isConfirmed = false }: Imag
         </div>
       </div>
 
+      {/* Uncategorized Images Warning - Moved to top */}
       {uncategorizedImages.length > 0 && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center">
@@ -486,6 +487,98 @@ export function ImagesTab({ runId, pages, onConfirm, isConfirmed = false }: Imag
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Uncategorized Images Section - Moved to top */}
+          {groupedImages['Uncategorized'] && (
+            <div className="border rounded-lg p-4 border-red-200 bg-red-50">
+              <div className="flex justify-between items-center mb-4 pb-2 border-b border-red-200">
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    ⚠️ Uncategorized {draggedImage && '← Drop here'}
+                  </h3>
+                  <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-medium">
+                    Will be deleted
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {groupedImages['Uncategorized'].map((image) => (
+                  <div 
+                    key={image.id} 
+                    className={`border rounded-lg overflow-hidden cursor-move ${
+                      image.status === 'remove' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                    }`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, image.id)}
+                  >
+                    <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                      <img
+                        src={image.url}
+                        alt={image.alt_text || 'Image'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden text-gray-500 text-sm">Image not available</div>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          image.is_uploaded 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {image.is_uploaded ? 'Uploaded' : 'Extracted'}
+                        </span>
+                        <span className="text-xs text-gray-500">{image.type}</span>
+                      </div>
+                      {image.title && (
+                        <p className="text-sm font-medium text-gray-800 truncate">{image.title}</p>
+                      )}
+                      {image.alt_text && (
+                        <p className="text-xs text-gray-600 truncate">{image.alt_text}</p>
+                      )}
+                      {image.filename && (
+                        <p className="text-xs text-gray-500 truncate">{image.filename}</p>
+                      )}
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleImageStatusChange(image.id, 'keep')}
+                          disabled={isConfirmed}
+                          className={`px-3 py-1 text-xs rounded-full ${
+                            isConfirmed 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : image.status === 'keep' || !image.status
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-600'
+                          }`}
+                          title={isConfirmed ? "Section is locked - unconfirm to edit" : "Keep this image"}
+                        >
+                          Keep
+                        </button>
+                        <button
+                          onClick={() => handleImageStatusChange(image.id, 'remove')}
+                          disabled={isConfirmed}
+                          className={`px-3 py-1 text-xs rounded-full ${
+                            isConfirmed 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : image.status === 'remove'
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-gray-100 text-gray-600'
+                          }`}
+                          title={isConfirmed ? "Section is locked - unconfirm to edit" : "Remove this image"}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Logo Section */}
           <div className={`border rounded-lg p-4 ${
             confirmedSections.has('logos') 
@@ -610,58 +703,49 @@ export function ImagesTab({ runId, pages, onConfirm, isConfirmed = false }: Imag
 
           {/* Other Images by Page */}
           {Object.entries(groupedImages).map(([page, pageImages]) => {
-            const isUncategorized = page === 'Uncategorized';
+            // Skip Uncategorized since it's handled separately at the top
+            if (page === 'Uncategorized') return null;
+            
             return (
               <div 
                 key={page} 
                 className={`border rounded-lg p-4 ${
-                  isUncategorized
-                    ? 'border-red-200 bg-red-50'
-                    : confirmedSections.has(page) 
-                      ? 'border-green-200 bg-green-50' 
-                      : 'border-gray-200 bg-white'
+                  confirmedSections.has(page) 
+                    ? 'border-green-200 bg-green-50' 
+                    : 'border-gray-200 bg-white'
                 }`}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, page)}
               >
-                <div className={`flex justify-between items-center mb-4 pb-2 ${isUncategorized ? 'border-b border-red-200' : 'border-b border-gray-200'}`}>
+                <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
                   <div className="flex items-center space-x-2">
                     <h3 className="text-lg font-semibold text-gray-800">
-                      {isUncategorized ? 'Uncategorized' : page} {draggedImage && '← Drop here'}
+                      {page} {draggedImage && '← Drop here'}
                     </h3>
-                    {isUncategorized && (
-                      <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-medium">
-                        Will be deleted
-                      </span>
-                    )}
                   </div>
                   <div className="flex space-x-2">
-                    {!isUncategorized && (
-                      <button 
-                        className={`px-4 py-2 text-sm rounded-full transition-colors font-medium ${
-                          isConfirmed 
-                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                        onClick={() => setShowUploadModal(true)}
-                        disabled={isConfirmed}
-                        title={isConfirmed ? "Section is locked - unconfirm to edit" : "Upload image to this page"}
-                      >
-                        Upload Image
-                      </button>
-                    )}
-                    {!isUncategorized && (
-                      <button 
-                        className={`px-4 py-2 text-sm text-white rounded-full transition-colors font-medium ${
-                          confirmedSections.has(page) 
-                            ? 'bg-red-600 hover:bg-red-700' 
-                            : 'bg-green-600 hover:bg-green-700'
-                        }`}
-                        onClick={() => handleSectionConfirm(page)}
-                      >
-                        {confirmedSections.has(page) ? 'Unconfirm' : 'Confirm'}
-                      </button>
-                    )}
+                    <button 
+                      className={`px-4 py-2 text-sm rounded-full transition-colors font-medium ${
+                        isConfirmed 
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                      onClick={() => setShowUploadModal(true)}
+                      disabled={isConfirmed}
+                      title={isConfirmed ? "Section is locked - unconfirm to edit" : "Upload image to this page"}
+                    >
+                      Upload Image
+                    </button>
+                    <button 
+                      className={`px-4 py-2 text-sm text-white rounded-full transition-colors font-medium ${
+                        confirmedSections.has(page) 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-green-600 hover:bg-green-700'
+                      }`}
+                      onClick={() => handleSectionConfirm(page)}
+                    >
+                      {confirmedSections.has(page) ? 'Unconfirm' : 'Confirm'}
+                    </button>
                   </div>
                 </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
