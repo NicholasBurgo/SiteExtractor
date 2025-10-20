@@ -1,62 +1,81 @@
-# 📚 Site Generator Documentation
+# SiteTestGenerator Documentation
 
-This folder contains all the documentation for the Site Generator project.
+Welcome to the SiteTestGenerator documentation! This folder contains all the project documentation organized by topic.
 
-## 📖 Documentation Structure
+## 📚 Documentation Index
 
-### Core Documentation
-- **[README.md](README.md)** - Main project overview and quick start
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Detailed technical architecture
-- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute getting started guide
-- **[WINDOWS_QUICKSTART.md](WINDOWS_QUICKSTART.md)** - Windows-specific setup guide
+### Setup & Installation
+- **[Setup Complete](SETUP_COMPLETE.md)** - Initial setup guide and what's working
+- **[Desktop App Ready](DESKTOP_APP_READY.md)** - Desktop application setup and features
 
-### Implementation & Setup
-- **[IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)** - Complete implementation overview
-- **[SETUP_COMPLETE.md](SETUP_COMPLETE.md)** - Setup completion guide
-- **[SUCCESS_WINDOWS.md](SUCCESS_WINDOWS.md)** - Windows installation success guide
+### Project Structure & Migration
+- **[Monorepo Migration](MONOREPO_MIGRATION.md)** - Complete migration guide from old structure to monorepo
+- **[Cleanup Complete](CLEANUP_COMPLETE.md)** - Summary of cleanup and restructuring
 
-### Features & Enhancements
-- **[PLAYWRIGHT_INTEGRATION_COMPLETE.md](PLAYWRIGHT_INTEGRATION_COMPLETE.md)** - JavaScript SPA support
-- **[PLAYWRIGHT_SETUP.md](PLAYWRIGHT_SETUP.md)** - Playwright installation guide
-- **[VALIDATION_ENHANCEMENTS.md](VALIDATION_ENHANCEMENTS.md)** - Validation improvements
-- **[USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)** - Advanced usage examples
+## 🚀 Quick Start
 
-### Application Documentation
-- **[README_SITE_GENERATOR.md](README_SITE_GENERATOR.md)** - Site Generator app documentation
+1. **Install Dependencies:**
+   ```bash
+   pnpm install
+   ```
 
-## 🚀 Quick Links
+2. **Start Development:**
+   ```bash
+   pnpm dev
+   ```
 
-- **Start Here**: [QUICKSTART.md](QUICKSTART.md)
-- **Windows Users**: [WINDOWS_QUICKSTART.md](WINDOWS_QUICKSTART.md)
-- **Advanced Usage**: [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)
-- **Technical Details**: [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)
+3. **Visit the Application:**
+   - Web App: http://localhost:3000
+   - API Server: http://localhost:5174
 
 ## 📁 Project Structure
 
 ```
 SiteTestGenerator/
-├── docs/                    # 📚 All documentation (this folder)
-├── scripts/                 # 🔧 Batch files and scripts
-├── tests/                   # 🧪 Test files and examples
-├── packages/                # 📦 Application packages
-│   ├── site-app/           # 🖥️ Electron desktop app
-│   ├── extractor/          # 🔍 Extraction engine
-│   └── cli/                # 💻 Command line interface
-├── truth_extractor/        # 🐍 Python extraction backend
-├── config/                  # ⚙️ Configuration files
-├── build/                   # 🏗️ Build outputs
-└── out/                     # 📤 Extraction results
+├─ apps/                          # Applications
+│  ├─ server/                     # Fastify API server
+│  └─ web/                        # React confirmation UI
+├─ packages/                      # Shared packages
+│  ├─ types/                      # TypeScript types & Zod schemas
+│  └─ utils/                      # Utility functions
+├─ docs/                          # Documentation (this folder)
+├─ runs/                          # On-disk artifacts
+└─ Configuration files
 ```
 
-## 🎯 Getting Started
+## 🔧 Available Commands
 
-1. **Read**: [QUICKSTART.md](QUICKSTART.md) for basic setup
-2. **Install**: Follow the platform-specific guide
-3. **Run**: Use the desktop app or CLI
-4. **Explore**: Check [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md) for advanced features
+- `pnpm dev` - Start development servers
+- `pnpm build` - Build all packages
+- `pnpm lint` - Run ESLint
+- `pnpm format` - Format code with Prettier
 
-## 📞 Support
+## 📖 Documentation Files
 
-- **Issues**: Check the implementation docs for troubleshooting
-- **Features**: See [VALIDATION_ENHANCEMENTS.md](VALIDATION_ENHANCEMENTS.md) for latest improvements
-- **JavaScript Sites**: Read [PLAYWRIGHT_INTEGRATION_COMPLETE.md](PLAYWRIGHT_INTEGRATION_COMPLETE.md)
+| File | Description |
+|------|-------------|
+| [SETUP_COMPLETE.md](SETUP_COMPLETE.md) | Initial setup and what's working |
+| [DESKTOP_APP_READY.md](DESKTOP_APP_READY.md) | Desktop app features and setup |
+| [MONOREPO_MIGRATION.md](MONOREPO_MIGRATION.md) | Migration from old structure |
+| [CLEANUP_COMPLETE.md](CLEANUP_COMPLETE.md) | Cleanup and restructuring summary |
+
+## 🎯 Key Features
+
+- **Clean Monorepo Structure** - Organized apps and packages
+- **Modern Tooling** - TypeScript, Vite, Fastify, React
+- **Real Data Extraction** - Actual paragraph extraction (no mock data)
+- **Proper Organization** - All files follow project structure
+- **Desktop & Web Support** - Both Electron and web versions
+
+## 📝 Contributing
+
+When adding new documentation:
+
+1. Create your `.md` file in this `docs/` folder
+2. Update this `README.md` index
+3. Follow the existing documentation style
+4. Include clear headings and examples
+
+---
+
+*Last updated: October 2025*

@@ -1,0 +1,11 @@
+field,value,confidence,source
+brand_name,React Templates & Themes,0.42,title
+location,,0.0,
+email,ritirathod0@gmail.com,1.0,a[href^='mailto:']
+phone,,0.0,
+socials,,0.0,
+services,,0.0,
+brand_colors,"#2F8EA1, #4D6A73",0.66,logo_palette
+logo,assets\logo.png,0.72,img[class*='logo']
+background,"Download the top React templates, React dashboard, and React themes. It included a free and premium dashboard, landing page, e-commerce site, UI kit, and more.",0.48,meta[name='description']
+slogan,React Templates & Themes,0.42,title

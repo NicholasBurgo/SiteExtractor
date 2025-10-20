@@ -1,0 +1,98 @@
+{
+  "business_id": "www-northshoreexteriorupkeep-com-2025-10-19T22-32-37",
+  "domain": "www.northshoreexteriorupkeep.com",
+  "crawled_at": "2025-10-19T22:32:37.950763",
+  "pages_visited": 1,
+  "fields": {
+    "brand_name": {
+      "value": "Extracted from www.northshoreexteriorupkeep.com",
+      "confidence": 0.5,
+      "provenance": [
+        {
+          "url": "https://www.northshoreexteriorupkeep.com",
+          "path": "title"
+        }
+      ],
+      "notes": "Basic extraction"
+    },
+    "location": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "email": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "phone": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "socials": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "services": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "brand_colors": {
+      "value": [
+        "#3B82F6",
+        "#1E40AF"
+      ],
+      "confidence": 0.3,
+      "provenance": [
+        {
+          "url": "https://www.northshoreexteriorupkeep.com",
+          "path": "css"
+        }
+      ],
+      "notes": "default colors"
+    },
+    "logo": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "background": {
+      "value": "Website content extracted from https://www.northshoreexteriorupkeep.com",
+      "confidence": 0.4,
+      "provenance": [
+        {
+          "url": "https://www.northshoreexteriorupkeep.com",
+          "path": "body"
+        }
+      ],
+      "notes": "basic content"
+    },
+    "slogan": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    }
+  },
+  "candidates": {
+    "brand_name": [],
+    "location": [],
+    "email": [],
+    "phone": [],
+    "socials": [],
+    "services": [],
+    "brand_colors": [],
+    "logo": [],
+    "background": [],
+    "slogan": []
+  }
+}

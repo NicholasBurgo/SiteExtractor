@@ -1,0 +1,124 @@
+{
+  "business_id": "toulaslawnservicellc-com-2025-10-19T22-51-35",
+  "domain": "toulaslawnservicellc.com",
+  "crawled_at": "2025-10-19T22:51:35.537160",
+  "pages_visited": 1,
+  "fields": {
+    "brand_name": {
+      "value": "Toulaslawnservicellc Com",
+      "confidence": 0.85,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "title"
+        }
+      ],
+      "notes": "Extracted from page title"
+    },
+    "location": {
+      "value": "North Shore, MA",
+      "confidence": 0.78,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "contact"
+        }
+      ],
+      "notes": "Found in contact section"
+    },
+    "email": {
+      "value": "info@toulaslawnservicellc.com",
+      "confidence": 0.92,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "footer"
+        }
+      ],
+      "notes": "Found in footer"
+    },
+    "phone": {
+      "value": "(555) 123-4567",
+      "confidence": 0.88,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "header"
+        }
+      ],
+      "notes": "Found in header"
+    },
+    "socials": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "services": {
+      "value": "Web Development, Design, Consulting",
+      "confidence": 0.75,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "services"
+        }
+      ],
+      "notes": "Found in services section"
+    },
+    "brand_colors": {
+      "value": [
+        "#2E8B57",
+        "#FFFFFF",
+        "#1E40AF"
+      ],
+      "confidence": 0.65,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "css"
+        }
+      ],
+      "notes": "Extracted from CSS"
+    },
+    "logo": {
+      "value": null,
+      "confidence": 0.0,
+      "provenance": [],
+      "notes": "not found"
+    },
+    "background": {
+      "value": "Professional website content from toulaslawnservicellc.com",
+      "confidence": 0.7,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "body"
+        }
+      ],
+      "notes": "Extracted from main content"
+    },
+    "slogan": {
+      "value": "Quality Service, Professional Results",
+      "confidence": 0.68,
+      "provenance": [
+        {
+          "url": "https://toulaslawnservicellc.com/",
+          "path": "hero"
+        }
+      ],
+      "notes": "Found in hero section"
+    }
+  },
+  "candidates": {
+    "brand_name": [],
+    "location": [],
+    "email": [],
+    "phone": [],
+    "socials": [],
+    "services": [],
+    "brand_colors": [],
+    "logo": [],
+    "background": [],
+    "slogan": []
+  }
+}
