@@ -3,7 +3,7 @@ import { ImageConfirmation } from './ImageConfirmation';
 import { ContentConfirmation } from './ContentConfirmation';
 import { TruthConfirmation } from './TruthConfirmation';
 import { Button } from './ui/Button';
-import { Image, FileText, CheckCircle, AlertCircle, RotateCcw, ArrowLeft } from 'lucide-react';
+import { Image, FileText, CheckCircle, AlertCircle, RotateCcw, ArrowLeft, Globe } from 'lucide-react';
 
 interface ConfirmationPanelProps {
   page: any;
@@ -237,6 +237,7 @@ export const ConfirmationPanel: React.FC<ConfirmationPanelProps> = ({ page, onCo
           />
         )}
         
+        
         {activeTab === 'paragraphs' && (
           <div className="p-6 text-muted-foreground">
             Paragraphs content coming soon...
@@ -251,9 +252,10 @@ export const ConfirmationPanel: React.FC<ConfirmationPanelProps> = ({ page, onCo
         
         {activeTab === 'summary' && (
           <div className="p-6 space-y-6">
+            {/* Overview Stats */}
             <div className="bg-card border border-border rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Extraction Summary</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Extraction Overview</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <div className="text-sm text-foreground/80">Images Found</div>
                   <div className="text-2xl font-bold text-foreground">
@@ -261,26 +263,76 @@ export const ConfirmationPanel: React.FC<ConfirmationPanelProps> = ({ page, onCo
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-sm text-foreground/80">Content Blocks</div>
+                  <div className="text-sm text-foreground/80">Pages Crawled</div>
                   <div className="text-2xl font-bold text-foreground">
-                    {page?.blocks?.value?.length || 0}
+                    {page?.crawledPages?.value?.length || 0}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-sm text-foreground/80">Navigation Items</div>
+                  <div className="text-sm text-foreground/80">Total Images</div>
                   <div className="text-2xl font-bold text-foreground">
-                    {page?.navbar?.value?.length || 0}
+                    {page?.crawledPages?.value?.reduce((total: number, page: any) => total + (page.imageCount || 0), 0) || 0}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-sm text-foreground/80">Links Found</div>
+                  <div className="text-sm text-foreground/80">Success Rate</div>
                   <div className="text-2xl font-bold text-foreground">
-                    {page?.links?.value?.length || 0}
+                    {page?.crawledPages?.value?.length ? 
+                      `${Math.round((page.crawledPages.value.filter((p: any) => p.success).length / page.crawledPages.value.length) * 100)}%` 
+                      : '0%'}
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Pages Details */}
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">Pages Discovered</h3>
+                <div className="text-sm text-muted-foreground">
+                  {page?.crawledPages?.value?.length || 0} pages crawled
+                </div>
+              </div>
+              
+              {page?.crawledPages?.value?.length > 0 ? (
+                <div className="space-y-3">
+                  {page.crawledPages.value.map((pageData: any, index: number) => (
+                    <div key={pageData.url} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${pageData.success ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {pageData.title || pageData.slug || `Page ${index + 1}`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {pageData.url}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <div className="flex items-center space-x-1">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            pageData.depth === 0 ? 'bg-blue-100 text-blue-800' : 
+                            pageData.depth === 1 ? 'bg-green-100 text-green-800' : 
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {pageData.depth === 0 ? 'Homepage' : `Level ${pageData.depth}`}
+                          </span>
+                        </div>
+                        <div>{pageData.statusCode || 'N/A'}</div>
+                        <div>{pageData.imageCount || 0} images</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No pages crawled.
+                </div>
+              )}
+            </div>
             
+            {/* Page Metadata */}
             <div className="bg-card border border-border rounded-lg p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">Page Metadata</h3>
               <div className="space-y-2">

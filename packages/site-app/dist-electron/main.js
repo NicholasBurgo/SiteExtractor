@@ -189,6 +189,23 @@ electron_1.ipcMain.handle('load-truth-data', async (_e, outputPath) => {
         console.log('=== LOADING TRUTH DATA ===');
         console.log('Output path:', outputPath);
         console.log('Resolved path:', path.resolve(outputPath));
+        // Check if the path is already a truth.json file
+        if (outputPath.endsWith('truth.json')) {
+            console.log('Direct truth.json file path provided');
+            if (fs.existsSync(outputPath)) {
+                console.log('✓ Found truth.json at:', outputPath);
+                const data = fs.readFileSync(outputPath, 'utf8');
+                const parsed = JSON.parse(data);
+                console.log('✓ Loaded truth data for:', parsed.domain);
+                return parsed;
+            }
+            else {
+                console.error('✗ Truth.json file not found at:', outputPath);
+                return null;
+            }
+        }
+        // Otherwise, treat it as a directory and look for truth.json
+        console.log('Directory path provided, looking for truth.json');
         // First, try to find truth.json directly in the output path
         let truthFilePath = path.join(outputPath, 'truth.json');
         console.log('Checking direct path:', truthFilePath);
