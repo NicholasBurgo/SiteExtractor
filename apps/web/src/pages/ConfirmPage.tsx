@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
 import { TruthTableTab } from './TruthTableTab';
-import { ImagesTab } from './ImagesTab';
 import { ParagraphsTab } from './ParagraphsTab';
 import { NavbarTab } from './NavbarTab';
-import { MiscTab } from './MiscTab';
+import { ContactTab } from './ContactTab';
+import { AssetsTab } from './AssetsTab';
+import { BusinessTab } from './BusinessTab';
 import { SummaryTab } from './SummaryTab';
 import { usePageManager, Page } from '../hooks/usePageManager';
 
@@ -16,7 +17,7 @@ interface ConfirmPageProps {
 }
 
 export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPageProps) {
-  const [activeTab, setActiveTab] = useState<'truth-table' | 'images' | 'paragraphs' | 'navbar' | 'misc' | 'summary'>('truth-table');
+  const [activeTab, setActiveTab] = useState<'truth-table' | 'navbar' | 'assets' | 'paragraphs' | 'business' | 'summary'>('truth-table');
   const [confirmedTabs, setConfirmedTabs] = useState<Set<string>>(new Set());
 
   // Use shared page manager at the top level
@@ -36,15 +37,15 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
 
   const handleApproveAll = () => {
     // Mark all tabs with confirm buttons as confirmed
-    setConfirmedTabs(new Set(['truth-table', 'navbar', 'paragraphs', 'images']));
+    setConfirmedTabs(new Set(['truth-table', 'navbar', 'assets', 'paragraphs', 'business']));
   };
 
   const tabs = [
     { id: 'truth-table', label: 'Truth Table', component: <TruthTableTab runId={runId} url={url} extractionOptions={extractionOptions} onConfirm={() => handleTabConfirm('truth-table')} onConfirmAll={handleApproveAll} isConfirmed={confirmedTabs.has('truth-table')} /> },
     { id: 'navbar', label: 'Navigation', component: <NavbarTab runId={runId} pages={pages} addPage={addPage} updatePage={updatePage} removePage={removePage} isLoading={pagesLoading} onConfirm={() => handleTabConfirm('navbar')} onConfirmAll={handleApproveAll} isConfirmed={confirmedTabs.has('navbar')} /> },
-    { id: 'images', label: 'Images', component: <ImagesTab runId={runId} pages={pages} onConfirm={() => handleTabConfirm('images')} isConfirmed={confirmedTabs.has('images')} /> },
+    { id: 'assets', label: 'Assets', component: <AssetsTab runId={runId} url={url} pages={pages} onConfirm={() => handleTabConfirm('assets')} isConfirmed={confirmedTabs.has('assets')} /> },
     { id: 'paragraphs', label: 'Paragraphs', component: <ParagraphsTab runId={runId} url={url} extractionOptions={extractionOptions} pages={pages} onConfirm={() => handleTabConfirm('paragraphs')} isConfirmed={confirmedTabs.has('paragraphs')} /> },
-    { id: 'misc', label: 'Misc', component: <MiscTab runId={runId} /> },
+    { id: 'business', label: 'Business', component: <BusinessTab runId={runId} url={url} onConfirm={() => handleTabConfirm('business')} isConfirmed={confirmedTabs.has('business')} /> },
   ] as const;
 
   const summaryTab = { id: 'summary', label: 'Summary', component: <SummaryTab runId={runId} onApproveAll={handleApproveAll} isConfirmed={confirmedTabs.has('summary')} onConfirm={() => handleTabConfirm('summary')} /> };
@@ -54,7 +55,7 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
       <div className="mb-8">
         <button
           onClick={onBack}
-          className="flex items-center text-blue-600 hover:text-blue-700 mb-4"
+          className="flex items-center px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 rounded-full transition-all"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Extraction
@@ -68,20 +69,20 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex justify-between">
           {/* Left side - Regular tabs */}
-          <div className="flex space-x-8">
+          <div className="flex space-x-3">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                className={`py-2 px-4 rounded-full font-medium text-sm flex items-center space-x-2 transition-all ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800'
                 }`}
               >
                 <span>{tab.label}</span>
                 {confirmedTabs.has(tab.id) && (
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-4 h-4 text-green-400" />
                 )}
               </button>
             ))}
@@ -90,10 +91,10 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
           {/* Right side - Summary tab with special styling */}
           <button
             onClick={() => setActiveTab(summaryTab.id as typeof activeTab)}
-            className={`py-2 px-4 border-b-2 font-semibold text-sm flex items-center space-x-2 rounded-t-lg transition-all ${
+            className={`py-2 px-4 rounded-full font-semibold text-sm flex items-center space-x-2 transition-all ${
               activeTab === summaryTab.id
-                ? 'border-blue-500 text-white bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg'
-                : 'border-transparent text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md hover:shadow-lg'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-md hover:shadow-lg'
             }`}
           >
             <span>{summaryTab.label}</span>
