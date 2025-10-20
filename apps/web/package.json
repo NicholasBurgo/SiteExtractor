@@ -5,7 +5,7 @@
   "main": "dist-electron/main.js",
   "private": true,
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"tsc -p electron/tsconfig.json --watch\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron dist-electron/main.js\"",
+    "dev": "concurrently -k -s first \"vite\" \"tsc -p electron/tsconfig.json --watch\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron dist-electron/main.js\"",
     "build": "tsc && vite build && tsc -p electron/tsconfig.json",
     "build-electron": "tsc -p electron/tsconfig.json",
     "preview": "vite preview",

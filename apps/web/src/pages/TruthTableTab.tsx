@@ -5,6 +5,8 @@ interface TruthTableTabProps {
   url?: string;
   extractionOptions?: any;
   onConfirm?: () => void;
+  onConfirmAll?: () => void;
+  isConfirmed?: boolean;
 }
 
 interface TruthTableField {
@@ -14,7 +16,7 @@ interface TruthTableField {
   status: 'Found' | 'Not Found' | 'Pending' | 'Edited' | 'Removed';
 }
 
-export function TruthTableTab({ runId, url, extractionOptions, onConfirm }: TruthTableTabProps) {
+export function TruthTableTab({ runId, url, extractionOptions, onConfirm, onConfirmAll, isConfirmed = false }: TruthTableTabProps) {
   const [fields, setFields] = useState<TruthTableField[]>([]);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,7 +134,28 @@ export function TruthTableTab({ runId, url, extractionOptions, onConfirm }: Trut
     }
   };
 
+  const handleConfirmAll = async () => {
+    // Save truth table data first
+    await saveTruthTableData();
+    
+    // Confirm only the truth table tab
+    const truthTableData = localStorage.getItem(`truth-table-${runId}`);
+    if (truthTableData) {
+      const parsed = JSON.parse(truthTableData);
+      localStorage.setItem(`truth-table-${runId}`, JSON.stringify({
+        ...parsed,
+        confirmedAt: new Date().toISOString()
+      }));
+    }
+
+    // Trigger the confirm callback to update tab checkmark
+    onConfirm?.();
+    
+    console.log('Truth table tab confirmed');
+  };
+
   const startEditing = (fieldName: string, currentValue: string | null | string[]) => {
+    if (isConfirmed) return; // Prevent editing when confirmed
     setEditingField(fieldName);
     setEditValue(Array.isArray(currentValue) ? currentValue.join(', ') : (currentValue || ''));
   };
@@ -195,8 +218,33 @@ export function TruthTableTab({ runId, url, extractionOptions, onConfirm }: Trut
 
   return (
     <div className="p-6">
-      <div className="mb-6">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900">Truth Table</h2>
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={handleRetry}
+            disabled={isRetrying || !url}
+            className="px-4 py-2 text-sm font-medium text-black bg-yellow-400 border border-transparent rounded-full hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRetrying ? 'Retrying...' : 'Retry'}
+          </button>
+          <button 
+            onClick={() => {
+              if (isConfirmed) {
+                onConfirm?.();
+              } else {
+                handleConfirmAll();
+              }
+            }}
+            className={`px-4 py-2 text-sm font-medium border border-transparent rounded-full focus:outline-none focus:ring-2 ${
+              isConfirmed 
+                ? 'text-white bg-red-600 hover:bg-red-700 focus:ring-red-500' 
+                : 'text-white bg-green-600 hover:bg-green-700 focus:ring-green-500'
+            }`}
+          >
+            {isConfirmed ? 'Unconfirm All' : 'Confirm All'}
+          </button>
+        </div>
       </div>
       
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -258,9 +306,13 @@ export function TruthTableTab({ runId, url, extractionOptions, onConfirm }: Trut
                       </div>
                     ) : (
                       <div 
-                        className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded break-words"
+                        className={`px-2 py-1 rounded break-words ${
+                          isConfirmed 
+                            ? 'cursor-not-allowed bg-gray-100 text-gray-500' 
+                            : 'cursor-pointer hover:bg-gray-100'
+                        }`}
                         onClick={() => startEditing(field.field, field.value)}
-                        title="Click to edit"
+                        title={isConfirmed ? "Section is locked - unconfirm to edit" : "Click to edit"}
                       >
                         {field.value || 'null'}
                       </div>
@@ -283,26 +335,6 @@ export function TruthTableTab({ runId, url, extractionOptions, onConfirm }: Trut
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-center space-x-4 mt-8">
-        <button 
-          onClick={() => {
-            // Save truth table data
-            saveTruthTableData();
-            onConfirm?.();
-          }}
-          className="px-6 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-full hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          Confirm
-        </button>
-        <button 
-          onClick={handleRetry}
-          disabled={isRetrying || !url}
-          className="px-6 py-2 text-sm font-medium text-black bg-yellow-400 border border-transparent rounded-full hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isRetrying ? 'Retrying...' : 'Retry'}
-        </button>
-      </div>
     </div>
   );
 }

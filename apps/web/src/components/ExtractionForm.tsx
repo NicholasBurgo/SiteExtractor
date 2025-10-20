@@ -76,7 +76,7 @@ export function ExtractionForm({ onExtractionComplete, isExtracting, setIsExtrac
       if (text.trim()) {
         setUrl(text.trim());
         setPasted(true);
-        setTimeout(() => setPasted(false), 2000); // Reset after 2 seconds
+        window.setTimeout(() => setPasted(false), 2000); // Reset after 2 seconds
       }
     } catch (err) {
       console.error('Failed to paste from clipboard:', err);
