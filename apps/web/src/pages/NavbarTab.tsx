@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, X, Edit2 } from 'lucide-react';
+import { usePageManager, Page } from '../hooks/usePageManager';
 
 interface NavbarTabProps {
   runId: string;
@@ -15,58 +16,44 @@ interface NavbarPage {
 }
 
 export function NavbarTab({ runId, onConfirm }: NavbarTabProps) {
-  const [pages, setPages] = useState<NavbarPage[]>([]);
+  const [isAddingPage, setIsAddingPage] = useState(false);
   const [newPageName, setNewPageName] = useState('');
   const [newPageUrl, setNewPageUrl] = useState('');
-  const [isAddingPage, setIsAddingPage] = useState(false);
 
-  useEffect(() => {
-    // Load extracted navigation data
-    loadNavigationData();
-  }, [runId]);
+  // Use shared page manager
+  const { pages, addPage, updatePage, removePage, isLoading } = usePageManager(runId);
 
-  const loadNavigationData = async () => {
-    try {
-      // Mock extracted navigation data - in real app this would come from the extraction
-      const extractedPages: NavbarPage[] = [
-        { id: '1', name: 'Home', url: '/', order: 1, status: 'extracted' },
-        { id: '2', name: 'Services', url: '/services', order: 2, status: 'extracted' },
-        { id: '3', name: 'About', url: '/about', order: 3, status: 'extracted' },
-        { id: '4', name: 'Contact', url: '/contact', order: 4, status: 'extracted' },
-      ];
-      setPages(extractedPages);
-    } catch (error) {
-      console.error('Failed to load navigation data:', error);
-    }
-  };
+  // Debug logging
+  console.log('NavbarTab render:', { runId, pages, isLoading });
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-500">Loading navigation data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Remove the old useEffect and loadNavigationData since we're using the shared page manager
 
   const addNewPage = () => {
     if (!newPageName.trim() || !newPageUrl.trim()) return;
 
-    const newPage: NavbarPage = {
-      id: Date.now().toString(),
-      name: newPageName.trim(),
-      url: newPageUrl.trim(),
-      order: pages.length + 1,
-      status: 'added'
-    };
-
-    setPages([...pages, newPage]);
+    addPage(newPageName.trim(), newPageUrl.trim());
     setNewPageName('');
     setNewPageUrl('');
     setIsAddingPage(false);
   };
 
-  const removePage = (id: string) => {
-    setPages(pages.filter(page => page.id !== id));
+  const handleRemovePage = (id: string) => {
+    removePage(id);
   };
 
   const updatePageName = (id: string, newName: string) => {
-    setPages(pages.map(page => 
-      page.id === id 
-        ? { ...page, name: newName, status: page.status === 'extracted' ? 'modified' : page.status }
-        : page
-    ));
+    updatePage(id, { name: newName.endsWith(' Page') ? newName : `${newName} Page` });
   };
 
   const saveNavigationData = async () => {
@@ -86,23 +73,7 @@ export function NavbarTab({ runId, onConfirm }: NavbarTabProps) {
     }
   };
 
-  // Load saved data on component mount
-  useEffect(() => {
-    const savedData = localStorage.getItem(`navigation-${runId}`);
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        if (parsed.pages) {
-          setPages(parsed.pages);
-          return; // Don't load mock data if we have saved data
-        }
-      } catch (error) {
-        console.error('Failed to parse saved navigation data:', error);
-      }
-    }
-    // Only load mock data if no saved data exists
-    loadNavigationData();
-  }, [runId]);
+  // Removed old useEffect - now using shared page manager
 
   return (
     <div className="p-6">
@@ -203,7 +174,7 @@ export function NavbarTab({ runId, onConfirm }: NavbarTabProps) {
                   {page.status}
                 </span>
                 <button
-                  onClick={() => removePage(page.id)}
+                  onClick={() => handleRemovePage(page.id)}
                   className="p-1 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
                 >
                   <X className="w-4 h-4" />

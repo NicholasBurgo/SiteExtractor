@@ -75,7 +75,7 @@ ipcMain.handle('extract-truth-table', async (event, url: string, options: any) =
           // Read the truth.json file that was created
           const fs = require('fs');
           const path = require('path');
-          const truthPath = path.join(process.cwd(), 'runs', runId, 'truth.json');
+          const truthPath = path.join(process.cwd(), '..', '..', 'runs', runId, 'truth.json');
           
           if (fs.existsSync(truthPath)) {
             const truthData = JSON.parse(fs.readFileSync(truthPath, 'utf8'));
@@ -127,7 +127,7 @@ ipcMain.handle('retry-truth-table', async (event, url: string, options: any) => 
           // Read the truth.json file that was created
           const fs = require('fs');
           const path = require('path');
-          const truthPath = path.join(process.cwd(), 'runs', runId, 'truth.json');
+          const truthPath = path.join(process.cwd(), '..', '..', 'runs', runId, 'truth.json');
           
           if (fs.existsSync(truthPath)) {
             const truthData = JSON.parse(fs.readFileSync(truthPath, 'utf8'));
@@ -155,7 +155,7 @@ ipcMain.handle('get-extraction-data', async (event, runId: string) => {
   const path = require('path');
   
   try {
-    const runPath = path.join(process.cwd(), 'runs', runId);
+    const runPath = path.join(process.cwd(), '..', '..', 'runs', runId);
     const truthPath = path.join(runPath, 'truth.json');
     
     const data = await fs.readFile(truthPath, 'utf-8');
