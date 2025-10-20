@@ -76,27 +76,6 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
       });
     }
 
-    // Images Tab
-    const imagesData = localStorage.getItem(`images-${runId}`);
-    if (imagesData) {
-      const parsed = JSON.parse(imagesData);
-      tabs.push({
-        name: 'Images',
-        isConfirmed: !!parsed.confirmedAt,
-        hasData: !!parsed.images && parsed.images.length > 0,
-        lastUpdated: parsed.confirmedAt || parsed.loadedAt,
-        dataCount: parsed.images?.length || 0,
-        jsonData: parsed
-      });
-    } else {
-      tabs.push({
-        name: 'Images',
-        isConfirmed: false,
-        hasData: false,
-        jsonData: null
-      });
-    }
-
     // Paragraphs Tab
     const paragraphsData = localStorage.getItem(`paragraphs-${runId}`);
     if (paragraphsData) {
@@ -117,6 +96,80 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
         jsonData: null
       });
     }
+
+    // Business Tab (with sub-tabs)
+    const metaData = localStorage.getItem(`meta-${runId}`);
+    const servicesData = localStorage.getItem(`services-${runId}`);
+    const contactData = localStorage.getItem(`contact-${runId}`);
+    const legalData = localStorage.getItem(`legal-${runId}`);
+    
+    if (metaData || servicesData || contactData || legalData) {
+      const metaParsed = metaData ? JSON.parse(metaData) : {};
+      const servicesParsed = servicesData ? JSON.parse(servicesData) : {};
+      const contactParsed = contactData ? JSON.parse(contactData) : {};
+      const legalParsed = legalData ? JSON.parse(legalData) : {};
+      
+      const totalBusiness = (metaParsed.businessName ? 1 : 0) + 
+                           (metaParsed.businessType ? 1 : 0) + 
+                           (servicesParsed.length || 0) + 
+                           (contactParsed.phone?.length || 0) + 
+                           (contactParsed.email?.length || 0) + 
+                           (legalParsed.privacyPolicy ? 1 : 0) + 
+                           (legalParsed.termsOfService ? 1 : 0);
+      
+      tabs.push({
+        name: 'Business',
+        isConfirmed: !!(metaParsed.confirmedAt || servicesParsed.confirmedAt || contactParsed.confirmedAt || legalParsed.confirmedAt),
+        hasData: totalBusiness > 0,
+        lastUpdated: metaParsed.confirmedAt || servicesParsed.confirmedAt || contactParsed.confirmedAt || legalParsed.confirmedAt || 
+                    metaParsed.retriedAt || servicesParsed.retriedAt || contactParsed.retriedAt || legalParsed.retriedAt,
+        dataCount: totalBusiness,
+        jsonData: { meta: metaParsed, services: servicesParsed, contact: contactParsed, legal: legalParsed }
+      });
+    } else {
+      tabs.push({
+        name: 'Business',
+        isConfirmed: false,
+        hasData: false,
+        jsonData: null
+      });
+    }
+
+
+    // SEO Tab (removed - not needed)
+    // SEO functionality has been removed from the main navigation
+
+    // Assets Tab
+    const assetsData = localStorage.getItem(`assets-${runId}`);
+    const imagesData = localStorage.getItem(`images-${runId}`);
+    
+    if (assetsData || imagesData) {
+      const assetsParsed = assetsData ? JSON.parse(assetsData) : {};
+      const imagesParsed = imagesData ? JSON.parse(imagesData) : {};
+      
+      const totalAssets = (assetsParsed.favicons?.length || 0) + 
+                         (imagesParsed.images?.length || 0) + 
+                         (assetsParsed.downloadable_files?.length || 0);
+      
+      tabs.push({
+        name: 'Assets',
+        isConfirmed: !!(assetsParsed.confirmedAt || imagesParsed.confirmedAt),
+        hasData: totalAssets > 0,
+        lastUpdated: assetsParsed.confirmedAt || imagesParsed.confirmedAt || assetsParsed.retriedAt || imagesParsed.loadedAt,
+        dataCount: totalAssets,
+        jsonData: { ...assetsParsed, images: imagesParsed.images }
+      });
+    } else {
+      tabs.push({
+        name: 'Assets',
+        isConfirmed: false,
+        hasData: false,
+        jsonData: null
+      });
+    }
+
+    // Legal Tab (now part of Business)
+    // Legal data is handled in the Business tab section above
 
     setTabStatuses(tabs);
   };
@@ -152,8 +205,55 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
       }));
     }
 
-    // Confirm Images
+    // Confirm Business (Meta, Services, Contact, Legal)
+    const metaData = localStorage.getItem(`meta-${runId}`);
+    if (metaData) {
+      const parsed = JSON.parse(metaData);
+      localStorage.setItem(`meta-${runId}`, JSON.stringify({
+        ...parsed,
+        confirmedAt: new Date().toISOString()
+      }));
+    }
+
+    const servicesData = localStorage.getItem(`services-${runId}`);
+    if (servicesData) {
+      const parsed = JSON.parse(servicesData);
+      localStorage.setItem(`services-${runId}`, JSON.stringify({
+        ...parsed,
+        confirmedAt: new Date().toISOString()
+      }));
+    }
+
+    const contactData = localStorage.getItem(`contact-${runId}`);
+    if (contactData) {
+      const parsed = JSON.parse(contactData);
+      localStorage.setItem(`contact-${runId}`, JSON.stringify({
+        ...parsed,
+        confirmedAt: new Date().toISOString()
+      }));
+    }
+
+    const legalData = localStorage.getItem(`legal-${runId}`);
+    if (legalData) {
+      const parsed = JSON.parse(legalData);
+      localStorage.setItem(`legal-${runId}`, JSON.stringify({
+        ...parsed,
+        confirmedAt: new Date().toISOString()
+      }));
+    }
+
+    // Confirm Assets (including Images)
+    const assetsData = localStorage.getItem(`assets-${runId}`);
     const imagesData = localStorage.getItem(`images-${runId}`);
+    
+    if (assetsData) {
+      const parsed = JSON.parse(assetsData);
+      localStorage.setItem(`assets-${runId}`, JSON.stringify({
+        ...parsed,
+        confirmedAt: new Date().toISOString()
+      }));
+    }
+    
     if (imagesData) {
       const parsed = JSON.parse(imagesData);
       localStorage.setItem(`images-${runId}`, JSON.stringify({
@@ -377,6 +477,49 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
             </div>
           </div>
         </div>
+
+        {/* Business Validation Warnings */}
+        {(() => {
+          const businessTab = tabStatuses.find(tab => tab.name === 'Business');
+          if (!businessTab?.jsonData) return null;
+
+          const { meta, services } = businessTab.jsonData;
+          const warnings = [];
+
+          // Check required fields
+          if (!meta?.businessName) {
+            warnings.push('Business name is required');
+          }
+          if (!meta?.businessType) {
+            warnings.push('Business type is required');
+          }
+
+          // Check services for certain business types
+          if (meta?.businessType && ['services', 'law', 'retail'].includes(meta.businessType)) {
+            if (!services || services.length === 0) {
+              warnings.push(`${meta.businessType} businesses should have services listed`);
+            }
+          }
+
+          if (warnings.length === 0) return null;
+
+          return (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+              <div className="flex items-center mb-4">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
+                <h3 className="text-lg font-semibold text-yellow-800">Business Validation Warnings</h3>
+              </div>
+              <div className="space-y-2">
+                {warnings.map((warning, index) => (
+                  <div key={index} className="flex items-center text-sm text-yellow-700">
+                    <div className="w-2 h-2 bg-yellow-600 rounded-full mr-2"></div>
+                    {warning}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

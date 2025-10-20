@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const TextBlockSchema = z.object({
   id: z.string(),
-  type: z.enum(['heading', 'paragraph', 'list', 'table', 'quote', 'cta']),
+  type: z.enum(['heading', 'paragraph', 'list', 'table', 'quote']),
   content: z.string(),
   status: z.enum(['pending', 'keep', 'reject', 'edit']),
   confidence: z.number().min(0).max(1),
