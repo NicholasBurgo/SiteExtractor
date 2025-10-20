@@ -4,17 +4,69 @@ A comprehensive website data extraction and analysis platform with both desktop 
 
 ## 🚀 Quick Start
 
-```bash
-# Install dependencies
-pnpm install
+### Prerequisites
+- **Node.js** (v18+ recommended)
+- **Python** (v3.8+ recommended)
+- **pnpm** (will be installed via Corepack)
 
-# Start development servers
+### Setup Instructions
+
+#### 1. Clone and Install Node.js Dependencies
+```bash
+# Clone the repository
+git clone <repository-url>
+cd SiteTestGenerator
+
+# Install Node.js dependencies using pnpm
+# Option A: Using npx (recommended, no admin required)
+npx -y pnpm@9.11.0 install
+
+# Option B: Enable pnpm globally (requires admin)
+# Open PowerShell as Administrator, then:
+corepack enable
+corepack prepare pnpm@9.11.0 --activate
+pnpm install
+```
+
+#### 2. Setup Python Virtual Environment
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# Windows Command Prompt:
+venv\Scripts\activate.bat
+# macOS/Linux:
+source venv/bin/activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+```
+
+#### 3. Start Development Servers
+```bash
+# Start all development servers
+npx -y pnpm@9.11.0 dev
+# OR if pnpm is enabled globally:
 pnpm dev
 ```
 
+### Access Points
 - **Web App**: http://localhost:3000
 - **API Server**: http://localhost:5174
 - **Desktop App**: Electron application with native OS integration
+
+### Running Python Scripts
+```bash
+# Make sure virtual environment is activated
+.\venv\Scripts\Activate.ps1
+
+# Run extraction scripts
+python apps/web/truth_extractor.py <url> [max_pages] [timeout] [use_playwright]
+python apps/web/image_extractor.py <url> [max_pages] [output_dir]
+```
 
 ## 📚 Documentation
 
@@ -149,11 +201,22 @@ py image_extractor.py <url> [max_pages] [output_dir]
 
 ## 🐍 Python Dependencies
 
-The Python extraction scripts require these packages:
+The Python extraction scripts require these packages (automatically installed via `requirements.txt`):
 
 ```bash
+# Install from requirements.txt (recommended)
+pip install -r requirements.txt
+
+# Or install manually:
 pip install beautifulsoup4 requests email-validator phonenumbers validators
 ```
+
+**Required packages:**
+- `requests` - HTTP requests for web scraping
+- `beautifulsoup4` - HTML parsing and content extraction
+- `email-validator` - Email address validation
+- `phonenumbers` - Phone number validation and formatting
+- `validators` - URL and other data validation
 
 ## 📊 API Endpoints
 
@@ -243,6 +306,146 @@ runs/
 - **UI Themes**: Multiple interface themes and customization
 - **Plugin System**: Third-party plugin architecture
 - **API Versioning**: Backward-compatible API evolution
+
+## 🔧 Troubleshooting
+
+### Common Setup Issues
+
+#### pnpm Command Not Found
+```bash
+# Solution 1: Use npx (recommended)
+npx -y pnpm@9.11.0 install
+
+# Solution 2: Enable Corepack globally (requires admin)
+# Open PowerShell as Administrator:
+corepack enable
+corepack prepare pnpm@9.11.0 --activate
+```
+
+#### Python Virtual Environment Issues
+```bash
+# If virtual environment activation fails:
+# Windows PowerShell (if execution policy blocks):
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Then activate:
+.\venv\Scripts\Activate.ps1
+```
+
+#### Permission Errors
+- **Windows**: Run PowerShell as Administrator for global pnpm setup
+- **File permissions**: Ensure write access to project directory
+- **Python packages**: Use virtual environment to avoid permission issues
+
+#### Node.js Version Issues
+- Ensure Node.js v18+ is installed
+- Check with: `node -v`
+- Update if needed: Download from [nodejs.org](https://nodejs.org/)
+
+#### Python Version Issues
+- Ensure Python v3.8+ is installed
+- Check with: `python --version`
+- Update if needed: Download from [python.org](https://python.org/)
+
+### 🚨 Server 500 Errors (Transfer to New Computer)
+
+If you're getting 500 Internal Server Error when transferring the project to a new computer, follow these steps:
+
+#### 1. Install Missing Python Dependencies
+```bash
+# Install Python packages required for extraction
+pip install -r requirements.txt
+
+# Verify installation
+pip list | findstr -i "requests beautifulsoup phonenumbers email-validator validators"
+```
+
+#### 2. Install pnpm (if not available)
+```bash
+# Install pnpm globally
+npm install -g pnpm
+
+# Or use npx if pnpm command not found
+npx pnpm install
+```
+
+#### 3. Build Workspace Packages
+```bash
+# Install all dependencies
+npx pnpm install
+
+# Build required packages
+npx pnpm --filter @sg/utils build
+npx pnpm --filter @sg/types build
+```
+
+#### 4. Start Server Correctly
+```bash
+# Start server using pnpm
+npx pnpm --filter @sg/server dev
+
+# Verify server is running
+curl http://localhost:5174/health
+```
+
+#### 5. Test Extraction Endpoints
+```bash
+# Test navbar extraction
+curl -X POST http://localhost:5174/api/extract/navbar \
+  -H "Content-Type: application/json" \
+  -d '{"runId": "your-run-id"}'
+
+# Test images extraction  
+curl -X POST http://localhost:5174/api/extract/images \
+  -H "Content-Type: application/json" \
+  -d '{"runId": "your-run-id"}'
+
+# Test paragraphs extraction
+curl -X POST http://localhost:5174/api/extract/paragraphs \
+  -H "Content-Type: application/json" \
+  -d '{"runId": "your-run-id"}'
+```
+
+#### Common Error Messages and Solutions
+
+**Error: `Cannot find module '@sg/utils'`**
+```bash
+# Solution: Build the workspace packages
+npx pnpm --filter @sg/utils build
+npx pnpm --filter @sg/types build
+```
+
+**Error: `ModuleNotFoundError: No module named 'beautifulsoup4'`**
+```bash
+# Solution: Install Python dependencies
+pip install -r requirements.txt
+```
+
+**Error: `pnpm: command not found`**
+```bash
+# Solution: Install pnpm or use npx
+npm install -g pnpm
+# OR
+npx pnpm install
+```
+
+**Error: `500 Internal Server Error` on extraction endpoints**
+```bash
+# Solution: Complete setup process
+pip install -r requirements.txt
+npx pnpm install
+npx pnpm --filter @sg/utils build
+npx pnpm --filter @sg/types build
+npx pnpm --filter @sg/server dev
+```
+
+#### Verification Checklist
+- [ ] Python dependencies installed (`pip list` shows all required packages)
+- [ ] pnpm available (`npx pnpm --version` works)
+- [ ] Workspace packages built (`@sg/utils` and `@sg/types` have `dist/` folders)
+- [ ] Server starts without errors (`npx pnpm --filter @sg/server dev`)
+- [ ] Health endpoint responds (`curl http://localhost:5174/health`)
+- [ ] Extraction endpoints return 200 status (not 500)
 
 ## 📝 Development Notes
 
