@@ -17,7 +17,7 @@ export async function legalRoute(fastify: FastifyInstance) {
     const { url, runId } = request.body;
     
     try {
-      const scriptPath = join(process.cwd(), '..', 'web', 'legal_extractor.py');
+      const scriptPath = join(process.cwd(), '..', '..', 'extractors', 'legal_extractor.py');
       
       fastify.log.info(`Running legal extraction for ${url} with runId ${runId}`);
       
@@ -47,3 +47,4 @@ export async function legalRoute(fastify: FastifyInstance) {
     }
   });
 }
+

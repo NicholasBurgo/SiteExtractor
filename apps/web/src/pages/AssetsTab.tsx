@@ -181,20 +181,33 @@ export function AssetsTab({ runId, url, pages, onConfirm, isConfirmed = false }:
 
   const loadImagesData = async () => {
     try {
-      // First try to load from localStorage
+      // First try to load from localStorage (preloaded data)
       const savedData = localStorage.getItem(`images-${runId}`);
+      console.log('AssetsTab: Checking for preloaded images data with key:', `images-${runId}`);
+      console.log('AssetsTab: Preloaded data exists:', !!savedData);
+      
       if (savedData) {
         const parsed = JSON.parse(savedData);
-        if (parsed.images) {
+        console.log('AssetsTab: Parsed preloaded data:', parsed);
+        
+        // Handle both preloaded data format (just images array) and saved data format (with confirmedSections)
+        if (Array.isArray(parsed)) {
+          // Preloaded data format - just an array of images
+          setImages(parsed);
+          console.log('AssetsTab: Using preloaded images array:', parsed.length, 'images');
+        } else if (parsed.images) {
+          // Saved data format - object with images and confirmedSections
           setImages(parsed.images);
-        }
-        if (parsed.confirmedSections) {
-          setConfirmedSections(new Set(parsed.confirmedSections));
+          if (parsed.confirmedSections) {
+            setConfirmedSections(new Set(parsed.confirmedSections));
+          }
+          console.log('AssetsTab: Using saved images data:', parsed.images.length, 'images');
         }
         return;
       }
 
       // If no saved data, fetch from API
+      console.log('AssetsTab: No preloaded data found, fetching from API...');
       const response = await fetch('/api/extract/images', {
         method: 'POST',
         headers: {
@@ -207,6 +220,9 @@ export function AssetsTab({ runId, url, pages, onConfirm, isConfirmed = false }:
         const result = await response.json();
         if (result.status === 'success' && result.images) {
           setImages(result.images);
+          // Store the fetched data for future use
+          localStorage.setItem(`images-${runId}`, JSON.stringify(result.images));
+          console.log('AssetsTab: Fetched and stored images data:', result.images.length, 'images');
         }
       }
     } catch (error) {
@@ -702,13 +718,108 @@ export function AssetsTab({ runId, url, pages, onConfirm, isConfirmed = false }:
       );
     }
 
-    // Separate logos from other images
-    const logos = images.filter(img => img.type === 'logo');
-    const otherImages = images.filter(img => img.type !== 'logo');
+    // Debug: Log all images and their types
+    console.log('AssetsTab: All images:', images.map(img => ({
+      id: img.id,
+      type: img.type,
+      page: img.page,
+      alt_text: img.alt_text,
+      title: img.title,
+      filename: img.filename
+    })));
 
-    // Group images by page
+    // Separate logos from other images with balanced logic
+    const logos = images.filter(img => {
+      // Trust the Python extractor's initial categorization but add smart validation
+      if (img.type === 'logo') {
+        const altLower = (img.alt_text || '').toLowerCase();
+        const titleLower = (img.title || '').toLowerCase();
+        const filenameLower = (img.filename || '').toLowerCase();
+        
+        // Check for explicit logo indicators
+        const hasLogoText = altLower.includes('logo') || titleLower.includes('logo') || 
+                           altLower.includes('brand') || titleLower.includes('brand');
+        const hasLogoFilename = filenameLower.includes('logo') || filenameLower.includes('brand');
+        
+        // If it has logo indicators, definitely keep as logo
+        if (hasLogoText || hasLogoFilename) {
+          return true;
+        }
+        
+        // If no text indicators but marked as logo, check if it's the first image on Home Page
+        // (common pattern: first image is often the logo)
+        if (img.page === 'Home Page' && img.id === 'img_0') {
+          return true; // Keep first image on home page as logo
+        }
+        
+        // For other cases, be more conservative - keep as logo if extractor says so
+        // but log for debugging
+        console.log('AssetsTab: Keeping image as logo despite no text indicators:', {
+          id: img.id,
+          type: img.type,
+          page: img.page,
+          alt_text: img.alt_text,
+          title: img.title
+        });
+        return true;
+      }
+      
+      return false;
+    });
+    
+    const otherImages = images.filter(img => {
+      // Include all non-logo images
+      if (img.type !== 'logo') {
+        return true;
+      }
+      
+      // For images marked as logo, only move to content if they clearly aren't logos
+      const altLower = (img.alt_text || '').toLowerCase();
+      const titleLower = (img.title || '').toLowerCase();
+      const filenameLower = (img.filename || '').toLowerCase();
+      
+      // Check for explicit content indicators (images that are clearly not logos)
+      const hasContentText = altLower.includes('photo') || altLower.includes('image') || 
+                            altLower.includes('picture') || altLower.includes('banner') ||
+                            altLower.includes('hero') || altLower.includes('background');
+      
+      // Only move to content if it has explicit content indicators
+      // Otherwise, trust the extractor's logo classification
+      if (hasContentText) {
+        console.log('AssetsTab: Moving image from logo to content due to content indicators:', {
+          id: img.id,
+          type: img.type,
+          alt_text: img.alt_text,
+          title: img.title
+        });
+        return true;
+      }
+      
+      return false; // Keep as logo
+    });
+
+    // Debug: Log categorization results
+    console.log('AssetsTab: Logo images:', logos.map(img => ({ id: img.id, type: img.type, alt_text: img.alt_text })));
+    console.log('AssetsTab: Content images:', otherImages.map(img => ({ id: img.id, type: img.type, page: img.page })));
+
+    // Group images by page with improved logic
     const groupedImages = otherImages.reduce((acc, image) => {
-      const page = image.page || 'Other';
+      // Normalize page names
+      let page = image.page || 'Other';
+      
+      // Map common page variations to standard names
+      if (page.toLowerCase().includes('home') || page.toLowerCase().includes('main')) {
+        page = 'Home Page';
+      } else if (page.toLowerCase().includes('service')) {
+        page = 'Services Page';
+      } else if (page.toLowerCase().includes('work') || page.toLowerCase().includes('portfolio')) {
+        page = 'Our Work Page';
+      } else if (page.toLowerCase().includes('about')) {
+        page = 'About Page';
+      } else if (page.toLowerCase().includes('contact')) {
+        page = 'Contact Page';
+      }
+      
       if (!acc[page]) acc[page] = [];
       acc[page].push(image);
       return acc;

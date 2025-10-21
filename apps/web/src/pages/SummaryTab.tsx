@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { DynamicTruthTable } from '../components/DynamicTruthTable';
 
 interface SummaryTabProps {
   runId: string;
@@ -34,37 +35,39 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
   const loadTabStatuses = () => {
     const tabs: TabStatus[] = [];
 
-    // Truth Table Tab
-    const truthTableData = localStorage.getItem(`truth-table-${runId}`);
-    if (truthTableData) {
-      const parsed = JSON.parse(truthTableData);
-      tabs.push({
-        name: 'Truth Table',
-        isConfirmed: !!parsed.confirmedAt,
-        hasData: !!parsed.fields && parsed.fields.length > 0,
-        lastUpdated: parsed.confirmedAt || parsed.retriedAt || parsed.loadedAt,
-        dataCount: parsed.fields?.length || 0,
-        jsonData: parsed
-      });
-    } else {
-      tabs.push({
-        name: 'Truth Table',
-        isConfirmed: false,
-        hasData: false,
-        jsonData: null
-      });
-    }
+    console.log('SummaryTab: Loading tab statuses for runId:', runId);
 
     // Navigation Tab
-    const navigationData = localStorage.getItem(`navigation-${runId}`);
+    const navigationData = localStorage.getItem(`navbar-${runId}`);
+    console.log('SummaryTab: Navigation data:', navigationData);
     if (navigationData) {
       const parsed = JSON.parse(navigationData);
+      console.log('SummaryTab: Parsed navigation data:', parsed);
+      
+      // Extract pages from tree structure
+      const extractPagesFromTree = (node: any): number => {
+        let count = 0;
+        if (node && typeof node === 'object') {
+          if (node.label && node.href && node.href !== '/') {
+            count++;
+          }
+          if (node.children && Array.isArray(node.children)) {
+            for (const child of node.children) {
+              count += extractPagesFromTree(child);
+            }
+          }
+        }
+        return count;
+      };
+      
+      const pageCount = extractPagesFromTree(parsed);
+      
       tabs.push({
         name: 'Navigation',
         isConfirmed: !!parsed.confirmedAt,
-        hasData: !!parsed.pages && parsed.pages.length > 0,
+        hasData: pageCount > 0,
         lastUpdated: parsed.confirmedAt || parsed.loadedAt,
-        dataCount: parsed.pages?.length || 0,
+        dataCount: pageCount,
         jsonData: parsed
       });
     } else {
@@ -80,12 +83,13 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
     const paragraphsData = localStorage.getItem(`paragraphs-${runId}`);
     if (paragraphsData) {
       const parsed = JSON.parse(paragraphsData);
+      const paragraphsArray = Array.isArray(parsed) ? parsed : (parsed.paragraphs || []);
       tabs.push({
         name: 'Paragraphs',
         isConfirmed: !!parsed.confirmedAt,
-        hasData: !!parsed.paragraphs && parsed.paragraphs.length > 0,
+        hasData: paragraphsArray.length > 0,
         lastUpdated: parsed.confirmedAt || parsed.retriedAt || parsed.loadedAt,
-        dataCount: parsed.paragraphs?.length || 0,
+        dataCount: paragraphsArray.length,
         jsonData: parsed
       });
     } else {
@@ -148,7 +152,7 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
       const imagesParsed = imagesData ? JSON.parse(imagesData) : {};
       
       const totalAssets = (assetsParsed.favicons?.length || 0) + 
-                         (imagesParsed.images?.length || 0) + 
+                         (imagesParsed.length || 0) + 
                          (assetsParsed.downloadable_files?.length || 0);
       
       tabs.push({
@@ -157,7 +161,7 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
         hasData: totalAssets > 0,
         lastUpdated: assetsParsed.confirmedAt || imagesParsed.confirmedAt || assetsParsed.retriedAt || imagesParsed.loadedAt,
         dataCount: totalAssets,
-        jsonData: { ...assetsParsed, images: imagesParsed.images }
+        jsonData: { ...assetsParsed, images: imagesParsed }
       });
     } else {
       tabs.push({
@@ -175,21 +179,12 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
   };
 
   const handleApproveAll = () => {
-    // Confirm Truth Table
-    const truthTableData = localStorage.getItem(`truth-table-${runId}`);
-    if (truthTableData) {
-      const parsed = JSON.parse(truthTableData);
-      localStorage.setItem(`truth-table-${runId}`, JSON.stringify({
-        ...parsed,
-        confirmedAt: new Date().toISOString()
-      }));
-    }
 
     // Confirm Navigation
-    const navigationData = localStorage.getItem(`navigation-${runId}`);
+    const navigationData = localStorage.getItem(`navbar-${runId}`);
     if (navigationData) {
       const parsed = JSON.parse(navigationData);
-      localStorage.setItem(`navigation-${runId}`, JSON.stringify({
+      localStorage.setItem(`navbar-${runId}`, JSON.stringify({
         ...parsed,
         confirmedAt: new Date().toISOString()
       }));
@@ -378,80 +373,8 @@ export function SummaryTab({ runId, onApproveAll, isConfirmed = false, onConfirm
           </div>
         </div>
 
-        {/* JSON Data Previews */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">JSON Data Previews</h3>
-          <div className="space-y-4">
-            {tabStatuses.map((tab) => (
-              <div key={tab.name} className="border border-gray-200 rounded-lg">
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                  <div className="flex items-center space-x-3">
-                    <h4 className="font-medium text-gray-900">{tab.name}</h4>
-                    {getStatusIcon(tab)}
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(tab)}`}>
-                      {getStatusText(tab)}
-                    </span>
-                    {tab.dataCount !== undefined && (
-                      <span className="text-sm text-gray-600">({tab.dataCount} items)</span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {tab.jsonData && (
-                      <button
-                        onClick={() => copyToClipboard(tab.jsonData, tab.name)}
-                        className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-                        title="Copy JSON to clipboard"
-                      >
-                        {copiedTab === tab.name ? (
-                          <>
-                            <Check className="w-4 h-4 text-green-600" />
-                            <span className="text-green-600">Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => toggleExpanded(tab.name)}
-                      className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-                    >
-                      {expandedTabs.has(tab.name) ? (
-                        <>
-                          <EyeOff className="w-4 h-4" />
-                          <span>Hide</span>
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-4 h-4" />
-                          <span>Show</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                {expandedTabs.has(tab.name) && (
-                  <div className="p-4">
-                    {tab.jsonData ? (
-                      <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 max-h-96">
-                        {JSON.stringify(tab.jsonData, null, 2)}
-                      </pre>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <p>No data available for {tab.name}</p>
-                        <p className="text-sm mt-1">Data will appear here when extracted</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Dynamic Truth Table */}
+        <DynamicTruthTable runId={runId} />
 
         {/* Summary Statistics */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
