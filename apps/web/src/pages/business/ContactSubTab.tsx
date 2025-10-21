@@ -6,6 +6,7 @@ interface ContactSubTabProps {
   url?: string;
   onConfirm?: () => void;
   isConfirmed?: boolean;
+  hasExtracted?: boolean; // Add this prop
 }
 
 interface ContactData {
@@ -28,7 +29,7 @@ interface ContactData {
   error?: string;
 }
 
-export function ContactSubTab({ runId, url, onConfirm, isConfirmed = false }: ContactSubTabProps) {
+export function ContactSubTab({ runId, url, onConfirm, isConfirmed = false, hasExtracted = false }: ContactSubTabProps) {
   const [contactData, setContactData] = useState<ContactData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -37,24 +38,27 @@ export function ContactSubTab({ runId, url, onConfirm, isConfirmed = false }: Co
 
   useEffect(() => {
     loadContactData();
-  }, [runId]);
+  }, [runId, hasExtracted]);
 
   const loadContactData = async () => {
     setIsLoading(true);
     try {
-      // Try to load from localStorage first
+      // Only load from localStorage - no individual API calls
       const savedData = localStorage.getItem(`contact-${runId}`);
       if (savedData) {
         const parsed = JSON.parse(savedData);
         setContactData(parsed);
-        setIsLoading(false);
-        return;
+      } else if (hasExtracted) {
+        // Only show "No Data Found" if extraction has been attempted
+        setContactData(null);
+      } else {
+        // If no extraction has been attempted yet, don't show error
+        setContactData(null);
       }
-
-      // If no saved data, try to extract
-      await retryContactExtraction();
     } catch (error) {
       console.error('Error loading contact data:', error);
+      setContactData(null);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -62,7 +66,8 @@ export function ContactSubTab({ runId, url, onConfirm, isConfirmed = false }: Co
   const retryContactExtraction = async () => {
     setIsRetrying(true);
     try {
-      const response = await fetch('/api/extract/contact', {
+      // Use unified extraction instead of individual contact extraction
+      const response = await fetch('/api/extract/unified', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,22 +80,24 @@ export function ContactSubTab({ runId, url, onConfirm, isConfirmed = false }: Co
 
       if (response.ok) {
         const result = await response.json();
-        const data = result.result;
+        const contactData = result.extractedData?.contact;
         
-        // Save to localStorage
-        const dataToSave = {
-          ...data,
-          loadedAt: new Date().toISOString(),
-          retriedAt: new Date().toISOString()
-        };
-        localStorage.setItem(`contact-${runId}`, JSON.stringify(dataToSave));
-        
-        setContactData(data);
+        if (contactData) {
+          // Save to localStorage
+          const dataToSave = {
+            ...contactData,
+            loadedAt: new Date().toISOString(),
+            retriedAt: new Date().toISOString()
+          };
+          localStorage.setItem(`contact-${runId}`, JSON.stringify(dataToSave));
+          
+          setContactData(contactData);
+        }
       } else {
-        console.error('Contact extraction failed');
+        console.error('Unified extraction failed');
       }
     } catch (error) {
-      console.error('Error retrying contact extraction:', error);
+      console.error('Error retrying unified extraction:', error);
     } finally {
       setIsRetrying(false);
       setIsLoading(false);
@@ -210,16 +217,26 @@ export function ContactSubTab({ runId, url, onConfirm, isConfirmed = false }: Co
     return (
       <div className="p-6">
         <div className="text-center py-8">
-          <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Contact Data Found</h3>
-          <p className="text-gray-600 mb-4">Unable to extract contact information from the website.</p>
-          <button
-            onClick={retryContactExtraction}
-            disabled={isRetrying}
-            className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isRetrying ? 'Retrying...' : 'Retry Extraction'}
-          </button>
+          {hasExtracted ? (
+            <>
+              <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Contact Data Found</h3>
+              <p className="text-gray-600 mb-4">Unable to extract contact information from the website.</p>
+              <button
+                onClick={retryContactExtraction}
+                disabled={isRetrying}
+                className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isRetrying ? 'Retrying...' : 'Retry Extraction'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Extracting Contact Information...</h3>
+              <p className="text-gray-600 mb-4">Please wait while we extract contact information from the website.</p>
+            </>
+          )}
         </div>
       </div>
     );

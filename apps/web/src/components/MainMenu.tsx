@@ -52,13 +52,15 @@ export function MainMenu({ onExtractionComplete, isExtracting, setIsExtracting, 
         usePlaywright
       };
 
+      let runId: string;
+
       // Check if we have the electron API available
       if (window.electronAPI) {
         // Desktop app mode - use Electron IPC
         const result = await window.electronAPI.extractTruthTable(url, options);
         
         if ((result as any).success) {
-          onExtractionComplete((result as any).runId, url, options);
+          runId = (result as any).runId;
         } else {
           throw new Error('Extraction failed');
         }
@@ -77,11 +79,128 @@ export function MainMenu({ onExtractionComplete, isExtracting, setIsExtracting, 
 
         const result = await response.json();
         if ((result as any).status === 'success') {
-          onExtractionComplete((result as any).runId, url, options);
+          runId = (result as any).runId;
         } else {
           throw new Error((result as any).message || 'Extraction failed');
         }
       }
+
+      // Now trigger all individual extractions in parallel
+      console.log('Starting parallel individual extractions...');
+      
+      // Check if extraction is already in progress
+      const extractionInProgress = localStorage.getItem(`extraction-in-progress-${runId}`);
+      if (extractionInProgress) {
+        console.log('Extraction already in progress for this runId, skipping parallel extractions...');
+      } else {
+        // Mark extraction as in progress
+        localStorage.setItem(`extraction-in-progress-${runId}`, 'true');
+        
+        const extractionPromises = [
+          // Business data extractions
+          fetch('/api/extract/meta', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, runId })
+          }),
+          fetch('/api/extract/services', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, runId })
+          }),
+          fetch('/api/extract/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, runId })
+          }),
+          fetch('/api/extract/legal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, runId })
+          }),
+          fetch('/api/extract/assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, runId })
+          }),
+          // Tab data preloading
+          fetch('/api/extract/navbar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ runId })
+          }),
+          fetch('/api/extract/images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ runId })
+          }),
+          fetch('/api/extract/paragraphs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ runId })
+          })
+        ];
+
+        try {
+          const results = await Promise.allSettled(extractionPromises);
+          
+          // Process results and store preloaded data
+          const processedResults = await Promise.all(
+            results.map(async (result, index) => {
+              const extractionTypes = ['meta', 'services', 'contact', 'legal', 'assets', 'navbar', 'images', 'paragraphs'];
+              
+              if (result.status === 'fulfilled') {
+                console.log(`${extractionTypes[index]} extraction completed successfully`);
+                
+                // Store preloaded data in localStorage for immediate tab access
+                try {
+                  const response = result.value;
+                  if (response.ok) {
+                    const data = await response.json();
+                    const storageKey = `${extractionTypes[index]}-${runId}`;
+                    
+                    // Store the data with appropriate key
+                    if (extractionTypes[index] === 'navbar') {
+                      localStorage.setItem(storageKey, JSON.stringify(data.navbar));
+                    } else if (extractionTypes[index] === 'images') {
+                      localStorage.setItem(storageKey, JSON.stringify(data.images));
+                    } else if (extractionTypes[index] === 'paragraphs') {
+                      localStorage.setItem(storageKey, JSON.stringify(data.paragraphs));
+                    } else {
+                      // For business data (meta, services, contact, legal, assets)
+                      localStorage.setItem(storageKey, JSON.stringify(data.result || data));
+                    }
+                    
+                    console.log(`Preloaded ${extractionTypes[index]} data for runId: ${runId}`, {
+                      storageKey,
+                      dataLength: extractionTypes[index] === 'images' ? data.images?.length : 'N/A',
+                      dataKeys: Object.keys(data)
+                    });
+                    return { type: extractionTypes[index], success: true };
+                  }
+                } catch (storageError) {
+                  console.warn(`Failed to store ${extractionTypes[index]} data:`, storageError);
+                  return { type: extractionTypes[index], success: false, error: storageError };
+                }
+              } else {
+                console.warn(`${extractionTypes[index]} extraction failed:`, result.reason);
+                return { type: extractionTypes[index], success: false, error: result.reason };
+              }
+              
+              return { type: extractionTypes[index], success: false };
+            })
+          );
+          
+          console.log('All parallel extractions completed');
+        } catch (parallelError) {
+          console.warn('Some parallel extractions failed:', parallelError);
+        } finally {
+          // Remove extraction in progress flag
+          localStorage.removeItem(`extraction-in-progress-${runId}`);
+        }
+      }
+      
+      onExtractionComplete(runId, url, options);
     } catch (error) {
       console.error('Extraction failed:', error);
       alert(`Extraction failed: ${error}`);
@@ -121,6 +240,49 @@ export function MainMenu({ onExtractionComplete, isExtracting, setIsExtracting, 
         return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      // Handle different timestamp formats
+      let date: Date;
+      
+      if (timestamp.includes('T')) {
+        // ISO format
+        date = new Date(timestamp);
+      } else if (timestamp.includes('/')) {
+        // Date format like MM/DD/YYYY or DD/MM/YYYY
+        date = new Date(timestamp);
+      } else if (timestamp.includes('-')) {
+        // Date format like YYYY-MM-DD
+        date = new Date(timestamp);
+      } else {
+        // Try parsing as number (timestamp)
+        const numTimestamp = parseInt(timestamp);
+        if (!isNaN(numTimestamp)) {
+          date = new Date(numTimestamp);
+        } else {
+          date = new Date(timestamp);
+        }
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return timestamp; // fallback to original timestamp
+      }
+      
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Error formatting timestamp:', error);
+      return timestamp; // fallback to original timestamp
     }
   };
 
@@ -184,58 +346,39 @@ export function MainMenu({ onExtractionComplete, isExtracting, setIsExtracting, 
                 <div className="space-y-3">
                   {runs.map((run) => (
                     <div key={run.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-gray-900 truncate">{run.url}</h3>
-                            <p className="text-sm text-gray-500">{run.timestamp}</p>
-                          </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3 flex-1">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(run.status)}`}>
                             {run.status}
                           </span>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 break-all">{run.url}</h3>
+                            <p className="text-sm text-gray-500">{formatTimestamp(run.timestamp)}</p>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleContinueRun(run.id)}
-                            className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <ArrowRight className="w-4 h-4 inline mr-1" />
-                            Continue
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(run.id)}
-                            className={`px-3 py-1 text-sm font-medium rounded-full focus:outline-none focus:ring-2 ${
-                              confirmingDeletes.has(run.id)
-                                ? 'text-white bg-red-600 hover:bg-red-700 focus:ring-red-500'
-                                : 'text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 focus:ring-red-500'
-                            }`}
-                          >
-                            {confirmingDeletes.has(run.id) ? 'Confirm' : 'Delete'}
-                          </button>
-                        </div>
-                      </div>
-                      
-                      {/* File Status */}
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          {getFileStatusIcon(run.files.truth)}
-                          <span>Truth</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          {getFileStatusIcon(run.files.images)}
-                          <span>Images</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          {getFileStatusIcon(run.files.navbar)}
-                          <span>Navbar</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          {getFileStatusIcon(run.files.paragraphs)}
-                          <span>Paragraphs</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          {getFileStatusIcon(run.files.misc)}
-                          <span>Misc</span>
+                        <div className="flex flex-col items-end space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleDeleteClick(run.id)}
+                              className={`px-3 py-1 text-sm font-medium rounded-full focus:outline-none focus:ring-2 ${
+                                confirmingDeletes.has(run.id)
+                                  ? 'text-white bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                                  : 'text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 focus:ring-red-500'
+                              }`}
+                            >
+                              {confirmingDeletes.has(run.id) ? 'Confirm' : 'Delete'}
+                            </button>
+                            <button
+                              onClick={() => handleContinueRun(run.id)}
+                              className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <ArrowRight className="w-4 h-4 inline mr-1" />
+                              Continue
+                            </button>
+                          </div>
+                          <div className="text-xs text-gray-500 font-medium">
+                            extraction
+                          </div>
                         </div>
                       </div>
                     </div>

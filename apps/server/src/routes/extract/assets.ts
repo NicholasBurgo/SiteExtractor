@@ -17,7 +17,7 @@ export async function assetsRoute(fastify: FastifyInstance) {
     const { url, runId } = request.body;
     
     try {
-      const scriptPath = join(process.cwd(), '..', 'web', 'assets_extractor.py');
+      const scriptPath = join(process.cwd(), '..', '..', 'extractors', 'assets_extractor.py');
       
       fastify.log.info(`Running assets extraction for ${url} with runId ${runId}`);
       
@@ -47,3 +47,4 @@ export async function assetsRoute(fastify: FastifyInstance) {
     }
   });
 }
+

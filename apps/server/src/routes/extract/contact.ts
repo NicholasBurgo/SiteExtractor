@@ -17,7 +17,7 @@ export async function contactRoute(fastify: FastifyInstance) {
     const { url, runId } = request.body;
     
     try {
-      const scriptPath = join(process.cwd(), '..', 'web', 'contact_extractor.py');
+      const scriptPath = join(process.cwd(), '..', '..', 'extractors', 'contact_extractor.py');
       
       fastify.log.info(`Running contact extraction for ${url} with runId ${runId}`);
       
@@ -47,3 +47,4 @@ export async function contactRoute(fastify: FastifyInstance) {
     }
   });
 }
+

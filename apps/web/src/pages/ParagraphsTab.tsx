@@ -137,6 +137,32 @@ export function ParagraphsTab({ runId, url, extractionOptions, pages, onConfirm,
   }, [confirmedPages, runId]);
 
   const loadParagraphData = async () => {
+    // First check if paragraphs data is already preloaded in localStorage
+    const preloadedParagraphsData = localStorage.getItem(`paragraphs-${runId}`);
+    if (preloadedParagraphsData) {
+      try {
+        const paragraphsData = JSON.parse(preloadedParagraphsData);
+        console.log('ParagraphsTab: Using preloaded paragraphs data:', paragraphsData);
+        
+        // Convert to frontend format if needed
+        const apiParagraphs: Paragraph[] = paragraphsData.map((item: any) => ({
+          id: item.id,
+          title: item.title || (item.type === 'title' ? item.content : undefined),
+          content: item.content,
+          page: item.page,
+          type: item.type,
+          status: item.status || 'keep',
+          confidence: item.confidence,
+          order: item.order,
+        }));
+        
+        setParagraphs(apiParagraphs);
+        return;
+      } catch (error) {
+        console.warn('ParagraphsTab: Failed to parse preloaded paragraphs data:', error);
+      }
+    }
+    
     setIsLoading(true);
     try {
       // Call the actual paragraph extraction API
@@ -171,11 +197,7 @@ export function ParagraphsTab({ runId, url, extractionOptions, pages, onConfirm,
         setParagraphs(apiParagraphs);
         
         // Save to localStorage for future use
-        localStorage.setItem(`paragraphs-${runId}`, JSON.stringify({
-          paragraphs: apiParagraphs,
-          loadedAt: new Date().toISOString(),
-          runId,
-        }));
+        localStorage.setItem(`paragraphs-${runId}`, JSON.stringify(apiParagraphs));
       } else {
         throw new Error(result.message || 'Failed to load paragraphs');
       }
