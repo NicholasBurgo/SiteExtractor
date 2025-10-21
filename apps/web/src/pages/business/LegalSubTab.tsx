@@ -6,6 +6,7 @@ interface LegalSubTabProps {
   url?: string;
   onConfirm?: () => void;
   isConfirmed?: boolean;
+  hasExtracted?: boolean; // Add this prop
 }
 
 interface LegalData {
@@ -19,7 +20,7 @@ interface LegalData {
   error?: string;
 }
 
-export function LegalSubTab({ runId, url, onConfirm, isConfirmed = false }: LegalSubTabProps) {
+export function LegalSubTab({ runId, url, onConfirm, isConfirmed = false, hasExtracted = false }: LegalSubTabProps) {
   const [legalData, setLegalData] = useState<LegalData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -28,24 +29,27 @@ export function LegalSubTab({ runId, url, onConfirm, isConfirmed = false }: Lega
 
   useEffect(() => {
     loadLegalData();
-  }, [runId]);
+  }, [runId, hasExtracted]);
 
   const loadLegalData = async () => {
     setIsLoading(true);
     try {
-      // Try to load from localStorage first
+      // Only load from localStorage - no individual API calls
       const savedData = localStorage.getItem(`legal-${runId}`);
       if (savedData) {
         const parsed = JSON.parse(savedData);
         setLegalData(parsed);
-        setIsLoading(false);
-        return;
+      } else if (hasExtracted) {
+        // Only show "No Data Found" if extraction has been attempted
+        setLegalData(null);
+      } else {
+        // If no extraction has been attempted yet, don't show error
+        setLegalData(null);
       }
-
-      // If no saved data, try to extract
-      await retryLegalExtraction();
     } catch (error) {
       console.error('Error loading legal data:', error);
+      setLegalData(null);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -53,7 +57,8 @@ export function LegalSubTab({ runId, url, onConfirm, isConfirmed = false }: Lega
   const retryLegalExtraction = async () => {
     setIsRetrying(true);
     try {
-      const response = await fetch('/api/extract/legal', {
+      // Use unified extraction instead of individual legal extraction
+      const response = await fetch('/api/extract/unified', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,22 +71,24 @@ export function LegalSubTab({ runId, url, onConfirm, isConfirmed = false }: Lega
 
       if (response.ok) {
         const result = await response.json();
-        const data = result.result;
+        const legalData = result.extractedData?.legal;
         
-        // Save to localStorage
-        const dataToSave = {
-          ...data,
-          loadedAt: new Date().toISOString(),
-          retriedAt: new Date().toISOString()
-        };
-        localStorage.setItem(`legal-${runId}`, JSON.stringify(dataToSave));
-        
-        setLegalData(data);
+        if (legalData) {
+          // Save to localStorage
+          const dataToSave = {
+            ...legalData,
+            loadedAt: new Date().toISOString(),
+            retriedAt: new Date().toISOString()
+          };
+          localStorage.setItem(`legal-${runId}`, JSON.stringify(dataToSave));
+          
+          setLegalData(legalData);
+        }
       } else {
-        console.error('Legal extraction failed');
+        console.error('Unified extraction failed');
       }
     } catch (error) {
-      console.error('Error retrying legal extraction:', error);
+      console.error('Error retrying unified extraction:', error);
     } finally {
       setIsRetrying(false);
       setIsLoading(false);
@@ -195,16 +202,26 @@ export function LegalSubTab({ runId, url, onConfirm, isConfirmed = false }: Lega
     return (
       <div className="p-6">
         <div className="text-center py-8">
-          <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Legal Data Found</h3>
-          <p className="text-gray-600 mb-4">Unable to extract legal information from the website.</p>
-          <button
-            onClick={retryLegalExtraction}
-            disabled={isRetrying}
-            className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isRetrying ? 'Retrying...' : 'Retry Extraction'}
-          </button>
+          {hasExtracted ? (
+            <>
+              <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Legal Data Found</h3>
+              <p className="text-gray-600 mb-4">Unable to extract legal information from the website.</p>
+              <button
+                onClick={retryLegalExtraction}
+                disabled={isRetrying}
+                className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isRetrying ? 'Retrying...' : 'Retry Extraction'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Extracting Legal Information...</h3>
+              <p className="text-gray-600 mb-4">Please wait while we extract legal information from the website.</p>
+            </>
+          )}
         </div>
       </div>
     );

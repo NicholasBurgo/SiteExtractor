@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
-import { TruthTableTab } from './TruthTableTab';
 import { ParagraphsTab } from './ParagraphsTab';
 import { NavbarTab } from './NavbarTab';
 import { ContactTab } from './ContactTab';
@@ -17,7 +16,7 @@ interface ConfirmPageProps {
 }
 
 export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPageProps) {
-  const [activeTab, setActiveTab] = useState<'truth-table' | 'navbar' | 'assets' | 'paragraphs' | 'business' | 'summary'>('truth-table');
+  const [activeTab, setActiveTab] = useState<'navbar' | 'assets' | 'paragraphs' | 'business' | 'summary'>('navbar');
   const [confirmedTabs, setConfirmedTabs] = useState<Set<string>>(new Set());
 
   // Use shared page manager at the top level
@@ -37,11 +36,10 @@ export function ConfirmPage({ runId, url, extractionOptions, onBack }: ConfirmPa
 
   const handleApproveAll = () => {
     // Mark all tabs with confirm buttons as confirmed
-    setConfirmedTabs(new Set(['truth-table', 'navbar', 'assets', 'paragraphs', 'business']));
+    setConfirmedTabs(new Set(['navbar', 'assets', 'paragraphs', 'business']));
   };
 
   const tabs = [
-    { id: 'truth-table', label: 'Truth Table', component: <TruthTableTab runId={runId} url={url} extractionOptions={extractionOptions} onConfirm={() => handleTabConfirm('truth-table')} onConfirmAll={handleApproveAll} isConfirmed={confirmedTabs.has('truth-table')} /> },
     { id: 'navbar', label: 'Navigation', component: <NavbarTab runId={runId} pages={pages} addPage={addPage} updatePage={updatePage} removePage={removePage} isLoading={pagesLoading} onConfirm={() => handleTabConfirm('navbar')} onConfirmAll={handleApproveAll} isConfirmed={confirmedTabs.has('navbar')} /> },
     { id: 'assets', label: 'Assets', component: <AssetsTab runId={runId} url={url} pages={pages} onConfirm={() => handleTabConfirm('assets')} isConfirmed={confirmedTabs.has('assets')} /> },
     { id: 'paragraphs', label: 'Paragraphs', component: <ParagraphsTab runId={runId} url={url} extractionOptions={extractionOptions} pages={pages} onConfirm={() => handleTabConfirm('paragraphs')} isConfirmed={confirmedTabs.has('paragraphs')} /> },

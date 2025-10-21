@@ -7,9 +7,10 @@ interface IdentitySubTabProps {
   url?: string;
   onConfirm?: () => void;
   isConfirmed?: boolean;
+  hasExtracted?: boolean; // Add this prop
 }
 
-export function IdentitySubTab({ runId, url, onConfirm, isConfirmed = false }: IdentitySubTabProps) {
+export function IdentitySubTab({ runId, url, onConfirm, isConfirmed = false, hasExtracted = false }: IdentitySubTabProps) {
   const [metaData, setMetaData] = useState<Meta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -18,24 +19,41 @@ export function IdentitySubTab({ runId, url, onConfirm, isConfirmed = false }: I
 
   useEffect(() => {
     loadMetaData();
-  }, [runId]);
+  }, [runId, hasExtracted]);
+
+  // Also check for data changes in localStorage
+  useEffect(() => {
+    const checkForData = () => {
+      const savedData = localStorage.getItem(`meta-${runId}`);
+      if (savedData && !metaData) {
+        console.log('Meta data appeared in localStorage, reloading...');
+        loadMetaData();
+      }
+    };
+    
+    const interval = setInterval(checkForData, 1000);
+    return () => clearInterval(interval);
+  }, [runId, metaData]);
 
   const loadMetaData = async () => {
     setIsLoading(true);
     try {
-      // Try to load from localStorage first
+      // Only load from localStorage - no individual API calls
       const savedData = localStorage.getItem(`meta-${runId}`);
       if (savedData) {
         const parsed = JSON.parse(savedData);
         setMetaData(parsed);
-        setIsLoading(false);
-        return;
+      } else if (hasExtracted) {
+        // Only show "No Data Found" if extraction has been attempted
+        setMetaData(null);
+      } else {
+        // If no extraction has been attempted yet, don't show error
+        setMetaData(null);
       }
-
-      // If no saved data, try to extract
-      await retryMetaExtraction();
     } catch (error) {
       console.error('Error loading meta data:', error);
+      setMetaData(null);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -43,7 +61,8 @@ export function IdentitySubTab({ runId, url, onConfirm, isConfirmed = false }: I
   const retryMetaExtraction = async () => {
     setIsRetrying(true);
     try {
-      const response = await fetch('/api/extract/meta', {
+      // Use unified extraction instead of individual meta extraction
+      const response = await fetch('/api/extract/unified', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,22 +75,24 @@ export function IdentitySubTab({ runId, url, onConfirm, isConfirmed = false }: I
 
       if (response.ok) {
         const result = await response.json();
-        const data = result.result;
+        const metaData = result.extractedData?.meta;
         
-        // Save to localStorage
-        const dataToSave = {
-          ...data,
-          loadedAt: new Date().toISOString(),
-          retriedAt: new Date().toISOString()
-        };
-        localStorage.setItem(`meta-${runId}`, JSON.stringify(dataToSave));
-        
-        setMetaData(data);
+        if (metaData) {
+          // Save to localStorage
+          const dataToSave = {
+            ...metaData,
+            loadedAt: new Date().toISOString(),
+            retriedAt: new Date().toISOString()
+          };
+          localStorage.setItem(`meta-${runId}`, JSON.stringify(dataToSave));
+          
+          setMetaData(metaData);
+        }
       } else {
-        console.error('Meta extraction failed');
+        console.error('Unified extraction failed');
       }
     } catch (error) {
-      console.error('Error retrying meta extraction:', error);
+      console.error('Error retrying unified extraction:', error);
     } finally {
       setIsRetrying(false);
       setIsLoading(false);
@@ -224,16 +245,26 @@ export function IdentitySubTab({ runId, url, onConfirm, isConfirmed = false }: I
     return (
       <div className="p-6">
         <div className="text-center py-8">
-          <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Identity Data Found</h3>
-          <p className="text-gray-600 mb-4">Unable to extract business identity information from the website.</p>
-          <button
-            onClick={retryMetaExtraction}
-            disabled={isRetrying}
-            className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isRetrying ? 'Retrying...' : 'Retry Extraction'}
-          </button>
+          {hasExtracted ? (
+            <>
+              <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Identity Data Found</h3>
+              <p className="text-gray-600 mb-4">Unable to extract business identity information from the website.</p>
+              <button
+                onClick={retryMetaExtraction}
+                disabled={isRetrying}
+                className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isRetrying ? 'Retrying...' : 'Retry Extraction'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Extracting Business Identity...</h3>
+              <p className="text-gray-600 mb-4">Please wait while we extract business identity information from the website.</p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -282,6 +313,7 @@ export function IdentitySubTab({ runId, url, onConfirm, isConfirmed = false }: I
         {renderField('Business Type', 'businessType', metaData.businessType, <Tag className="w-5 h-5 text-green-600" />, true)}
         {renderField('Slogan', 'slogan', metaData.slogan, <FileText className="w-5 h-5 text-purple-600" />)}
         {renderField('Background', 'background', metaData.background, <FileText className="w-5 h-5 text-orange-600" />)}
+        {renderField('Service Area', 'serviceArea', metaData.serviceArea, <FileText className="w-5 h-5 text-teal-600" />)}
         {renderField('Brand Colors', 'colors', metaData.colors, <Palette className="w-5 h-5 text-pink-600" />)}
       </div>
 

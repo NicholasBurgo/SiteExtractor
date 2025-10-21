@@ -41,6 +41,7 @@ class MetaExtractor:
                 "businessType": None,
                 "slogan": None,
                 "background": None,
+                "serviceArea": None,
                 "colors": [],
                 "extraction_date": datetime.now().isoformat(),
                 "url": url
@@ -62,6 +63,10 @@ class MetaExtractor:
             background = self._extract_background(soup, text)
             data["background"] = background
             
+            # Extract service area
+            service_area = self._extract_service_area(soup, text)
+            data["serviceArea"] = service_area
+            
             # Extract colors
             colors = self._extract_colors(soup)
             data["colors"] = colors
@@ -75,6 +80,7 @@ class MetaExtractor:
                 "businessType": None,
                 "slogan": None,
                 "background": None,
+                "serviceArea": None,
                 "colors": [],
                 "extraction_date": datetime.now().isoformat(),
                 "url": url,
@@ -82,50 +88,141 @@ class MetaExtractor:
             }
     
     def _extract_business_name(self, soup: BeautifulSoup, text: str) -> Optional[str]:
-        """Extract business name from various sources."""
-        # Method 1: Title tag
-        title_tag = soup.find('title')
-        if title_tag:
-            title_text = title_tag.get_text().strip()
-            # Clean up common title patterns
-            title_text = re.sub(r'\s*[-|]\s*(Home|Services|About|Contact).*$', '', title_text, flags=re.I)
-            if title_text and len(title_text) > 2:
-                return title_text
+        """Extract business name using sophisticated logic from truth extractor."""
+        candidates = []
         
-        # Method 2: H1 tag
-        h1_tag = soup.find('h1')
-        if h1_tag:
-            h1_text = h1_tag.get_text().strip()
-            if h1_text and len(h1_text) > 2 and len(h1_text) < 100:
-                return h1_text
+        def is_valid_brand_name(text: str) -> bool:
+            """Check if text is likely a valid brand name."""
+            if not text or len(text.strip()) < 2:
+                return False
+            
+            text = text.strip()
+            
+            # Reject phone numbers
+            if re.search(r'\(\d{3}\)\s*\d{3}-\d{4}|\d{3}-\d{3}-\d{4}|\+\d{1,3}\s*\d{3,4}\s*\d{3,4}\s*\d{3,4}', text):
+                return False
+            
+            # Reject email addresses
+            if re.search(r'@\w+\.\w+', text):
+                return False
+            
+            # Reject URLs
+            if re.search(r'https?://|www\.', text, re.I):
+                return False
+            
+            # Reject common non-brand phrases
+            reject_phrases = [
+                'call us', 'contact us', 'phone', 'email', 'address', 'location',
+                'home', 'about', 'services', 'contact', 'menu', 'navigation',
+                'welcome', 'official', 'website', 'site', 'page'
+            ]
+            
+            text_lower = text.lower()
+            for phrase in reject_phrases:
+                if phrase in text_lower:
+                    return False
+            
+            # Must contain at least one letter
+            if not re.search(r'[a-zA-Z]', text):
+                return False
+            
+            # Reasonable length (2-100 characters)
+            if len(text) < 2 or len(text) > 100:
+                return False
+            
+            return True
         
-        # Method 3: Logo alt text
-        logo_img = soup.find('img', alt=True)
-        if logo_img:
-            alt_text = logo_img.get('alt', '').strip()
-            if alt_text and len(alt_text) > 2 and len(alt_text) < 100:
-                return alt_text
+        # Method 1: Page title (highest priority)
+        title = soup.find('title')
+        if title and title.text.strip():
+            title_text = title.text.strip()
+            # Clean up title (remove common suffixes and prefixes)
+            clean_title = re.sub(r'\s*[-|]\s*(Home|Welcome|Official|Website|Site).*$', '', title_text, flags=re.IGNORECASE)
+            clean_title = re.sub(r'^(Home|Welcome|Official|Website|Site)\s*[-|]\s*', '', clean_title, flags=re.IGNORECASE)
+            
+            if is_valid_brand_name(clean_title):
+                candidates.append({
+                    'value': clean_title,
+                    'confidence': 0.9,
+                    'source': 'title'
+                })
         
-        # Method 4: Meta tags
-        meta_title = soup.find('meta', {'property': 'og:title'})
-        if meta_title:
-            og_title = meta_title.get('content', '').strip()
-            if og_title and len(og_title) > 2:
-                return og_title
+        # Method 2: Meta property og:title
+        og_title = soup.find('meta', property='og:title')
+        if og_title and og_title.get('content'):
+            og_text = og_title.get('content').strip()
+            if is_valid_brand_name(og_text):
+                candidates.append({
+                    'value': og_text,
+                    'confidence': 0.85,
+                    'source': 'og:title'
+                })
         
-        # Method 5: Structured data
+        # Method 3: Meta property og:site_name
+        og_site_name = soup.find('meta', property='og:site_name')
+        if og_site_name and og_site_name.get('content'):
+            site_name = og_site_name.get('content').strip()
+            if is_valid_brand_name(site_name):
+                candidates.append({
+                    'value': site_name,
+                    'confidence': 0.88,
+                    'source': 'og:site_name'
+                })
+        
+        # Method 4: H1 tag (but filter out common non-brand content)
+        h1_tags = soup.find_all('h1')
+        for h1 in h1_tags:
+            if h1.text.strip():
+                h1_text = h1.text.strip()
+                if is_valid_brand_name(h1_text):
+                    candidates.append({
+                        'value': h1_text,
+                        'confidence': 0.75,
+                        'source': 'h1'
+                    })
+                    break  # Only take the first valid H1
+        
+        # Method 5: Logo alt text
+        logo_images = soup.find_all('img', alt=True)
+        for logo in logo_images:
+            alt_text = logo.get('alt', '').strip()
+            if is_valid_brand_name(alt_text):
+                candidates.append({
+                    'value': alt_text,
+                    'confidence': 0.7,
+                    'source': 'logo_alt'
+                })
+                break  # Only take the first valid logo alt text
+        
+        # Method 6: Structured data
         json_scripts = soup.find_all('script', type='application/ld+json')
         for script in json_scripts:
             try:
                 data = json.loads(script.string)
                 if isinstance(data, dict):
-                    if 'name' in data:
-                        return data['name']
+                    if 'name' in data and is_valid_brand_name(data['name']):
+                        candidates.append({
+                            'value': data['name'],
+                            'confidence': 0.8,
+                            'source': 'structured_data'
+                        })
                     elif '@type' in data and data['@type'] == 'Organization' and 'name' in data:
-                        return data['name']
+                        if is_valid_brand_name(data['name']):
+                            candidates.append({
+                                'value': data['name'],
+                                'confidence': 0.85,
+                                'source': 'organization_structured_data'
+                            })
             except:
                 continue
         
+        # Select best candidate
+        if candidates:
+            best = max(candidates, key=lambda x: x['confidence'])
+            logger.info(f"Selected business name '{best['value']}' from {best['source']} with confidence {best['confidence']}")
+            return best['value']
+        
+        logger.warning("No valid business name found")
         return None
     
     def _extract_business_type(self, soup: BeautifulSoup, text: str) -> Optional[str]:
@@ -300,6 +397,61 @@ class MetaExtractor:
         if color.lower() in named_colors:
             return True
         return False
+    
+    def _extract_service_area(self, soup: BeautifulSoup, text: str) -> Optional[str]:
+        """Extract service area/geographic coverage from content."""
+        # Look for common service area indicators
+        service_area_patterns = [
+            r'serving\s+([^.!?]*(?:area|region|city|state|county|zip)[^.!?]*)',
+            r'service\s+area[:\s]*([^.!?]*)',
+            r'coverage\s+area[:\s]*([^.!?]*)',
+            r'locations[:\s]*([^.!?]*)',
+            r'we\s+serve[:\s]*([^.!?]*)',
+            r'proudly\s+serving[:\s]*([^.!?]*)',
+            r'available\s+in[:\s]*([^.!?]*)',
+        ]
+        
+        text_lower = text.lower()
+        
+        for pattern in service_area_patterns:
+            matches = re.finditer(pattern, text_lower, re.I)
+            for match in matches:
+                area_text = match.group(1).strip()
+                if area_text and len(area_text) > 3 and len(area_text) < 200:
+                    # Clean up the text
+                    area_text = re.sub(r'\s+', ' ', area_text)
+                    area_text = re.sub(r'^[:\-\s]+|[:\-\s]+$', '', area_text)
+                    if area_text:
+                        return area_text.title()
+        
+        # Look for contact information sections that might contain service areas
+        contact_sections = soup.find_all(['div', 'section', 'p'], class_=re.compile(r'contact|location|service|area', re.I))
+        for section in contact_sections:
+            section_text = section.get_text().lower()
+            for pattern in service_area_patterns:
+                matches = re.finditer(pattern, section_text, re.I)
+                for match in matches:
+                    area_text = match.group(1).strip()
+                    if area_text and len(area_text) > 3 and len(area_text) < 200:
+                        area_text = re.sub(r'\s+', ' ', area_text)
+                        area_text = re.sub(r'^[:\-\s]+|[:\-\s]+$', '', area_text)
+                        if area_text:
+                            return area_text.title()
+        
+        # Look for address information that might indicate service area
+        address_patterns = [
+            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s*(?:County|City|State|Area))',
+            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s*(?:and\s+surrounding\s+areas?))',
+        ]
+        
+        for pattern in address_patterns:
+            matches = re.finditer(pattern, text)
+            for match in matches:
+                area_text = match.group(1).strip()
+                if area_text and len(area_text) < 100:
+                    return area_text
+        
+        return None
 
 def main():
     """Main function for command line usage."""

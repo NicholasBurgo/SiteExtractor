@@ -7,6 +7,7 @@ export const MetaSchema = z.object({
   businessType: BusinessTypeSchema.nullable(),
   slogan: z.string().nullable().optional(),
   background: z.string().nullable().optional(),
+  serviceArea: z.string().nullable().optional(),
   colors: z.array(z.string()).optional(),
 });
 

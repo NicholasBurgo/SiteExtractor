@@ -25,7 +25,7 @@ export async function metaRoute(fastify: FastifyInstance) {
       }
       
       // Path to the Python script
-      const scriptPath = join(process.cwd(), '..', 'web', 'meta_extractor.py');
+      const scriptPath = join(process.cwd(), '..', '..', 'extractors', 'meta_extractor.py');
       
       fastify.log.info(`Running meta extraction for ${url} with runId ${runId}`);
       
