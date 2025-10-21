@@ -136,8 +136,13 @@ export function ImagesTab({ runId, pages, onConfirm, isConfirmed = false }: Imag
 
   useEffect(() => {
     if (runId) {
-      loadImages();
-      loadConfirmedSections();
+      // Small delay to ensure preloading completes
+      const timeoutId = setTimeout(() => {
+        loadImages();
+        loadConfirmedSections();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [runId]);
 
@@ -235,6 +240,24 @@ export function ImagesTab({ runId, pages, onConfirm, isConfirmed = false }: Imag
   const loadImages = async () => {
     if (!runId) return;
     
+    // First check if images data is already preloaded in localStorage
+    const preloadedImagesData = localStorage.getItem(`images-${runId}`);
+    console.log('ImagesTab: Checking for preloaded data with key:', `images-${runId}`);
+    console.log('ImagesTab: Preloaded data exists:', !!preloadedImagesData);
+    
+    if (preloadedImagesData) {
+      try {
+        const imagesData = JSON.parse(preloadedImagesData);
+        console.log('ImagesTab: Using preloaded images data:', imagesData);
+        console.log('ImagesTab: Images count:', imagesData?.length || 0);
+        setImages(imagesData);
+        return;
+      } catch (error) {
+        console.warn('ImagesTab: Failed to parse preloaded images data:', error);
+        console.warn('ImagesTab: Raw preloaded data:', preloadedImagesData);
+      }
+    }
+    
     setIsLoading(true);
     try {
       const response = await fetch('/api/extract/images', {
@@ -252,6 +275,8 @@ export function ImagesTab({ runId, pages, onConfirm, isConfirmed = false }: Imag
       const result = await response.json();
       
       if (result.status === 'success' && result.images) {
+        // Store the data for future use
+        localStorage.setItem(`images-${runId}`, JSON.stringify(result.images));
         setImages(result.images);
       } else {
         throw new Error(result.message || 'Failed to load images');

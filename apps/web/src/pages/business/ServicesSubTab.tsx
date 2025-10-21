@@ -7,9 +7,10 @@ interface ServicesSubTabProps {
   url?: string;
   onConfirm?: () => void;
   isConfirmed?: boolean;
+  hasExtracted?: boolean; // Add this prop
 }
 
-export function ServicesSubTab({ runId, url, onConfirm, isConfirmed = false }: ServicesSubTabProps) {
+export function ServicesSubTab({ runId, url, onConfirm, isConfirmed = false, hasExtracted = false }: ServicesSubTabProps) {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -24,24 +25,27 @@ export function ServicesSubTab({ runId, url, onConfirm, isConfirmed = false }: S
 
   useEffect(() => {
     loadServicesData();
-  }, [runId]);
+  }, [runId, hasExtracted]);
 
   const loadServicesData = async () => {
     setIsLoading(true);
     try {
-      // Try to load from localStorage first
+      // Only load from localStorage - no individual API calls
       const savedData = localStorage.getItem(`services-${runId}`);
       if (savedData) {
         const parsed = JSON.parse(savedData);
         setServices(parsed);
-        setIsLoading(false);
-        return;
+      } else if (hasExtracted) {
+        // Only show "No Data Found" if extraction has been attempted
+        setServices([]);
+      } else {
+        // If no extraction has been attempted yet, don't show error
+        setServices([]);
       }
-
-      // If no saved data, try to extract
-      await retryServicesExtraction();
     } catch (error) {
       console.error('Error loading services data:', error);
+      setServices([]);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -49,7 +53,8 @@ export function ServicesSubTab({ runId, url, onConfirm, isConfirmed = false }: S
   const retryServicesExtraction = async () => {
     setIsRetrying(true);
     try {
-      const response = await fetch('/api/extract/services', {
+      // Use unified extraction instead of individual services extraction
+      const response = await fetch('/api/extract/unified', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,22 +67,22 @@ export function ServicesSubTab({ runId, url, onConfirm, isConfirmed = false }: S
 
       if (response.ok) {
         const result = await response.json();
-        const data = result.result;
+        const servicesData = result.extractedData?.services || [];
         
         // Save to localStorage
         const dataToSave = {
-          ...data,
+          ...servicesData,
           loadedAt: new Date().toISOString(),
           retriedAt: new Date().toISOString()
         };
         localStorage.setItem(`services-${runId}`, JSON.stringify(dataToSave));
         
-        setServices(data);
+        setServices(servicesData);
       } else {
-        console.error('Services extraction failed');
+        console.error('Unified extraction failed');
       }
     } catch (error) {
-      console.error('Error retrying services extraction:', error);
+      console.error('Error retrying unified extraction:', error);
     } finally {
       setIsRetrying(false);
       setIsLoading(false);
@@ -217,20 +222,30 @@ export function ServicesSubTab({ runId, url, onConfirm, isConfirmed = false }: S
 
       {services.length === 0 ? (
         <div className="text-center py-12">
-          <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Services Found</h3>
-          <p className="text-gray-600 mb-4">No services have been extracted or added yet.</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            disabled={isConfirmed}
-            className={`px-6 py-2 rounded-full transition-all ${
-              isConfirmed 
-                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            Add Your First Service
-          </button>
+          {hasExtracted ? (
+            <>
+              <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Services Found</h3>
+              <p className="text-gray-600 mb-4">No services have been extracted or added yet.</p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                disabled={isConfirmed}
+                className={`px-6 py-2 rounded-full transition-all ${
+                  isConfirmed 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                Add Your First Service
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Extracting Services...</h3>
+              <p className="text-gray-600 mb-4">Please wait while we extract business services from the website.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

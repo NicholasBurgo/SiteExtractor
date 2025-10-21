@@ -20,7 +20,30 @@ export async function runsRoute(fastify: FastifyInstance) {
   // List all runs
   fastify.get('/api/runs/list', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const runsDir = join(process.cwd(), '..', '..', 'runs');
+      // Try multiple possible paths for the runs directory
+      const possiblePaths = [
+        join(process.cwd(), '..', '..', 'runs'),
+        join(process.cwd(), '..', '..', '..', 'runs'),
+        join(__dirname, '..', '..', '..', '..', 'runs'),
+        join(__dirname, '..', '..', '..', '..', '..', 'runs')
+      ];
+      
+      let runsDir = '';
+      for (const path of possiblePaths) {
+        try {
+          await stat(path);
+          runsDir = path;
+          break;
+        } catch (error) {
+          // Path doesn't exist, try next one
+          continue;
+        }
+      }
+      
+      if (!runsDir) {
+        fastify.log.error(`Runs directory not found. Tried paths: ${possiblePaths.join(', ')}`);
+        return reply.status(500).send({ error: 'Runs directory not found' });
+      }
       const entries = await readdir(runsDir);
       
       const runs: RunInfo[] = [];
@@ -62,12 +85,28 @@ export async function runsRoute(fastify: FastifyInstance) {
   fastify.delete('/api/runs/:runId', async (request: FastifyRequest<{ Params: { runId: string } }>, reply: FastifyReply) => {
     try {
       const { runId } = request.params;
-      const runPath = join(process.cwd(), '..', '..', 'runs', runId);
       
-      // Check if run exists
-      try {
-        await stat(runPath);
-      } catch (error) {
+      // Try multiple possible paths for the runs directory
+      const possiblePaths = [
+        join(process.cwd(), '..', '..', 'runs', runId),
+        join(process.cwd(), '..', '..', '..', 'runs', runId),
+        join(__dirname, '..', '..', '..', '..', 'runs', runId),
+        join(__dirname, '..', '..', '..', '..', '..', 'runs', runId)
+      ];
+      
+      let runPath = '';
+      for (const path of possiblePaths) {
+        try {
+          await stat(path);
+          runPath = path;
+          break;
+        } catch (error) {
+          // Path doesn't exist, try next one
+          continue;
+        }
+      }
+      
+      if (!runPath) {
         return reply.status(404).send({ error: 'Run not found' });
       }
       

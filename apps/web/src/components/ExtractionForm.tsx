@@ -31,6 +31,29 @@ export function ExtractionForm({ onExtractionComplete, isExtracting, setIsExtrac
         const result = await window.electronAPI.extractTruthTable(url, options);
         
         if (result.success) {
+          // Also trigger unified business extraction for desktop app
+          try {
+            console.log('Starting unified business extraction (desktop)...');
+            const businessResponse = await fetch('/api/extract/unified', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                url,
+                runId: result.runId
+              }),
+            });
+            
+            if (businessResponse.ok) {
+              console.log('Unified business extraction completed (desktop)');
+            } else {
+              console.warn('Unified business extraction failed (desktop)');
+            }
+          } catch (businessError) {
+            console.warn('Unified business extraction error (desktop):', businessError);
+          }
+          
           onExtractionComplete(result.runId, url, options);
         } else {
           throw new Error('Extraction failed');
@@ -50,6 +73,29 @@ export function ExtractionForm({ onExtractionComplete, isExtracting, setIsExtrac
 
         const result = await response.json();
         if (result.status === 'success') {
+          // Also trigger unified business extraction
+          try {
+            console.log('Starting unified business extraction...');
+            const businessResponse = await fetch('/api/extract/unified', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                url,
+                runId: result.runId
+              }),
+            });
+            
+            if (businessResponse.ok) {
+              console.log('Unified business extraction completed');
+            } else {
+              console.warn('Unified business extraction failed');
+            }
+          } catch (businessError) {
+            console.warn('Unified business extraction error:', businessError);
+          }
+          
           onExtractionComplete(result.runId, url, options);
         } else {
           throw new Error(result.message || 'Extraction failed');

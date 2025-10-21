@@ -25,7 +25,7 @@ export async function servicesRoute(fastify: FastifyInstance) {
       }
       
       // Path to the Python script
-      const scriptPath = join(process.cwd(), '..', 'web', 'services_extractor.py');
+      const scriptPath = join(process.cwd(), '..', '..', 'extractors', 'services_extractor.py');
       
       fastify.log.info(`Running services extraction for ${url} with runId ${runId}`);
       
