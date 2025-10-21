@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import staticFiles from '@fastify/static';
 import multipart from '@fastify/multipart';
 import { join } from 'path';
+import { existsSync } from 'fs';
 import { config } from './config/env';
 import { registerRoutes } from './routes';
 
@@ -28,10 +29,31 @@ async function start() {
 
     await fastify.register(multipart);
 
-    await fastify.register(staticFiles, {
-      root: join(process.cwd(), '..', '..', 'runs'),
-      prefix: '/runs/',
-    });
+    // Find the runs directory
+    const possibleRunsPaths = [
+      join(process.cwd(), '..', '..', 'runs'),
+      join(process.cwd(), '..', '..', '..', 'runs'),
+      join(__dirname, '..', '..', '..', '..', 'runs'),
+      join(__dirname, '..', '..', '..', '..', '..', 'runs')
+    ];
+    
+    let runsDir = '';
+    for (const path of possibleRunsPaths) {
+      if (existsSync(path)) {
+        runsDir = path;
+        break;
+      }
+    }
+    
+    if (runsDir) {
+      await fastify.register(staticFiles, {
+        root: runsDir,
+        prefix: '/runs/',
+      });
+      fastify.log.info(`Static files served from: ${runsDir}`);
+    } else {
+      fastify.log.warn('Runs directory not found, static file serving disabled');
+    }
 
     // Register routes
     await registerRoutes(fastify);

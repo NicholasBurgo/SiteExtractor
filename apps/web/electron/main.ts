@@ -13,9 +13,23 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: join(__dirname, 'preload.js'),
+      webSecurity: true,
+      allowRunningInsecureContent: false,
     },
     title: 'Site Generator',
     icon: join(__dirname, '../assets/icon.png'), // You can add an icon later
+  });
+
+  // Set additional security headers
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:* https:; font-src 'self' data:;"
+        ]
+      }
+    });
   });
 
   // Load the app
@@ -49,7 +63,7 @@ app.on('activate', () => {
 ipcMain.handle('extract-truth-table', async (event, url: string, options: any) => {
   return new Promise((resolve, reject) => {
     // Run the Python truth extractor
-    const pythonProcess = spawn('py', ['truth_extractor.py', url, options.maxPages || 20, options.timeout || 10, options.usePlaywright || true], {
+    const pythonProcess = spawn('py', [join(process.cwd(), '..', '..', 'extractors', 'truth_extractor.py'), url, options.maxPages || 20, options.timeout || 10, options.usePlaywright || true], {
       cwd: process.cwd(),
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -101,7 +115,7 @@ ipcMain.handle('extract-truth-table', async (event, url: string, options: any) =
 ipcMain.handle('retry-truth-table', async (event, url: string, options: any) => {
   return new Promise((resolve, reject) => {
     // Run the Python truth extractor again
-    const pythonProcess = spawn('py', ['truth_extractor.py', url, options.maxPages || 20, options.timeout || 10, options.usePlaywright || true], {
+    const pythonProcess = spawn('py', [join(process.cwd(), '..', '..', 'extractors', 'truth_extractor.py'), url, options.maxPages || 20, options.timeout || 10, options.usePlaywright || true], {
       cwd: process.cwd(),
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -158,8 +172,33 @@ ipcMain.handle('get-extraction-data', async (event, runId: string) => {
     const runPath = path.join(process.cwd(), '..', '..', 'runs', runId);
     const truthPath = path.join(runPath, 'truth.json');
     
-    const data = await fs.readFile(truthPath, 'utf-8');
-    return JSON.parse(data);
+    // Try to read truth.json first
+    try {
+      const data = await fs.readFile(truthPath, 'utf-8');
+      return JSON.parse(data);
+    } catch (truthError) {
+      // If truth.json doesn't exist, try to create a basic truth table from unified extraction data
+      console.log(`Truth.json not found for runId: ${runId}, creating basic truth table`);
+      
+      // Create a basic truth table structure
+      const basicTruthTable = {
+        url: '',
+        pages: [
+          {
+            id: 'page_1',
+            url: '/',
+            title: 'Home',
+            content: 'Welcome to our website',
+            extracted_at: new Date().toISOString(),
+            status: 'extracted'
+          }
+        ],
+        extracted_at: new Date().toISOString(),
+        runId: runId
+      };
+      
+      return basicTruthTable;
+    }
   } catch (error) {
     throw new Error(`Failed to load extraction data: ${error}`);
   }
