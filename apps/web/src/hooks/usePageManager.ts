@@ -6,6 +6,8 @@ export interface Page {
   url: string;
   order: number;
   status: 'extracted' | 'added' | 'modified';
+  qualityScore?: number;
+  originalLabel?: string;
 }
 
 export function usePageManager(runId?: string) {
@@ -21,8 +23,26 @@ export function usePageManager(runId?: string) {
   const loadPages = async () => {
     setIsLoading(true);
     console.log('usePageManager: Loading pages for runId:', runId);
+    
+    // First check if navbar data is already preloaded in localStorage
+    const preloadedNavbarData = localStorage.getItem(`navbar-${runId}`);
+    if (preloadedNavbarData) {
+      try {
+        const navbarData = JSON.parse(preloadedNavbarData);
+        console.log('usePageManager: Using preloaded navbar data:', navbarData);
+        const extractedPages = extractPagesFromNavbar(navbarData);
+        if (extractedPages.length > 0) {
+          setPages(extractedPages);
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.warn('usePageManager: Failed to parse preloaded navbar data:', error);
+      }
+    }
+    
     try {
-      // Load pages from navigation data
+      // Load pages from navigation data if not preloaded
       const response = await fetch('/api/extract/navbar', {
         method: 'POST',
         headers: {
@@ -35,6 +55,9 @@ export function usePageManager(runId?: string) {
         const result = await response.json();
         console.log('usePageManager: API response:', result);
         if (result.status === 'success' && result.navbar) {
+          // Store the data for future use
+          localStorage.setItem(`navbar-${runId}`, JSON.stringify(result.navbar));
+          
           // Convert navbar structure to pages
           const extractedPages = extractPagesFromNavbar(result.navbar);
           console.log('usePageManager: Extracted pages:', extractedPages);
@@ -78,7 +101,9 @@ export function usePageManager(runId?: string) {
           name: `${node.label} Page`,
           url: node.href,
           order: order,
-          status: 'extracted'
+          status: 'extracted',
+          qualityScore: node.quality_score || 50,
+          originalLabel: node.label
         });
       }
       
