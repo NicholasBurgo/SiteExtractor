@@ -38,48 +38,103 @@ export async function imagesRoute(fastify: FastifyInstance) {
     const { runId } = request.body;
     
     try {
-      // Read the extracted image data from the run directory
-      const imagesFilePath = join(process.cwd(), '..', '..', 'runs', runId, 'images', 'manifest.json');
+      // Try multiple possible paths for the runs directory
+      const possiblePaths = [
+        join(process.cwd(), '..', '..', 'runs', runId, 'images', 'manifest.json'),
+        join(process.cwd(), '..', '..', '..', 'runs', runId, 'images', 'manifest.json'),
+        join(__dirname, '..', '..', '..', '..', 'runs', runId, 'images', 'manifest.json'),
+        join(__dirname, '..', '..', '..', '..', '..', 'runs', runId, 'images', 'manifest.json')
+      ];
       
-      fastify.log.info(`Looking for images file at: ${imagesFilePath}`);
+      let imagesFilePath = '';
+      for (const path of possiblePaths) {
+        if (existsSync(path)) {
+          imagesFilePath = path;
+          break;
+        }
+      }
       
-      if (!existsSync(imagesFilePath)) {
-        fastify.log.warn(`Images file not found: ${imagesFilePath}`);
-        reply.code(404);
+      if (imagesFilePath) {
+        fastify.log.info(`Found images file at: ${imagesFilePath}`);
+        const imagesData = JSON.parse(readFileSync(imagesFilePath, 'utf8'));
+        
+        // Convert the extracted data to the format expected by the frontend
+        const images: Image[] = imagesData.map((item: any, index: number) => ({
+          id: item.id || `image_${index}`,
+          url: item.url || '',
+          alt_text: item.alt_text || '',
+          title: item.title || '',
+          page: item.page || 'Home Page',
+          type: item.type || 'content',
+          width: item.width,
+          height: item.height,
+          uploaded_at: item.uploaded_at || new Date().toISOString(),
+          is_uploaded: item.is_uploaded || false,
+          filename: item.filename
+        }));
+        
         return {
-          status: 'error',
-          message: 'No image data found for this run',
+          status: 'success',
+          message: 'Image extraction completed',
           runId,
-          debug: {
-            imagesFilePath,
-            cwd: process.cwd()
-          }
+          images,
+          count: images.length
         };
       }
       
-      const imagesData = JSON.parse(readFileSync(imagesFilePath, 'utf8'));
+      // Fallback: Try to get images from unified extraction assets data
+      fastify.log.info(`Images file not found, checking for unified extraction assets data for runId: ${runId}`);
       
-      // Convert the extracted data to the format expected by the frontend
-      const images: Image[] = imagesData.map((item: any, index: number) => ({
-        id: item.id || `image_${index}`,
-        url: item.url || '',
-        alt_text: item.alt_text || '',
-        title: item.title || '',
-        page: item.page || 'Home Page',
-        type: item.type || 'content',
-        width: item.width,
-        height: item.height,
-        uploaded_at: item.uploaded_at || new Date().toISOString(),
-        is_uploaded: item.is_uploaded || false,
-        filename: item.filename
-      }));
+      const possibleAssetsPaths = [
+        join(process.cwd(), '..', '..', 'runs', runId, 'assets.json'),
+        join(process.cwd(), '..', '..', '..', 'runs', runId, 'assets.json'),
+        join(__dirname, '..', '..', '..', '..', 'runs', runId, 'assets.json'),
+        join(__dirname, '..', '..', '..', '..', '..', 'runs', runId, 'assets.json')
+      ];
       
+      let assetsFilePath = '';
+      for (const path of possibleAssetsPaths) {
+        if (existsSync(path)) {
+          assetsFilePath = path;
+          break;
+        }
+      }
+      
+      if (assetsFilePath) {
+        const assetsData = JSON.parse(readFileSync(assetsFilePath, 'utf8'));
+        if (assetsData.images && Array.isArray(assetsData.images)) {
+          const images: Image[] = assetsData.images.map((item: any, index: number) => ({
+            id: `asset_image_${index}`,
+            url: item.url || '',
+            alt_text: item.alt || '',
+            title: '',
+            page: 'Home Page',
+            type: 'content',
+            width: item.width,
+            height: item.height,
+            uploaded_at: new Date().toISOString(),
+            is_uploaded: false,
+            filename: ''
+          }));
+          
+          return {
+            status: 'success',
+            message: 'Images extracted from unified extraction data',
+            runId,
+            images,
+            count: images.length
+          };
+        }
+      }
+      
+      // Final fallback: Return empty images array
+      fastify.log.info(`No image data found, returning empty array for runId: ${runId}`);
       return {
         status: 'success',
-        message: 'Image extraction completed',
+        message: 'No images found',
         runId,
-        images,
-        count: images.length
+        images: [],
+        count: 0
       };
     } catch (error) {
       fastify.log.error(error);

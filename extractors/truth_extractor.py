@@ -316,10 +316,10 @@ class EnhancedTruthExtractor:
         return "Home Page"
     
     def _extract_navbar(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
-        """Extract navigation structure from the page."""
+        """Extract navigation structure from the page with enhanced quality control."""
         navbar_items = []
         
-        # Look for common navigation elements
+        # Look for common navigation elements with priority order
         nav_selectors = [
             'nav',
             '.nav',
@@ -329,7 +329,10 @@ class EnhancedTruthExtractor:
             '.main-menu',
             'header nav',
             '.header-nav',
-            '.site-nav'
+            '.site-nav',
+            '.primary-nav',
+            '.main-nav',
+            '.top-nav'
         ]
         
         nav_element = None
@@ -345,8 +348,10 @@ class EnhancedTruthExtractor:
             ))
         
         if nav_element:
-            # Extract links from navigation
+            # Extract links from navigation with enhanced processing
             links = nav_element.find_all('a', href=True)
+            raw_items = []
+            
             for i, link in enumerate(links):
                 href = link.get('href', '')
                 text = link.get_text(strip=True)
@@ -358,17 +363,25 @@ class EnhancedTruthExtractor:
                     
                     # Only include internal links
                     if parsed_url.netloc == urlparse(url).netloc:
-                        navbar_items.append({
-                            'id': f"nav_{i}",
-                            'label': text,
-                            'href': parsed_url.path or '/',
-                            'order': i,
-                            'status': 'extracted',
-                            'children': [],
-                            'is_locked': False,
-                            'created_at': datetime.now().isoformat(),
-                            'updated_at': datetime.now().isoformat()
-                        })
+                        # Clean and normalize the text
+                        cleaned_text = self._clean_navigation_text(text)
+                        
+                        if cleaned_text and self._is_valid_navigation_item(cleaned_text, parsed_url.path):
+                            raw_items.append({
+                                'id': f"nav_{i}",
+                                'label': cleaned_text,
+                                'href': parsed_url.path or '/',
+                                'order': i,
+                                'status': 'extracted',
+                                'children': [],
+                                'is_locked': False,
+                                'created_at': datetime.now().isoformat(),
+                                'updated_at': datetime.now().isoformat(),
+                                'quality_score': self._calculate_navigation_quality(cleaned_text, parsed_url.path)
+                            })
+            
+            # Apply deduplication and quality filtering
+            navbar_items = self._deduplicate_and_filter_navigation(raw_items)
         
         # If no navigation found, create a basic structure
         if not navbar_items:
@@ -382,7 +395,8 @@ class EnhancedTruthExtractor:
                     'children': [],
                     'is_locked': False,
                     'created_at': datetime.now().isoformat(),
-                    'updated_at': datetime.now().isoformat()
+                    'updated_at': datetime.now().isoformat(),
+                    'quality_score': 100
                 }
             ]
         
@@ -397,6 +411,211 @@ class EnhancedTruthExtractor:
             'created_at': datetime.now().isoformat(),
             'updated_at': datetime.now().isoformat()
         }
+    
+    def _clean_navigation_text(self, text: str) -> str:
+        """Clean and normalize navigation text."""
+        if not text:
+            return ""
+        
+        # Remove extra whitespace and normalize
+        text = re.sub(r'\s+', ' ', text.strip())
+        
+        # Remove common unwanted patterns
+        unwanted_patterns = [
+            r'^\s*[|•]\s*',  # Leading separators
+            r'\s*[|•]\s*$',  # Trailing separators
+            r'^\s*>\s*',     # Leading arrows
+            r'\s*>\s*$',     # Trailing arrows
+            r'^\s*-\s*',     # Leading dashes
+            r'\s*-\s*$',     # Trailing dashes
+        ]
+        
+        for pattern in unwanted_patterns:
+            text = re.sub(pattern, '', text)
+        
+        # Remove phone numbers and emails from navigation text (more aggressive)
+        phone_patterns = [
+            r'\(\d{3}\)\s*\d{3}-\d{4}',  # (123) 456-7890
+            r'\d{3}-\d{3}-\d{4}',         # 123-456-7890
+            r'\+\d{1,3}\s*\d{3,4}\s*\d{3,4}\s*\d{3,4}',  # International
+            r'call\s+us\s+at\s*[^\w\s]*',  # "call us at" patterns
+            r'phone\s*:?\s*[^\w\s]*',     # "phone:" patterns
+        ]
+        
+        for pattern in phone_patterns:
+            text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+        
+        # Remove email patterns
+        text = re.sub(r'@\w+\.\w+', '', text)
+        
+        # Remove common navigation artifacts
+        artifacts = ['click here', 'read more', 'learn more', 'view all', 'see all', 'call us', 'contact us']
+        for artifact in artifacts:
+            if artifact.lower() in text.lower():
+                text = text.replace(artifact, '').strip()
+        
+        # Remove any remaining phone number fragments
+        text = re.sub(r'\b\d{3,}\b', '', text)  # Remove standalone numbers
+        
+        # Clean up any double spaces or empty sections
+        text = re.sub(r'\s+', ' ', text.strip())
+        
+        # Capitalize properly (title case for navigation)
+        text = text.title()
+        
+        return text.strip()
+    
+    def _is_valid_navigation_item(self, text: str, href: str) -> bool:
+        """Validate if a navigation item is legitimate."""
+        if not text or not href:
+            return False
+        
+        # Reject very short or very long text
+        if len(text) < 2 or len(text) > 30:
+            return False
+        
+        # Reject items that are clearly not navigation
+        invalid_patterns = [
+            r'^\d+$',  # Pure numbers
+            r'^[^\w\s]+$',  # Only symbols
+            r'^(home|main|index)$',  # Generic terms that might be duplicates
+        ]
+        
+        for pattern in invalid_patterns:
+            if re.match(pattern, text.lower()):
+                return False
+        
+        # Reject fragments and anchors
+        if href.startswith('#') or href.startswith('javascript:'):
+            return False
+        
+        # Reject file downloads
+        if any(ext in href.lower() for ext in ['.pdf', '.doc', '.zip', '.jpg', '.png', '.gif']):
+            return False
+        
+        return True
+    
+    def _calculate_navigation_quality(self, text: str, href: str) -> int:
+        """Calculate quality score for navigation item (0-100)."""
+        score = 50  # Base score
+        
+        # Text quality factors
+        if len(text) >= 3 and len(text) <= 20:
+            score += 20
+        
+        if text.isalpha() or ' ' in text:  # Contains only letters and spaces
+            score += 15
+        
+        if not any(char in text for char in '0123456789@()'):
+            score += 10
+        
+        # URL quality factors
+        if href == '/':
+            score += 15  # Home page is important
+        
+        if len(href.split('/')) <= 3:  # Not too deep
+            score += 10
+        
+        # Heavy penalties for contact information in navigation
+        contact_patterns = [
+            r'call\s+us', r'phone', r'contact\s+us', r'\(\d{3}\)', 
+            r'\d{3}-\d{3}-\d{4}', r'@\w+\.\w+', r'tel:', r'mailto:'
+        ]
+        
+        for pattern in contact_patterns:
+            if re.search(pattern, text.lower()):
+                score -= 30  # Heavy penalty for contact info
+        
+        # Additional penalties for phone numbers
+        if re.search(r'\d{3,}', text):
+            score -= 20
+        
+        # Penalize items that are clearly not navigation
+        if any(word in text.lower() for word in ['call', 'phone', 'email', 'contact', 'tel']):
+            score -= 15
+        
+        return min(100, max(0, score))
+    
+    def _deduplicate_and_filter_navigation(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Remove duplicates and filter low-quality navigation items."""
+        if not items:
+            return []
+        
+        # Sort by quality score (highest first)
+        items.sort(key=lambda x: x.get('quality_score', 0), reverse=True)
+        
+        # Group items by URL to handle multiple labels pointing to same destination
+        url_groups = {}
+        for item in items:
+            url = item['href']
+            if url not in url_groups:
+                url_groups[url] = []
+            url_groups[url].append(item)
+        
+        filtered_items = []
+        seen_labels = set()
+        
+        # Process each URL group
+        for url, group_items in url_groups.items():
+            # Sort group by quality score (highest first)
+            group_items.sort(key=lambda x: x.get('quality_score', 0), reverse=True)
+            
+            # Find the best item for this URL
+            best_item = None
+            for item in group_items:
+                label = item['label'].lower()
+                
+                # Skip if we've seen a very similar label (fuzzy matching)
+                is_duplicate_label = False
+                for seen_label in seen_labels:
+                    if self._are_labels_similar(label, seen_label):
+                        is_duplicate_label = True
+                        break
+                
+                if not is_duplicate_label and item.get('quality_score', 0) >= 30:
+                    best_item = item
+                    seen_labels.add(label)
+                    break
+            
+            if best_item:
+                filtered_items.append(best_item)
+        
+        # Reorder by original order, maintaining quality
+        filtered_items.sort(key=lambda x: x['order'])
+        
+        # Update IDs to be sequential
+        for i, item in enumerate(filtered_items):
+            item['id'] = f"nav_{i}"
+            item['order'] = i
+        
+        return filtered_items
+    
+    def _are_labels_similar(self, label1: str, label2: str) -> bool:
+        """Check if two navigation labels are similar enough to be considered duplicates."""
+        # Exact match
+        if label1 == label2:
+            return True
+        
+        # One is contained in the other
+        if label1 in label2 or label2 in label1:
+            return True
+        
+        # Check for common variations
+        variations = [
+            ('home', 'homepage', 'main'),
+            ('about', 'about us', 'about me'),
+            ('contact', 'contact us', 'get in touch'),
+            ('services', 'our services', 'what we do'),
+            ('portfolio', 'work', 'our work', 'gallery'),
+            ('blog', 'news', 'articles'),
+            ('shop', 'store', 'buy'),
+        ]
+        
+        for variation_group in variations:
+            if label1 in variation_group and label2 in variation_group:
+                return True
+        
+        return False
     
     def _extract_brand_name(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
         """Extract brand name with multiple validation methods and strict filtering."""
