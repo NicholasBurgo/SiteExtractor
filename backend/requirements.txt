@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+aiohttp
+orjson
+beautifulsoup4
+lxml
+readability-lxml
+trafilatura
+python-magic
+pypdf
+python-docx
+pydantic
+pydantic-settings
+playwright
+Pillow
