@@ -36,11 +36,27 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const confirmationApi = {
   /**
+   * Check extraction status
+   */
+  async getExtractionStatus(runId: string): Promise<{ isComplete: boolean; hasData: boolean; pagesCount: number; progress?: any }> {
+    const response = await fetch(`${API_BASE}/${runId}/status`);
+    return handleResponse(response);
+  },
+
+  /**
    * Get prime data (nav, footer, pages index)
    */
   async getPrime(runId: string): Promise<PrimeResponse> {
     const response = await fetch(`${API_BASE}/${runId}/prime`);
     return handleResponse<PrimeResponse>(response);
+  },
+
+  /**
+   * Get navigation data specifically
+   */
+  async getNavigation(runId: string): Promise<{ baseUrl: string; nav: any[] }> {
+    const response = await fetch(`${API_BASE}/${runId}/prime/nav`);
+    return handleResponse<{ baseUrl: string; nav: any[] }>(response);
   },
 
   /**
@@ -189,6 +205,38 @@ export const confirmationUtils = {
     });
     
     return result;
+  },
+
+  /**
+   * Apply sorting to navigation nodes (view-only, doesn't mutate original)
+   */
+  applySort(nodes: any[], mode: 'original' | 'az'): any[] {
+    const sortFn = mode === 'original'
+      ? (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0)
+      : (a: any, b: any) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+
+    return nodes
+      .slice()
+      .sort(sortFn)
+      .map(n => ({ 
+        ...n, 
+        children: n.children ? this.applySort(n.children, mode) : undefined 
+      }));
+  },
+
+  /**
+   * Generate a stable ID for a navigation node
+   */
+  generateNodeId(label: string, href: string): string {
+    // Simple hash function - in production you might want something more robust
+    const str = label + href;
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
   }
 };
 

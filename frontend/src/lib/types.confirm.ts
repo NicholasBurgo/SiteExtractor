@@ -4,9 +4,12 @@
  */
 
 export type NavNode = {
-  label: string;
-  href: string;
-  children?: NavNode[];
+  id: string;                 // stable hash of label+href
+  label: string;              // exact visual label (trimmed)
+  href: string;               // absolute URL (preserve query if present)
+  children?: NavNode[];       // nested items
+  order?: number;             // original order captured from DOM
+  path?: string;              // normalized path (for page matching)
 };
 
 export type FooterColumn = {
