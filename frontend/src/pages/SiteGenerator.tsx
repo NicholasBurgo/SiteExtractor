@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { startRun, getProgress, listPages, getPage } from "../lib/api";
+import { startRun, getProgress } from "../lib/api";
+import CheckpointDropdown from "../components/CheckpointDropdown";
 
 export default function SiteGenerator() {
   const navigate = useNavigate();
@@ -10,16 +11,12 @@ export default function SiteGenerator() {
   const [usePlaywright, setUsePlaywright] = useState(true);
   const [loading, setLoading] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
-  const [pages, setPages] = useState<any[]>([]);
-  const [selected, setSelected] = useState<any | null>(null);
-  const [showResults, setShowResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    setShowResults(false);
     
     if (!url || !url.startsWith('http')) {
       setError('Please enter a valid URL starting with http:// or https://');
@@ -32,21 +29,19 @@ export default function SiteGenerator() {
       const res = await startRun(body);
       setRunId(res.runId);
       
-      // Start polling for progress and results
+      // Start polling for progress
       const poll = setInterval(async () => {
         if (!res.runId) return;
         try {
           const prog = await getProgress(res.runId);
-          const list = await listPages(res.runId, 1, 200);
-          setPages(list);
           
           // Check if run is completed (no more queued items or status indicates completion)
           console.log('Progress check:', { queued: prog.queued, visited: prog.visited, status: prog.status });
           if (prog.queued === 0 || prog.status === 'completed') {
-            console.log('Run completed, navigating to confirmation');
+            console.log('Run completed, navigating to confirm page');
             clearInterval(poll);
             setLoading(false);
-            // Navigate to confirmation page
+            // Navigate directly to confirm page instead of showing results
             navigate(`/confirm/${res.runId}`);
           }
         } catch (error) {
@@ -58,16 +53,6 @@ export default function SiteGenerator() {
       console.error("Start run error:", error);
       setError('Unable to connect to the backend server. Please make sure the backend is running.');
       setLoading(false);
-    }
-  };
-
-  const handlePageSelect = async (pageId: string) => {
-    if (!runId) return;
-    try {
-      const page = await getPage(runId, pageId);
-      setSelected(page);
-    } catch (error) {
-      console.error("Get page error:", error);
     }
   };
 
@@ -84,20 +69,16 @@ export default function SiteGenerator() {
           
           {/* Header Buttons */}
           <div className="flex gap-3 mb-8">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-              <span>🕒</span>
-              Checkpoint
-            </button>
             <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors">
               <span>▷</span>
               Run Generator
             </button>
+            <CheckpointDropdown />
           </div>
         </div>
 
-        {!showResults ? (
-          /* Generator Form */
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Generator Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Run Generator</h2>
               <label className="block text-sm font-medium text-gray-700 mb-2">Website URL</label>
@@ -181,101 +162,16 @@ export default function SiteGenerator() {
 
             {runId && (
               <div className="text-center space-y-2">
-                <p className="text-sm text-green-600">
-                  Generator started! Run ID: {runId}
+                <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span>Extracting website data... Run ID: {runId}</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  This may take a few minutes. You will be automatically redirected to the confirmation page when complete.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/confirm/${runId}`)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
-                >
-                  Go to Confirmation
-                </button>
               </div>
             )}
           </form>
-        ) : (
-          /* Results View */
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Extraction Results</h2>
-              <button
-                onClick={() => {
-                  setShowResults(false);
-                  setPages([]);
-                  setSelected(null);
-                  setRunId(null);
-                }}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm"
-              >
-                New Extraction
-              </button>
-            </div>
-
-            <div className="grid grid-cols-[1fr_400px] gap-6">
-              {/* Pages Table */}
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b">
-                  <h3 className="font-medium">Extracted Pages ({pages.length})</h3>
-                </div>
-                <div className="max-h-96 overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-white border-b">
-                      <tr>
-                        <th className="text-left p-3">Title</th>
-                        <th className="text-center p-3">Type</th>
-                        <th className="text-center p-3">Words</th>
-                        <th className="text-center p-3">Images</th>
-                        <th className="text-center p-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pages.map((p) => (
-                        <tr
-                          key={p.pageId}
-                          className="hover:bg-gray-50 cursor-pointer border-b"
-                          onClick={() => handlePageSelect(p.pageId)}
-                        >
-                          <td className="p-3">{p.title || p.url}</td>
-                          <td className="text-center p-3">{p.type}</td>
-                          <td className="text-center p-3">{p.words}</td>
-                          <td className="text-center p-3">{p.images}</td>
-                          <td className="text-center p-3">{p.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Page Preview */}
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b">
-                  <h3 className="font-medium">Page Preview</h3>
-                </div>
-                <div className="p-4 max-h-96 overflow-auto">
-                  {selected ? (
-                    <>
-                      <div className="text-xs text-gray-500 break-all mb-2">
-                        {selected?.summary?.url}
-                      </div>
-                      <h4 className="text-lg font-semibold mb-3">
-                        {selected?.summary?.title || "Untitled"}
-                      </h4>
-                      <pre className="whitespace-pre-wrap text-sm text-gray-700">
-                        {selected?.text?.slice(0, 5000) || "No text content"}
-                      </pre>
-                    </>
-                  ) : (
-                    <div className="text-gray-500 text-center py-8">
-                      Select a page to preview content
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         <p className="mt-8 text-center text-sm text-gray-500">
           Enter a website URL to extract business information, images, and content.

@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { PrimeResponse, PrimeSubTab, NavNode } from '../lib/types.confirm';
 import { confirmationUtils } from '../lib/api.confirm';
+import NavigationTree from './NavigationTree';
 
 interface PrimeTabsProps {
   data: PrimeResponse;
@@ -19,126 +20,12 @@ const PrimeTabs: React.FC<PrimeTabsProps> = ({
   saving
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<PrimeSubTab>('nav');
-  const [editingNav, setEditingNav] = useState(false);
   const [editingFooter, setEditingFooter] = useState(false);
-  const [navData, setNavData] = useState<NavNode[]>(data.nav);
   const [footerData, setFooterData] = useState(data.footer);
-
-  const handleNavSave = () => {
-    const errors = confirmationUtils.validateNavigation(navData);
-    if (errors.length > 0) {
-      alert('Please fix navigation errors:\n' + errors.join('\n'));
-      return;
-    }
-    onNavigationUpdate(navData);
-    setEditingNav(false);
-  };
 
   const handleFooterSave = () => {
     onFooterUpdate(footerData);
     setEditingFooter(false);
-  };
-
-  const addNavItem = (parentPath: number[] = []) => {
-    const newItem: NavNode = { label: 'New Item', href: '#' };
-    
-    if (parentPath.length === 0) {
-      setNavData([...navData, newItem]);
-    } else {
-      const updatedNav = [...navData];
-      let current = updatedNav;
-      
-      for (let i = 0; i < parentPath.length - 1; i++) {
-        current = current[parentPath[i]].children || [];
-      }
-      
-      const parentIndex = parentPath[parentPath.length - 1];
-      if (!current[parentIndex].children) {
-        current[parentIndex].children = [];
-      }
-      current[parentIndex].children!.push(newItem);
-      
-      setNavData(updatedNav);
-    }
-  };
-
-  const removeNavItem = (path: number[]) => {
-    if (path.length === 1) {
-      setNavData(navData.filter((_, index) => index !== path[0]));
-    } else {
-      const updatedNav = [...navData];
-      let current = updatedNav;
-      
-      for (let i = 0; i < path.length - 1; i++) {
-        current = current[path[i]].children || [];
-      }
-      
-      const itemIndex = path[path.length - 1];
-      current.splice(itemIndex, 1);
-      
-      setNavData(updatedNav);
-    }
-  };
-
-  const updateNavItem = (path: number[], field: 'label' | 'href', value: string) => {
-    const updatedNav = [...navData];
-    let current = updatedNav;
-    
-    for (let i = 0; i < path.length - 1; i++) {
-      current = current[path[i]].children || [];
-    }
-    
-    const itemIndex = path[path.length - 1];
-    current[itemIndex][field] = value;
-    
-    setNavData(updatedNav);
-  };
-
-  const renderNavItem = (item: NavNode, path: number[], level: number = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    
-    return (
-      <div key={path.join('-')} className={`ml-${level * 4} border-l-2 border-gray-200 pl-4 mb-2`}>
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={item.label}
-            onChange={(e) => updateNavItem(path, 'label', e.target.value)}
-            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-            placeholder="Label"
-          />
-          <input
-            type="text"
-            value={item.href}
-            onChange={(e) => updateNavItem(path, 'href', e.target.value)}
-            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-            placeholder="URL"
-          />
-          <button
-            onClick={() => addNavItem(path)}
-            className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
-            title="Add child"
-          >
-            +
-          </button>
-          <button
-            onClick={() => removeNavItem(path)}
-            className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
-            title="Remove"
-          >
-            ×
-          </button>
-        </div>
-        
-        {hasChildren && (
-          <div className="mt-2">
-            {item.children!.map((child, index) => 
-              renderNavItem(child, [...path, index], level + 1)
-            )}
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -169,67 +56,18 @@ const PrimeTabs: React.FC<PrimeTabsProps> = ({
       {/* Navigation Tab */}
       {activeSubTab === 'nav' && (
         <div>
-          <div className="flex justify-between items-center mb-4">
+          <div className="mb-4">
             <h3 className="text-lg font-medium text-gray-900">Navigation Structure</h3>
-            <div className="space-x-2">
-              {editingNav ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setNavData(data.nav);
-                      setEditingNav(false);
-                    }}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleNavSave}
-                    disabled={saving}
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Save'}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setEditingNav(true)}
-                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                >
-                  Edit Navigation
-                </button>
-              )}
-            </div>
+            <p className="text-sm text-gray-600 mt-1">
+              Hierarchical tree view with sorting and editing capabilities
+            </p>
           </div>
 
-          {editingNav ? (
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded">
-                {navData.map((item, index) => renderNavItem(item, [index]))}
-                <button
-                  onClick={() => addNavItem()}
-                  className="mt-4 px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                >
-                  Add Top-Level Item
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-gray-50 p-4 rounded">
-              {data.nav.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No navigation items found</p>
-              ) : (
-                <div className="space-y-2">
-                  {confirmationUtils.flattenNavigation(data.nav).map(({ node, level, path }) => (
-                    <div key={path.join('-')} className={`ml-${level * 4} flex items-center space-x-2`}>
-                      <span className="text-sm font-medium">{node.label}</span>
-                      <span className="text-xs text-gray-500">{node.href}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <NavigationTree
+            nodes={data.nav}
+            onUpdate={onNavigationUpdate}
+            saving={saving}
+          />
         </div>
       )}
 

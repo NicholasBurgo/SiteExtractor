@@ -326,4 +326,4 @@ async def get_run_summary(run_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")                        
