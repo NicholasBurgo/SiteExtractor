@@ -1,470 +1,383 @@
-# SiteTestGenerator
+# Universal Site Extractor v2
 
-A comprehensive website data extraction and analysis platform with both desktop (Electron) and web interfaces. Features advanced truth table extraction, image analysis, and content processing capabilities.
+A clean, production-ready fullstack site extractor with FastAPI backend, React frontend, and comprehensive content extraction capabilities.
+
+## ✨ What's New in v2
+
+This is a **complete rewrite** that replaces the old extraction system with:
+
+- **FastAPI Backend**: High-performance async API with automatic Swagger documentation
+- **React Frontend**: Modern UI with real-time progress updates and advanced filtering  
+- **Multi-format Support**: HTML, PDF, DOCX, JSON, CSV, and image extraction
+- **JavaScript Rendering**: Optional Playwright integration for JS-heavy sites
+- **Smart Extraction**: Uses readability, trafilatura, and custom extractors
+- **Deduplication**: SimHash-based near-duplicate detection
+- **Rate Limiting**: Polite crawling with robots.txt compliance
+- **Real-time Monitoring**: Live progress updates and statistics
+- **Confirmation Workflow**: Review and edit extracted data before seeding
+- **Seed Generation**: Export generator-ready JSON for site building
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Node.js** (v18+ recommended)
-- **Python** (v3.8+ recommended)
-- **pnpm** (will be installed via Corepack)
 
-### Setup Instructions
+- **Python 3.10+** (for FastAPI backend)
+- **Node.js 18+** (for React frontend)
+- **Git** (for cloning)
 
-#### 1. Clone and Install Node.js Dependencies
-```bash
-# Clone the repository
-git clone <repository-url>
-cd SiteTestGenerator
+### Option 1: Development Mode (Recommended)
 
-# Install Node.js dependencies using pnpm
-# Option A: Using npx (recommended, no admin required)
-npx -y pnpm@9.11.0 install
+1. **Start both servers**:
+   ```bash
+   # On Windows (PowerShell)
+   .\scripts\dev.sh
+   
+   # On Linux/Mac
+   chmod +x scripts/dev.sh
+   ./scripts/dev.sh
+   ```
 
-# Option B: Enable pnpm globally (requires admin)
-# Open PowerShell as Administrator, then:
-corepack enable
-corepack prepare pnpm@9.11.0 --activate
-pnpm install
-```
+2. **Access the application**:
+   - **Frontend UI**: http://localhost:5173
+   - **Backend API**: http://localhost:5051  
+   - **Swagger Docs**: http://localhost:5051/docs
 
-#### 2. Setup Python Virtual Environment
-```bash
-# Create virtual environment
-python -m venv venv
+### Option 2: Manual Setup
 
-# Activate virtual environment
-# Windows PowerShell:
-.\venv\Scripts\Activate.ps1
-# Windows Command Prompt:
-venv\Scripts\activate.bat
-# macOS/Linux:
-source venv/bin/activate
+1. **Backend**:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   uvicorn backend.app:app --reload --port 5051
+   ```
 
-# Install Python dependencies
-pip install -r requirements.txt
-```
+2. **Frontend** (in new terminal):
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-#### 3. Start Development Servers
-```bash
-# Start all development servers
-npx -y pnpm@9.11.0 dev
-# OR if pnpm is enabled globally:
-pnpm dev
-```
-
-### Access Points
-- **Web App**: http://localhost:3000
-- **API Server**: http://localhost:5174
-- **Desktop App**: Electron application with native OS integration
-
-### Running Python Scripts
-```bash
-# Make sure virtual environment is activated
-.\venv\Scripts\Activate.ps1
-
-# Run extraction scripts
-python apps/web/truth_extractor.py <url> [max_pages] [timeout] [use_playwright]
-python apps/web/image_extractor.py <url> [max_pages] [output_dir]
-```
-
-## 📚 Documentation
-
-All documentation is organized in the [`docs/`](./docs/) folder:
-
-- **[Documentation Index](./docs/README.md)** - Complete documentation overview
-- **[Setup Guide](./docs/SETUP_COMPLETE.md)** - Initial setup and configuration
-- **[Desktop App](./docs/DESKTOP_APP_READY.md)** - Desktop application features
-- **[Migration Guide](./docs/MONOREPO_MIGRATION.md)** - Project structure migration
-- **[Cleanup Summary](./docs/CLEANUP_COMPLETE.md)** - Project cleanup details
-
-## 🏗️ Project Structure
-
-```
-SiteTestGenerator/
-├─ apps/                           # Applications
-│  ├─ server/                     # Fastify API server
-│  │  ├─ src/
-│  │  │  ├─ config/              # Environment configuration
-│  │  │  ├─ routes/              # API endpoints
-│  │  │  │  └─ extract/          # Data extraction routes
-│  │  │  │     ├─ images.ts      # Image extraction API
-│  │  │  │     ├─ misc.ts        # Miscellaneous data
-│  │  │  │     ├─ navbar.ts      # Navigation extraction
-│  │  │  │     ├─ paragraphs.ts  # Content extraction
-│  │  │  │     └─ truth-table.ts # Truth table API
-│  │  │  ├─ index.ts             # Server entry point
-│  │  │  └─ lib/                 # Server utilities
-│  │  └─ package.json
-│  └─ web/                        # React web application
-│     ├─ src/
-│     │  ├─ api/                  # API client & endpoints
-│     │  ├─ components/           # React components
-│     │  │  ├─ ExtractionForm.tsx # Main extraction form
-│     │  │  └─ ImageExtraction.tsx # Image extraction UI
-│     │  ├─ pages/                # Page components
-│     │  │  ├─ ConfirmPage.tsx    # Confirmation page
-│     │  │  ├─ ImagesTab.tsx      # Images tab
-│     │  │  ├─ MiscTab.tsx        # Miscellaneous tab
-│     │  │  ├─ NavbarTab.tsx      # Navigation tab
-│     │  │  ├─ ParagraphsTab.tsx  # Content tab
-│     │  │  ├─ SummaryTab.tsx     # Summary tab
-│     │  │  └─ TruthTableTab.tsx  # Truth table tab
-│     │  ├─ hooks/                # Custom React hooks
-│     │  ├─ types/                # TypeScript types
-│     │  ├─ App.tsx               # Main app component
-│     │  └─ main.tsx              # App entry point
-│     ├─ electron/                # Electron desktop app
-│     │  ├─ main.ts               # Main process
-│     │  └─ preload.ts            # Preload script
-│     ├─ runs/                    # Extraction results
-│     ├─ image_extractions/       # Image extraction results
-│     ├─ truth_extractor.py       # Python truth extraction
-│     ├─ image_extractor.py       # Python image extraction
-│     ├─ image-extraction-demo.html # Demo interface
-│     └─ package.json
-├─ packages/                      # Shared packages
-│  ├─ types/                      # TypeScript types & Zod schemas
-│  │  ├─ src/
-│  │  │  ├─ index.ts              # Main exports
-│  │  │  ├─ manifest.ts           # Manifest types
-│  │  │  ├─ navbar.ts              # Navigation types
-│  │  │  ├─ packed.ts             # Packed data types
-│  │  │  ├─ text.ts               # Text content types
-│  │  │  └─ truth.ts              # Truth table types
-│  │  └─ dist/                    # Compiled types
-│  └─ utils/                      # Utility functions
-│     ├─ src/
-│     │  ├─ index.ts              # Main exports
-│     │  ├─ detect.ts             # Detection utilities
-│     │  ├─ files.ts              # File operations
-│     │  ├─ hashing.ts            # Hash functions
-│     │  ├─ html.ts               # HTML processing
-│     │  └─ strings.ts            # String utilities
-│     └─ dist/                    # Compiled utilities
-├─ docs/                          # Documentation
-├─ runs/                          # Global extraction results
-└─ Configuration files
-```
-
-## ✨ Core Features
-
-### 🔍 **Truth Table Extraction**
-- **Enhanced Accuracy**: Strict validation with multiple extraction methods
-- **Business-Agnostic**: Works across all industries and business types
-- **Comprehensive Fields**: Brand name, location, email, phone, socials, services, colors, logo, background, slogan
-- **Confidence Scoring**: Accurate confidence levels based on source quality
-- **Provenance Tracking**: Full source tracking for each extracted field
-
-### 🖼️ **Image Extraction System**
-- **Logo Detection**: Extracts logo from truth table with high confidence
-- **Page Organization**: Groups images by page with titles and metadata
-- **Image Categorization**: Automatically categorizes (content, background, logo, banner)
-- **Preview System**: Shows image thumbnails with download functionality
-- **Upload Integration**: Users can add additional images via URL
-- **Statistics Dashboard**: Real-time extraction statistics
-
-### 📄 **Content Processing**
-- **Real Data Extraction**: No mock data - extracts actual website content
-- **Paragraph Analysis**: Meaningful content extraction with boilerplate filtering
-- **Navigation Extraction**: Comprehensive navigation structure analysis
-- **Miscellaneous Data**: Colors, metadata, structured data extraction
-
-### 🖥️ **Multi-Platform Support**
-- **Web Interface**: Modern React application with responsive design
-- **Desktop App**: Electron application with native OS integration
-- **API Server**: Fastify-based REST API for programmatic access
-- **Python Backend**: Advanced extraction logic in Python
-
-## 🔧 Development Commands
+### Option 3: Docker
 
 ```bash
-# Development
-pnpm dev                    # Start all development servers
-pnpm dev:web               # Start web app only
-pnpm dev:server            # Start API server only
-
-# Building
-pnpm build                 # Build all packages
-pnpm build:web             # Build web app
-pnpm build:server          # Build server
-
-# Code Quality
-pnpm lint                  # Run ESLint
-pnpm format                # Format code with Prettier
-pnpm type-check            # Run TypeScript checks
-
-# Python Scripts
-py truth_extractor.py <url> [max_pages] [timeout] [use_playwright]
-py image_extractor.py <url> [max_pages] [output_dir]
+docker-compose up --build
 ```
 
-## 🐍 Python Dependencies
-
-The Python extraction scripts require these packages (automatically installed via `requirements.txt`):
+### Production Build
 
 ```bash
-# Install from requirements.txt (recommended)
-pip install -r requirements.txt
+# On Windows (PowerShell)
+.\scripts\build.sh
 
-# Or install manually:
-pip install beautifulsoup4 requests email-validator phonenumbers validators
+# On Linux/Mac
+chmod +x scripts/build.sh
+./scripts/build.sh
 ```
 
-**Required packages:**
-- `requests` - HTTP requests for web scraping
-- `beautifulsoup4` - HTML parsing and content extraction
-- `email-validator` - Email address validation
-- `phonenumbers` - Phone number validation and formatting
-- `validators` - URL and other data validation
+## 📖 How to Use
 
-## 📊 API Endpoints
+### 1. Starting an Extraction
 
-### Truth Table Extraction
-- `POST /api/truth-table` - Extract truth table data
-- `GET /api/truth-table/:runId` - Get extraction results
+1. **Open the web interface**: http://localhost:5173
+2. **Enter target URL**: e.g., `https://example.com`
+3. **Click "Start Run"**: The system will begin crawling
+4. **Monitor progress**: Real-time updates in the left panel
 
-### Image Extraction
-- `POST /api/image-extraction` - Extract images from website
-- `GET /api/image-extraction/:runId` - Get image extraction results
-- `POST /api/image-extraction/:runId/upload` - Upload additional images
+### 2. Exploring Results
 
-### Other Extractions
-- `POST /api/extract/navbar` - Extract navigation structure
-- `POST /api/extract/paragraphs` - Extract content paragraphs
-- `POST /api/extract/misc` - Extract miscellaneous data
+The interface has **three panels**:
 
-## 🎯 Usage Examples
+- **Left Panel**: Run controls and progress summary
+- **Center Panel**: Page table with filtering options  
+- **Right Panel**: Detailed page preview
 
-### Truth Table Extraction
+### 3. Filtering and Search
+
+- **Search**: Type in the search box to find pages by title/content
+- **Content Type**: Filter by HTML, PDF, DOCX, JSON, CSV, Images
+- **Min Words**: Show only pages with minimum word count
+- **Status**: View successful pages vs. errors
+
+### 4. Confirmation and Seeding
+
+After extraction completes, you can review and edit the data:
+
+1. **Navigate to Confirmation**: Click "Confirm" on any completed run
+2. **Review Prime Data**: Edit navigation structure and footer content
+3. **Edit Page Content**: Modify titles, descriptions, media alt text, and links
+4. **Export Seed**: Generate generator-ready JSON for site building
+
+The confirmation interface provides:
+- **Prime Tab**: Navigation and footer editing with drag-and-drop reordering
+- **Content Tab**: Per-page editing of media, files, words, and links
+- **Summary Tab**: Overview statistics and content quality recommendations
+
+### 5. Page Details
+
+Click any page in the table to see:
+- **Full text content** (first 5000 characters)
+- **Metadata** (title, author, creation date, etc.)
+- **Headings** structure
+- **Images** and links found
+- **Statistics** (word count, image count, etc.)
+
+## ⚙️ Configuration
+
+Copy `env.example` to `.env` and customize:
+
 ```bash
-# Command line
-py truth_extractor.py https://example.com 5 10 true
-
-# API call
-curl -X POST http://localhost:5174/api/truth-table \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com", "maxPages": 5}'
+cp env.example .env
 ```
 
-### Image Extraction
+### Key Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `GLOBAL_CONCURRENCY` | 12 | Number of concurrent requests |
+| `PER_HOST_LIMIT` | 6 | Requests per host (politeness) |
+| `REQUEST_TIMEOUT_SEC` | 20 | Request timeout in seconds |
+| `MAX_PAGES_DEFAULT` | 400 | Default page limit |
+| `RENDER_ENABLED` | false | Enable JavaScript rendering |
+| `RENDER_BUDGET` | 0.10 | Percentage of pages to render with JS |
+
+## 📁 Project Structure
+
+```
+site_extractor_v2/
+├── backend/                    # FastAPI Backend
+│   ├── app.py                 # Main FastAPI application
+│   ├── routers/               # API route handlers
+│   │   ├── __init__.py
+│   │   ├── runs.py           # Run management endpoints
+│   │   ├── pages.py          # Page listing/details endpoints
+│   │   ├── review.py         # Review and aggregation endpoints
+│   │   └── confirm.py        # Confirmation workflow endpoints
+│   ├── core/                 # Core configuration and types
+│   │   ├── config.py         # Settings and environment config
+│   │   ├── deps.py           # Dependency injection
+│   │   └── types.py          # Pydantic models
+│   ├── crawl/                # Crawling engine
+│   │   ├── runner.py         # Main orchestration
+│   │   ├── frontier.py       # URL queue management
+│   │   ├── fetch.py          # Async HTTP client
+│   │   ├── render_pool.py    # Playwright browser pool
+│   │   └── robots.py         # Robots.txt compliance
+│   ├── extract/              # Content extractors
+│   │   ├── html.py           # HTML content extraction
+│   │   ├── pdfs.py           # PDF text extraction
+│   │   ├── docx_.py          # DOCX document extraction
+│   │   ├── json_csv.py       # JSON/CSV data extraction
+│   │   ├── images.py         # Image metadata extraction
+│   │   ├── nav_footer.py     # Navigation and footer extraction
+│   │   └── files_words_links.py # Structured content extraction
+│   ├── storage/              # Data storage
+│   │   ├── runs.py           # File-based run storage
+│   │   ├── simhash.py        # Near-duplicate detection
+│   │   ├── confirmation.py   # Confirmation data storage
+│   │   └── seed.py           # Seed generation utilities
+│   ├── Dockerfile            # Backend container config
+│   ├── requirements.txt      # Python dependencies
+│   └── README.md            # Backend documentation
+├── frontend/                  # React Frontend
+│   ├── src/
+│   │   ├── App.tsx          # Main application component
+│   │   ├── main.tsx         # React entry point
+│   │   ├── styles.css       # Tailwind CSS imports
+│   │   ├── components/      # Reusable UI components
+│   │   │   ├── TopBar.tsx
+│   │   │   ├── RunSummary.tsx
+│   │   │   ├── RunFilters.tsx
+│   │   │   ├── RunTable.tsx
+│   │   │   ├── PageDetail.tsx
+│   │   │   ├── PrimeTabs.tsx
+│   │   │   ├── ContentTabs.tsx
+│   │   │   └── SummaryTab.tsx
+│   │   ├── lib/             # Utilities and types
+│   │   │   ├── api.ts       # API client functions
+│   │   │   ├── types.ts     # TypeScript interfaces
+│   │   │   ├── api.confirm.ts # Confirmation API client
+│   │   │   └── types.confirm.ts # Confirmation types
+│   │   └── pages/           # Page components
+│   │       ├── Generator.tsx
+│   │       ├── Review.tsx
+│   │       ├── RunView.tsx
+│   │       └── ConfirmPage.tsx
+│   ├── Dockerfile           # Frontend container config
+│   ├── index.html           # HTML template
+│   ├── package.json         # Node.js dependencies
+│   ├── tailwind.config.js   # Tailwind CSS config
+│   ├── tsconfig.json        # TypeScript config
+│   └── vite.config.ts      # Vite build config
+├── scripts/                  # Development scripts
+│   ├── dev.sh              # Linux/Mac dev startup
+│   ├── dev.bat             # Windows dev startup
+│   ├── build.sh            # Linux/Mac build script
+│   └── build.bat           # Windows build script
+├── runs/                    # Generated extraction data
+├── docker-compose.yml       # Multi-service Docker setup
+├── .env.example            # Environment configuration template
+├── LICENSE                 # MIT License
+└── README.md              # This file
+```
+
+## Architecture
+
+### Backend (FastAPI)
+
+- **Crawler**: Async HTTP client with rate limiting and retry logic
+- **Extractors**: Content-type specific extraction modules
+- **Storage**: File-based storage with JSON serialization
+- **Deduplication**: SimHash for near-duplicate detection
+- **Rendering**: Optional Playwright pool for JavaScript pages
+
+### Frontend (React + TypeScript)
+
+- **Real-time Updates**: Live progress monitoring
+- **Advanced Filtering**: Multi-criteria page filtering
+- **Responsive Design**: Mobile-friendly interface
+- **Virtualization**: Handle large datasets efficiently
+
+## API Reference
+
+### Core Endpoints
+
+- `POST /api/runs/start` - Start new extraction
+- `GET /api/runs/{run_id}/progress` - Get run progress
+- `GET /api/runs/{run_id}/pages` - Get paginated pages
+- `GET /api/runs/{run_id}/page/{page_id}` - Get page details
+- `POST /api/runs/{run_id}/stop` - Stop running extraction
+
+### Confirmation Endpoints
+
+- `GET /api/confirm/{run_id}/prime` - Get navigation, footer, and pages index
+- `GET /api/confirm/{run_id}/content?page_path={path}` - Get structured page content
+- `PATCH /api/confirm/{run_id}/prime/nav` - Update navigation structure
+- `PATCH /api/confirm/{run_id}/prime/footer` - Update footer content
+- `PATCH /api/confirm/{run_id}/content?page_path={path}` - Update page content
+- `POST /api/confirm/{run_id}/seed` - Generate seed.json for site building
+
+### Content Types Supported
+
+- **HTML**: Full text extraction with metadata, links, images
+- **PDF**: Text extraction with page count and metadata
+- **DOCX**: Document text with heading structure
+- **JSON/CSV**: Schema inference and sample data
+- **Images**: Metadata extraction (size, format, EXIF)
+
+## Configuration
+
+Copy `env.example` to `.env` and customize settings:
+
 ```bash
-# Command line
-py image_extractor.py https://example.com 3 ./output
-
-# API call
-curl -X POST http://localhost:5174/api/image-extraction \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com", "maxPages": 3}'
+cp env.example .env
 ```
 
-## 🔄 Data Flow
+Key settings:
+- `GLOBAL_CONCURRENCY`: Number of concurrent requests
+- `PER_HOST_LIMIT`: Requests per host
+- `MAX_PAGES_DEFAULT`: Default page limit
+- `RENDER_ENABLED`: Enable JavaScript rendering
+- `RENDER_BUDGET`: Percentage of pages to render with JS
 
-1. **Input**: User provides website URL and extraction parameters
-2. **Processing**: Python scripts perform web scraping and data extraction
-3. **Validation**: Strict validation ensures data accuracy and quality
-4. **Storage**: Results saved to JSON files in organized directory structure
-5. **API**: Fastify server provides REST endpoints for data access
-6. **UI**: React application displays results with interactive interface
-7. **Export**: Users can download individual files or complete datasets
+## Usage
 
-## 📁 Output Structure
+### Starting an Extraction
 
-```
-runs/
-└─ {domain}-{timestamp}/
-   ├─ truth.json              # Truth table extraction results
-   ├─ images/                 # Image extraction results
-   ├─ navbar/                 # Navigation structure
-   ├─ text/                   # Text content
-   ├─ misc/                   # Miscellaneous data
-   └─ logs/                   # Extraction logs
-```
+1. Open the web interface
+2. Enter the target URL
+3. Configure settings (max pages, depth, concurrency)
+4. Click "Start Run"
 
-## 🛠️ Technology Stack
+### Monitoring Progress
 
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS
-- **Backend**: Fastify, Node.js, TypeScript
-- **Desktop**: Electron
-- **Extraction**: Python, BeautifulSoup, Requests
-- **Validation**: email-validator, phonenumbers, validators
-- **Build**: pnpm, TypeScript, ESLint, Prettier
+- View real-time progress in the run summary
+- Monitor queued, visited, and error counts
+- Check per-host statistics
+- View estimated time remaining
 
-## 🚀 Future Development
+### Exploring Results
 
-### Planned Features
-- **AI Integration**: Machine learning for better content classification
-- **Batch Processing**: Multiple URL extraction in parallel
-- **Export Formats**: PDF, Excel, CSV export options
-- **Real-time Monitoring**: Live extraction progress tracking
-- **Custom Extractors**: User-defined extraction rules
-- **Cloud Storage**: Integration with cloud storage providers
+- **Filter pages**: By content type, word count, errors, etc.
+- **Search**: Find specific pages by title or content
+- **Sort**: By word count, images, links, or processing time
+- **Details**: Click any page to view full content and metadata
 
-### Extension Points
-- **Custom Validators**: Add domain-specific validation rules
-- **New Extractors**: Implement additional data extraction methods
-- **UI Themes**: Multiple interface themes and customization
-- **Plugin System**: Third-party plugin architecture
-- **API Versioning**: Backward-compatible API evolution
+## Advanced Features
 
-## 🔧 Troubleshooting
+### JavaScript Rendering
 
-### Common Setup Issues
+Enable Playwright for JavaScript-heavy sites:
 
-#### pnpm Command Not Found
 ```bash
-# Solution 1: Use npx (recommended)
-npx -y pnpm@9.11.0 install
-
-# Solution 2: Enable Corepack globally (requires admin)
-# Open PowerShell as Administrator:
-corepack enable
-corepack prepare pnpm@9.11.0 --activate
+pip install playwright
+playwright install chromium
 ```
 
-#### Python Virtual Environment Issues
+Set `RENDER_ENABLED=true` in your `.env` file.
+
+### Custom Extractors
+
+Extend the system with custom content extractors:
+
+```python
+from backend.extract.base import BaseExtractor
+
+class CustomExtractor(BaseExtractor):
+    async def extract(self, url, content, headers):
+        # Your extraction logic
+        return PageResult(...)
+```
+
+### Rate Limiting
+
+Configure per-domain rate limits:
+
+```python
+# In your configuration
+PER_HOST_LIMIT = 6  # requests per host
+REQUESTS_PER_SECOND = 2.0  # global rate limit
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Import errors**: Ensure all dependencies are installed
+2. **Port conflicts**: Change ports in `scripts/dev.sh`
+3. **Memory issues**: Reduce `GLOBAL_CONCURRENCY` for large sites
+4. **Timeout errors**: Increase `REQUEST_TIMEOUT_SEC`
+
+### Debug Mode
+
+Enable debug logging:
+
 ```bash
-# If virtual environment activation fails:
-# Windows PowerShell (if execution policy blocks):
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-# Then activate:
-.\venv\Scripts\Activate.ps1
+export LOG_LEVEL=DEBUG
 ```
 
-#### Permission Errors
-- **Windows**: Run PowerShell as Administrator for global pnpm setup
-- **File permissions**: Ensure write access to project directory
-- **Python packages**: Use virtual environment to avoid permission issues
+### Performance Tuning
 
-#### Node.js Version Issues
-- Ensure Node.js v18+ is installed
-- Check with: `node -v`
-- Update if needed: Download from [nodejs.org](https://nodejs.org/)
+For large sites (500+ pages):
+- Increase `GLOBAL_CONCURRENCY` to 20-30
+- Set `PER_HOST_LIMIT` to 10-15
+- Use SSD storage for better I/O performance
+- Consider running on multiple machines
 
-#### Python Version Issues
-- Ensure Python v3.8+ is installed
-- Check with: `python --version`
-- Update if needed: Download from [python.org](https://python.org/)
+## Contributing
 
-### 🚨 Server 500 Errors (Transfer to New Computer)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-If you're getting 500 Internal Server Error when transferring the project to a new computer, follow these steps:
+## License
 
-#### 1. Install Missing Python Dependencies
-```bash
-# Install Python packages required for extraction
-pip install -r requirements.txt
+MIT License - see LICENSE file for details.
 
-# Verify installation
-pip list | findstr -i "requests beautifulsoup phonenumbers email-validator validators"
-```
+## Support
 
-#### 2. Install pnpm (if not available)
-```bash
-# Install pnpm globally
-npm install -g pnpm
-
-# Or use npx if pnpm command not found
-npx pnpm install
-```
-
-#### 3. Build Workspace Packages
-```bash
-# Install all dependencies
-npx pnpm install
-
-# Build required packages
-npx pnpm --filter @sg/utils build
-npx pnpm --filter @sg/types build
-```
-
-#### 4. Start Server Correctly
-```bash
-# Start server using pnpm
-npx pnpm --filter @sg/server dev
-
-# Verify server is running
-curl http://localhost:5174/health
-```
-
-#### 5. Test Extraction Endpoints
-```bash
-# Test navbar extraction
-curl -X POST http://localhost:5174/api/extract/navbar \
-  -H "Content-Type: application/json" \
-  -d '{"runId": "your-run-id"}'
-
-# Test images extraction  
-curl -X POST http://localhost:5174/api/extract/images \
-  -H "Content-Type: application/json" \
-  -d '{"runId": "your-run-id"}'
-
-# Test paragraphs extraction
-curl -X POST http://localhost:5174/api/extract/paragraphs \
-  -H "Content-Type: application/json" \
-  -d '{"runId": "your-run-id"}'
-```
-
-#### Common Error Messages and Solutions
-
-**Error: `Cannot find module '@sg/utils'`**
-```bash
-# Solution: Build the workspace packages
-npx pnpm --filter @sg/utils build
-npx pnpm --filter @sg/types build
-```
-
-**Error: `ModuleNotFoundError: No module named 'beautifulsoup4'`**
-```bash
-# Solution: Install Python dependencies
-pip install -r requirements.txt
-```
-
-**Error: `pnpm: command not found`**
-```bash
-# Solution: Install pnpm or use npx
-npm install -g pnpm
-# OR
-npx pnpm install
-```
-
-**Error: `500 Internal Server Error` on extraction endpoints**
-```bash
-# Solution: Complete setup process
-pip install -r requirements.txt
-npx pnpm install
-npx pnpm --filter @sg/utils build
-npx pnpm --filter @sg/types build
-npx pnpm --filter @sg/server dev
-```
-
-#### Verification Checklist
-- [ ] Python dependencies installed (`pip list` shows all required packages)
-- [ ] pnpm available (`npx pnpm --version` works)
-- [ ] Workspace packages built (`@sg/utils` and `@sg/types` have `dist/` folders)
-- [ ] Server starts without errors (`npx pnpm --filter @sg/server dev`)
-- [ ] Health endpoint responds (`curl http://localhost:5174/health`)
-- [ ] Extraction endpoints return 200 status (not 500)
-
-## 📝 Development Notes
-
-### Key Files for Future Development
-- `apps/web/truth_extractor.py` - Main truth extraction logic
-- `apps/web/image_extractor.py` - Image extraction system
-- `apps/server/src/routes/extract/` - API endpoint implementations
-- `apps/web/src/components/` - React UI components
-- `packages/types/src/` - TypeScript type definitions
-- `packages/utils/src/` - Shared utility functions
-
-### Important Considerations
-- **Python Dependencies**: Ensure all Python packages are installed
-- **File Permissions**: Check write permissions for output directories
-- **Rate Limiting**: Implement rate limiting for production use
-- **Error Handling**: Comprehensive error handling throughout the stack
-- **Security**: Validate all inputs and sanitize outputs
-- **Performance**: Optimize for large-scale extraction operations
-
----
-
-For detailed documentation, see the [`docs/`](./docs/) folder.
+- Issues: GitHub Issues
+- Documentation: This README
+- API Docs: http://localhost:5051/docs (when running)
