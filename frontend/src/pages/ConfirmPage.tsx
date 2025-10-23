@@ -20,6 +20,7 @@ const ConfirmPage: React.FC = () => {
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
   const [selectedPagePath, setSelectedPagePath] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -27,9 +28,69 @@ const ConfirmPage: React.FC = () => {
   // Load prime data on mount
   useEffect(() => {
     if (runId) {
-      loadPrimeData();
+      checkExtractionStatus();
     }
   }, [runId]);
+
+  const checkExtractionStatus = async () => {
+    if (!runId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const status = await confirmationApi.getExtractionStatus(runId);
+      console.log('Extraction status:', status);
+      
+      if (status.isComplete && status.hasData) {
+        // Extraction is complete and data is available
+        setExtracting(false);
+        await loadPrimeData();
+      } else if (status.isComplete && !status.hasData) {
+        // Extraction is complete but no data was extracted
+        setExtracting(false);
+        setError('No data was extracted from the website. Please try a different URL.');
+      } else {
+        // Still extracting
+        setExtracting(true);
+        setLoading(false);
+        
+        // Poll every 2 seconds until extraction is complete
+        const pollInterval = setInterval(async () => {
+          try {
+            const newStatus = await confirmationApi.getExtractionStatus(runId);
+            if (newStatus.isComplete) {
+              clearInterval(pollInterval);
+              if (newStatus.hasData) {
+                await loadPrimeData();
+              } else {
+                setExtracting(false);
+                setError('No data was extracted from the website. Please try a different URL.');
+              }
+            }
+          } catch (err) {
+            console.error('Error polling extraction status:', err);
+            clearInterval(pollInterval);
+            setExtracting(false);
+            setError('Failed to check extraction status');
+          }
+        }, 2000);
+        
+        // Cleanup interval on component unmount
+        return () => clearInterval(pollInterval);
+      }
+    } catch (err) {
+      console.error('Error checking extraction status:', err);
+      if (err instanceof ConfirmationApiError) {
+        setError(`Failed to check extraction status: ${err.message}`);
+      } else {
+        setError('An unexpected error occurred');
+      }
+      setExtracting(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadPrimeData = async () => {
     if (!runId) return;
@@ -80,6 +141,15 @@ const ConfirmPage: React.FC = () => {
     setSelectedPagePath(pagePath);
     loadPageContent(pagePath);
   };
+
+  // Auto-load first page content when switching to Content tab
+  useEffect(() => {
+    if (activeTab === 'content' && primeData && primeData.pages.length > 0 && !selectedPagePath) {
+      const firstPage = primeData.pages[0];
+      setSelectedPagePath(firstPage.path);
+      loadPageContent(firstPage.path);
+    }
+  }, [activeTab, primeData]);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -161,6 +231,28 @@ const ConfirmPage: React.FC = () => {
     }
   };
 
+  if (extracting) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Extracting Website Data</h2>
+          <p className="text-gray-600 mb-4">
+            We're crawling and extracting content from the website. This may take a few minutes depending on the site size.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Run ID:</strong> {runId}
+            </p>
+            <p className="text-sm text-blue-600 mt-1">
+              Please keep this page open while extraction is in progress...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading && !primeData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -212,59 +304,62 @@ const ConfirmPage: React.FC = () => {
         runId={runId || ''}
         baseUrl={primeData.baseUrl}
         onExportSeed={handleExportSeed}
+        onBack={() => navigate('/')}
         saving={saving}
       />
 
+      {/* Tab Navigation */}
+      <div className="bg-white border-b border-gray-200">
+        <nav className="flex space-x-8 px-6">
+          {[
+            { id: 'prime', label: 'Prime' },
+            { id: 'content', label: 'Content' },
+            { id: 'summary', label: 'Summary' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as ConfirmationTab)}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
       <div className="flex">
-        {/* Left Sidebar - Page Selector */}
-        <div className="w-64 bg-white shadow-sm border-r border-gray-200 p-4">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">All Pages</h3>
-          <div className="space-y-1">
-            {primeData.pages.map((page) => (
-              <button
-                key={page.pageId}
-                onClick={() => handlePageSelect(page.path)}
-                className={`w-full text-left px-3 py-2 rounded text-sm ${
-                  selectedPagePath === page.path
-                    ? 'bg-blue-100 text-blue-900'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <div className="font-medium truncate">{page.titleGuess || 'Untitled'}</div>
-                <div className="text-xs text-gray-500 truncate">{page.path}</div>
-                <div className="text-xs text-gray-400">
-                  {page.words || 0} words • {page.mediaCount || 0} media
-                </div>
-              </button>
-            ))}
+        {/* Left Sidebar - Only on Content tab */}
+        {activeTab === 'content' && (
+          <div className="w-64 bg-white shadow-sm border-r border-gray-200 p-4">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">All Pages</h3>
+            <div className="space-y-1">
+              {primeData.pages.map((page) => (
+                <button
+                  key={page.pageId}
+                  onClick={() => handlePageSelect(page.path)}
+                  className={`w-full text-left px-3 py-2 rounded text-sm ${
+                    selectedPagePath === page.path
+                      ? 'bg-blue-100 text-blue-900'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="font-medium truncate">{page.titleGuess || 'Untitled'}</div>
+                  <div className="text-xs text-gray-500 truncate">{page.path}</div>
+                  <div className="text-xs text-gray-400">
+                    {page.words || 0} words • {page.mediaCount || 0} media
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Content */}
         <div className="flex-1">
-          {/* Tab Navigation */}
-          <div className="bg-white border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              {[
-                { id: 'prime', label: 'Prime' },
-                { id: 'content', label: 'Content' },
-                { id: 'summary', label: 'Summary' }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as ConfirmationTab)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'prime' && (

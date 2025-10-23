@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Settings, Clock, CheckCircle } from 'lucide-react';
 import { startRun, getProgress } from '../lib/api';
+import CheckpointDropdown from '../components/CheckpointDropdown';
 
 export function Generator() {
   const navigate = useNavigate();
@@ -71,10 +72,6 @@ export function Generator() {
           
           {/* Header Buttons */}
           <div className="flex gap-3 mb-8">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-              <Clock className="w-4 h-4" />
-              Checkpoint
-            </button>
             <button 
               onClick={() => document.getElementById('generatorForm')?.scrollIntoView({ behavior: 'smooth' })}
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
@@ -82,6 +79,7 @@ export function Generator() {
               <Play className="w-4 h-4" />
               Run Generator
             </button>
+            <CheckpointDropdown />
           </div>
         </div>
 

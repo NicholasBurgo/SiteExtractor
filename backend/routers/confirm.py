@@ -10,6 +10,39 @@ from storage.seed import SeedBuilder
 router = APIRouter()
 
 
+@router.get("/{run_id}/status")
+async def get_extraction_status(run_id: str):
+    """
+    Check if extraction is complete and data is ready for confirmation.
+    Returns: { isComplete: bool, hasData: bool, pagesCount: int }
+    """
+    try:
+        from storage.runs import RunStore
+        from crawl.runner import RunManager
+        
+        # Check if run is still active
+        run_manager = RunManager()
+        progress = await run_manager.progress(run_id)
+        
+        # Check if confirmation data exists
+        store = ConfirmationStore(run_id)
+        pages_index = store.get_pages_index()
+        site_data = store.get_site_data()
+        
+        # Determine if extraction is complete
+        is_complete = progress is None or (progress.get("queued", 0) == 0 and progress.get("status") == "completed")
+        has_data = len(pages_index) > 0 and site_data.get("baseUrl")
+        
+        return {
+            "isComplete": is_complete,
+            "hasData": has_data,
+            "pagesCount": len(pages_index),
+            "progress": progress
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error checking extraction status: {str(e)}")
+
+
 @router.get("/{run_id}/prime")
 async def get_prime_data(run_id: str):
     """
@@ -64,16 +97,62 @@ async def get_page_content(run_id: str, page_path: str = Query(..., description=
         raise HTTPException(status_code=500, detail=f"Error getting page content: {str(e)}")
 
 
+@router.get("/{run_id}/prime/nav")
+async def get_navigation(run_id: str):
+    """
+    Get navigation data specifically.
+    Returns: { baseUrl, nav: NavNode[] }
+    """
+    try:
+        store = ConfirmationStore(run_id)
+        site_data = store.get_site_data()
+        
+        return {
+            "baseUrl": site_data.get("baseUrl", ""),
+            "nav": site_data.get("nav", [])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting navigation: {str(e)}")
+
+
 @router.patch("/{run_id}/prime/nav")
 async def update_navigation(run_id: str, nav: List[Dict[str, Any]]):
     """
     Update navigation data.
-    Input: edited nav (labels/urls/order); persist to site.json
+    Input: edited NavNode[] and overwrites site.json.nav
+    Validate: each node needs label, href; children optional.
+    Preserve order if not provided; regenerate continuous order values.
     """
     try:
+        # Validate navigation data
+        errors = []
+        for i, node in enumerate(nav):
+            if not node.get('label'):
+                errors.append(f"Node {i}: missing label")
+            if not node.get('href'):
+                errors.append(f"Node {i}: missing href")
+            if not node.get('id'):
+                errors.append(f"Node {i}: missing id")
+        
+        if errors:
+            raise HTTPException(status_code=400, detail=f"Validation errors: {'; '.join(errors)}")
+        
+        # Regenerate order values if not provided
+        for i, node in enumerate(nav):
+            if 'order' not in node:
+                node['order'] = i
+            
+            # Recursively handle children
+            if node.get('children'):
+                for j, child in enumerate(node['children']):
+                    if 'order' not in child:
+                        child['order'] = j
+        
         store = ConfirmationStore(run_id)
         store.update_navigation(nav)
         return {"message": "Navigation updated successfully"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating navigation: {str(e)}")
 

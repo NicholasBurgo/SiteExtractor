@@ -3,86 +3,214 @@ Navigation and Footer extraction utilities.
 Extracts exact navigation structure and footer content with proper ordering.
 """
 import re
+import hashlib
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from typing import List, Dict, Any, Optional, Tuple
 
 
-def extract_navigation(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
+def hash_string(text: str) -> str:
+    """Generate a stable hash for a string."""
+    return hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
+
+
+def dedupe_by(items: List[Dict[str, Any]], key_func) -> List[Dict[str, Any]]:
+    """Remove duplicates from a list based on a key function, keeping first occurrence."""
+    seen = set()
+    result = []
+    for item in items:
+        key = key_func(item)
+        if key not in seen:
+            seen.add(key)
+            result.append(item)
+    return result
+
+
+def buildNavTree(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
     """
-    Extract navigation from header landmarks or elements with role="navigation".
-    Preserves visual order and nesting (dropdowns) with children[].
-    Normalizes hrefs to absolute; keeps original labels (trim only).
+    Build a hierarchical navigation tree by parsing <nav> structures and dropdown/megamenu patterns.
+    Returns NavNode[] with proper hierarchy, order, and normalization.
     """
-    nav_items = []
+    # Find navigation roots
+    nav_roots = soup.select('header nav, [role="navigation"]')
+    if not nav_roots:
+        nav_roots = soup.select('nav')
     
-    # Look for navigation in header landmarks first
-    header_nav = soup.find('header')
-    if header_nav:
-        nav_elements = header_nav.find_all(['nav', '[role="navigation"]'])
-        for nav in nav_elements:
-            items = _extract_nav_items(nav, base_url)
-            nav_items.extend(items)
+    if not nav_roots:
+        return []
     
-    # Look for standalone navigation elements
-    if not nav_items:
-        nav_elements = soup.find_all(['nav', '[role="navigation"]'])
-        for nav in nav_elements:
-            items = _extract_nav_items(nav, base_url)
-            nav_items.extend(items)
+    root = nav_roots[0]
     
-    # Look for common navigation patterns if no explicit nav found
-    if not nav_items:
-        nav_patterns = [
-            'nav',
-            '.navbar',
-            '.navigation',
-            '.menu',
-            '.main-menu',
-            '.primary-menu',
-            '.header-menu',
-            '.nav-menu',
-            '.site-nav',
-            '.top-nav',
-            '.main-nav',
-            '.header-nav',
-            '.nav-links',
-            '.menu-links',
-            '.nav-list',
-            '.menu-list'
+    def to_abs(url: str) -> str:
+        """Convert URL to absolute form."""
+        if not url:
+            return ""
+        if url.startswith('#'):
+            return base_url + url
+        if url.startswith('//'):
+            parsed_base = urlparse(base_url)
+            return f"{parsed_base.scheme}:{url}"
+        if url.startswith('/'):
+            parsed_base = urlparse(base_url)
+            return f"{parsed_base.scheme}://{parsed_base.netloc}{url}"
+        if not url.startswith(('http://', 'https://')):
+            return urljoin(base_url, url)
+        return url
+    
+    def to_path(url: str) -> str:
+        """Extract normalized path from URL."""
+        if not url:
+            return ""
+        try:
+            parsed = urlparse(url)
+            path = parsed.path.rstrip('/') or '/'
+            return path
+        except:
+            return ""
+    
+    def is_good_nav_item(label: str) -> bool:
+        """Check if a navigation item is good (not phone numbers, CTAs, etc.)."""
+        if not label or len(label.strip()) < 1:
+            return False
+        
+        # Filter out phone numbers
+        phone_pattern = r'\(\d{3}\)\s*\d{3}-\d{4}|\d{3}-\d{3}-\d{4}|\d{3}\.\d{3}\.\d{4}'
+        if re.search(phone_pattern, label):
+            return False
+        
+        # Filter out common CTAs (but allow short navigation words)
+        cta_patterns = [
+            r'call us at', r'get a quote', r'free estimate', r'click here',
+            r'learn more', r'read more', r'view more', r'shop now',
+            r'buy now', r'sign up', r'subscribe', r'follow us',
+            r'like us', r'share', r'download', r'free', r'sale',
+            r'special offer', r'phone', r'email', r'address'
         ]
         
-        for pattern in nav_patterns:
-            nav_elements = soup.select(pattern)
-            for nav in nav_elements:
-                items = _extract_nav_items(nav, base_url)
-                if items:
-                    nav_items.extend(items)
-                    break
-            if nav_items:
-                break
+        label_lower = label.lower()
+        for pattern in cta_patterns:
+            if re.search(pattern, label_lower):
+                return False
+        
+        # Allow common navigation words even if short
+        common_nav_words = [
+            'home', 'about', 'contact', 'services', 'work', 'blog', 'news',
+            'shop', 'store', 'products', 'gallery', 'portfolio', 'team',
+            'careers', 'jobs', 'faq', 'help', 'support', 'login', 'register',
+            'account', 'profile', 'settings', 'admin', 'dashboard'
+        ]
+        if label_lower in common_nav_words:
+            return True
+        
+        # Filter out very short labels (but allow common nav words above)
+        if len(label) < 3:
+            return False
+        
+        # Filter out labels that are mostly numbers or symbols
+        if len(re.sub(r'[^a-zA-Z]', '', label)) < 2:
+            return False
+        
+        return True
     
-    # If still no navigation found, look for any ul/ol with links in header
-    if not nav_items:
-        header = soup.find('header')
-        if header:
-            for ul in header.find_all(['ul', 'ol']):
-                items = _extract_nav_items(ul, base_url)
-                if items:
-                    nav_items.extend(items)
-                    break
+    # Track all processed URLs to prevent duplication
+    processed_urls = set()
     
-    # Last resort: look for any div with class containing "nav" or "menu"
-    if not nav_items:
-        for div in soup.find_all('div'):
-            class_attr = div.get('class', [])
-            if any('nav' in cls.lower() or 'menu' in cls.lower() for cls in class_attr):
-                items = _extract_nav_items(div, base_url)
-                if items:
-                    nav_items.extend(items)
-                    break
+    def process_nav_element(nav_element, is_top_level=True):
+        """Process a navigation element and return nodes."""
+        nodes = []
+        
+        # Find direct child li elements
+        lis = nav_element.select(':scope > ul > li, :scope > li')
+        
+        for i, li in enumerate(lis):
+            # Find the main link in this li
+            main_link = li.select_one(':scope > a, :scope > span[role="link"]')
+            if not main_link:
+                continue
+            
+            # Extract label and href
+            label = main_link.get_text().strip()
+            label = re.sub(r'\s+', ' ', label)  # Normalize whitespace
+            
+            if not is_good_nav_item(label):
+                continue
+            
+            href = ""
+            if main_link.name == 'a' and main_link.get('href'):
+                href = to_abs(main_link['href'])
+            elif main_link.get('data-href'):
+                href = to_abs(main_link['data-href'])
+            
+            # Skip if we've already processed this URL (prevents duplication)
+            if href and href in processed_urls:
+                continue
+            
+            # Mark this URL as processed
+            if href:
+                processed_urls.add(href)
+            
+            # Create the node
+            node_id = hash_string(label + href)
+            node = {
+                'id': node_id,
+                'label': label,
+                'href': href,
+                'order': i,
+                'path': to_path(href) if href else None,
+                'children': []
+            }
+            
+            # Find children: nested ULs, dropdowns, megamenu columns
+            child_links = li.select(':scope ul li > a')
+            
+            if child_links:
+                children = []
+                for j, child_link in enumerate(child_links):
+                    child_label = child_link.get_text().strip()
+                    child_label = re.sub(r'\s+', ' ', child_label)
+                    
+                    if not is_good_nav_item(child_label):
+                        continue
+                    
+                    child_href = to_abs(child_link['href']) if child_link.get('href') else ""
+                    
+                    # Skip if we've already processed this child URL
+                    if child_href and child_href in processed_urls:
+                        continue
+                    
+                    # Mark this child URL as processed
+                    if child_href:
+                        processed_urls.add(child_href)
+                    
+                    child_id = hash_string(child_label + child_href)
+                    
+                    child_node = {
+                        'id': child_id,
+                        'label': child_label,
+                        'href': child_href,
+                        'order': j,
+                        'path': to_path(child_href) if child_href else None
+                    }
+                    children.append(child_node)
+                
+                node['children'] = children
+            
+            nodes.append(node)
+        
+        return nodes
     
-    return nav_items
+    # Process the main navigation element
+    nodes = process_nav_element(root, is_top_level=True)
+    
+    return nodes
+
+
+def extract_navigation(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
+    """
+    Extract navigation using the new hierarchical tree builder.
+    Returns NavNode[] with proper hierarchy, order, and normalization.
+    """
+    return buildNavTree(soup, base_url)
 
 
 def extract_footer(soup: BeautifulSoup, base_url: str) -> Dict[str, Any]:
@@ -181,111 +309,6 @@ def extract_footer(soup: BeautifulSoup, base_url: str) -> Dict[str, Any]:
     return footer_data
 
 
-def _extract_nav_items(nav_element, base_url: str) -> List[Dict[str, Any]]:
-    """Extract navigation items from a nav element, preserving order and nesting."""
-    import re
-    
-    items = []
-    
-    def _is_good_nav_item(label: str) -> bool:
-        """Check if a navigation item is good (not phone numbers, CTAs, etc.)."""
-        if not label or len(label.strip()) < 1:
-            return False
-        
-        # Filter out phone numbers
-        phone_pattern = r'\(\d{3}\)\s*\d{3}-\d{4}|\d{3}-\d{3}-\d{4}|\d{3}\.\d{3}\.\d{4}'
-        if re.search(phone_pattern, label):
-            return False
-        
-        # Filter out common CTAs (but allow short navigation words)
-        cta_patterns = [
-            r'call us at',
-            r'get a quote',
-            r'free estimate',
-            r'click here',
-            r'learn more',
-            r'read more',
-            r'view more',
-            r'shop now',
-            r'buy now',
-            r'sign up',
-            r'subscribe',
-            r'follow us',
-            r'like us',
-            r'share',
-            r'download',
-            r'free',
-            r'sale',
-            r'special offer',
-            r'phone',
-            r'email',
-            r'address'
-        ]
-        
-        label_lower = label.lower()
-        for pattern in cta_patterns:
-            if re.search(pattern, label_lower):
-                return False
-        
-        # Allow common navigation words even if short
-        common_nav_words = ['home', 'about', 'contact', 'services', 'work', 'blog', 'news', 'shop', 'store', 'products', 'gallery', 'portfolio', 'team', 'careers', 'jobs', 'faq', 'help', 'support', 'login', 'register', 'account', 'profile', 'settings', 'admin', 'dashboard']
-        if label_lower in common_nav_words:
-            return True
-        
-        # Filter out very short labels (but allow common nav words above)
-        if len(label) < 3:
-            return False
-        
-        # Filter out labels that are mostly numbers or symbols
-        if len(re.sub(r'[^a-zA-Z]', '', label)) < 2:
-            return False
-        
-        return True
-    
-    # Find all direct child links
-    for link in nav_element.find_all('a', href=True, recursive=False):
-        href = urljoin(base_url, link['href'])
-        label = link.get_text().strip()
-        
-        if label and href and _is_good_nav_item(label):
-            item = {
-                "label": label,
-                "href": href,
-                "children": []
-            }
-            
-            # Check for dropdown/submenu
-            parent_li = link.find_parent('li')
-            if parent_li:
-                submenu = parent_li.find('ul')
-                if submenu:
-                    item["children"] = _extract_nav_items(submenu, base_url)
-            
-            items.append(item)
-    
-    # If no direct links found, look for nested structure
-    if not items:
-        for li in nav_element.find_all('li', recursive=False):
-            link = li.find('a', href=True)
-            if link:
-                href = urljoin(base_url, link['href'])
-                label = link.get_text().strip()
-                
-                if label and href and _is_good_nav_item(label):
-                    item = {
-                        "label": label,
-                        "href": href,
-                        "children": []
-                    }
-                    
-                    # Check for submenu
-                    submenu = li.find('ul')
-                    if submenu:
-                        item["children"] = _extract_nav_items(submenu, base_url)
-                    
-                    items.append(item)
-    
-    return items
 
 
 def normalize_url(href: str, base_url: str) -> str:
