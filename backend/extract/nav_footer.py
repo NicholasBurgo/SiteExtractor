@@ -31,10 +31,39 @@ def buildNavTree(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
     Build a hierarchical navigation tree by parsing <nav> structures and dropdown/megamenu patterns.
     Returns NavNode[] with proper hierarchy, order, and normalization.
     """
-    # Find navigation roots
+    # Find navigation roots - try multiple strategies for small and large sites
     nav_roots = soup.select('header nav, [role="navigation"]')
     if not nav_roots:
         nav_roots = soup.select('nav')
+    
+    # For small sites, also check for nav links in headers without nav tags
+    if not nav_roots:
+        header = soup.find('header')
+        if header:
+            # Look for ul>li>a structure in header
+            nav_lists = header.select('ul')
+            if nav_lists:
+                # Use the first ul directly as root
+                nav_roots = nav_lists
+    
+    # Try even broader - look for common menu patterns anywhere
+    if not nav_roots:
+        # Look for common menu class/id patterns
+        menu_patterns = [
+            'ul.menu',
+            'ul.menu-item',
+            'ul.navigation',
+            'ul.main-menu',
+            'ul.primary-menu',
+            '#menu',
+            '.menu',
+            '.navigation'
+        ]
+        for pattern in menu_patterns:
+            nav_candidates = soup.select(pattern)
+            if nav_candidates:
+                nav_roots = nav_candidates
+                break
     
     if not nav_roots:
         return []
@@ -83,26 +112,40 @@ def buildNavTree(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
             r'call us at', r'get a quote', r'free estimate', r'click here',
             r'learn more', r'read more', r'view more', r'shop now',
             r'buy now', r'sign up', r'subscribe', r'follow us',
-            r'like us', r'share', r'download', r'free', r'sale',
-            r'special offer', r'phone', r'email', r'address'
+            r'like us', r'share', r'download', r'sale',
+            r'special offer'
         ]
         
-        label_lower = label.lower()
+        label_lower = label.lower().strip()
         for pattern in cta_patterns:
             if re.search(pattern, label_lower):
                 return False
         
         # Allow common navigation words even if short
         common_nav_words = [
-            'home', 'about', 'contact', 'services', 'work', 'blog', 'news',
-            'shop', 'store', 'products', 'gallery', 'portfolio', 'team',
-            'careers', 'jobs', 'faq', 'help', 'support', 'login', 'register',
-            'account', 'profile', 'settings', 'admin', 'dashboard'
+            'home', 'about', 'about us', 'contact', 'contact us', 'services', 
+            'service', 'work', 'blog', 'news', 'shop', 'store', 'products', 
+            'gallery', 'portfolio', 'team', 'careers', 'jobs', 'faq', 'help', 
+            'support', 'login', 'register', 'account', 'profile', 'settings', 
+            'admin', 'dashboard', 'menu', 'search'
         ]
         if label_lower in common_nav_words:
             return True
         
-        # Filter out very short labels (but allow common nav words above)
+        # For longer labels, allow if they look like navigation
+        # (not emails, phones, or promotional text)
+        if len(label) >= 5:
+            # Check if it looks like an email
+            if '@' in label or re.search(r'email|mail', label_lower):
+                return False
+            # Check if it's mostly promotional
+            if re.search(r'now available|limited time|act now', label_lower):
+                return False
+            # If it passes above checks and has reasonable length, allow
+            if len(label_lower.split()) <= 5:  # Allow up to 5 words
+                return True
+        
+        # Filter out very short labels that aren't in common nav words
         if len(label) < 3:
             return False
         
@@ -120,17 +163,34 @@ def buildNavTree(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
         nodes = []
         
         # Find direct child li elements
-        lis = nav_element.select(':scope > ul > li, :scope > li')
+        # Also handle case where nav_element is a ul itself
+        if nav_element.name == 'ul':
+            lis = nav_element.select(':scope > li')
+        else:
+            lis = nav_element.select(':scope > ul > li, :scope > li')
         
         for i, li in enumerate(lis):
-            # Find the main link in this li
-            main_link = li.select_one(':scope > a, :scope > span[role="link"]')
+            # Find the main link in this li - try multiple patterns
+            main_link = li.select_one(':scope > a')
             if not main_link:
+                main_link = li.select_one('a')
+            if not main_link:
+                main_link = li.select_one(':scope > span[role="link"]')
+            if not main_link:
+                # Check if the li itself has an onclick or data attribute
+                if li.get('onclick'):
+                    continue  # Skip JavaScript-based navigation
                 continue
             
             # Extract label and href
             label = main_link.get_text().strip()
             label = re.sub(r'\s+', ' ', label)  # Normalize whitespace
+            
+            # Fallback: if no text in the link, check for images with alt text
+            if not label:
+                img_in_link = main_link.find('img')
+                if img_in_link and img_in_link.get('alt'):
+                    label = img_in_link.get('alt').strip()
             
             if not is_good_nav_item(label):
                 continue
@@ -140,6 +200,8 @@ def buildNavTree(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
                 href = to_abs(main_link['href'])
             elif main_link.get('data-href'):
                 href = to_abs(main_link['data-href'])
+            elif main_link.get('href'):
+                href = to_abs(main_link['href'])
             
             # Skip if we've already processed this URL (prevents duplication)
             if href and href in processed_urls:
@@ -201,6 +263,37 @@ def buildNavTree(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
     
     # Process the main navigation element
     nodes = process_nav_element(root, is_top_level=True)
+    
+    # If we didn't find much navigation, try a broader search as fallback
+    if len(nodes) < 2:
+        # Look for all links in header area and top of page
+        header_area = soup.find('header')
+        if header_area:
+            all_header_links = header_area.find_all('a', href=True)
+            
+            for link in all_header_links:
+                # Skip if already processed
+                href = to_abs(link['href'])
+                if href and href in processed_urls:
+                    continue
+                
+                label = link.get_text().strip()
+                label = re.sub(r'\s+', ' ', label)
+                
+                if label and is_good_nav_item(label):
+                    # Mark as processed
+                    if href:
+                        processed_urls.add(href)
+                    
+                    node_id = hash_string(label + href)
+                    nodes.append({
+                        'id': node_id,
+                        'label': label,
+                        'href': href,
+                        'order': len(nodes),
+                        'path': to_path(href) if href else None,
+                        'children': []
+                    })
     
     return nodes
 
