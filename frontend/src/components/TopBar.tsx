@@ -34,20 +34,20 @@ export function TopBar({ runId, baseUrl, onExportSeed, onBack, saving }: TopBarP
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          {onExportSeed && (
-            <button
-              onClick={onExportSeed}
-              disabled={saving}
-              className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
-            >
-              {saving ? 'Exporting...' : 'Export Seed'}
-            </button>
-          )}
           <div className="text-sm text-gray-500">
             <a href="http://localhost:5051/docs" target="_blank" className="underline">
               API Docs
             </a>
           </div>
+          {onExportSeed && (
+            <button
+              onClick={onExportSeed}
+              disabled={saving}
+              className="px-4 py-2 bg-green-600 text-white rounded-full text-sm hover:bg-green-700 disabled:opacity-50"
+            >
+              {saving ? 'Processing...' : 'Confirm & Continue'}
+            </button>
+          )}
         </div>
       </div>
     </div>
