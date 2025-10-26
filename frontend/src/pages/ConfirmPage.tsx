@@ -24,6 +24,13 @@ const ConfirmPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pagesPerPage = 20;
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load prime data on mount
   useEffect(() => {
@@ -231,6 +238,51 @@ const ConfirmPage: React.FC = () => {
     }
   };
 
+  // Search and pagination helpers
+  const getFilteredPages = () => {
+    if (!primeData) return [];
+    if (!searchQuery.trim()) return primeData.pages;
+    
+    const query = searchQuery.toLowerCase();
+    return primeData.pages.filter(page => 
+      (page.titleGuess && page.titleGuess.toLowerCase().includes(query)) ||
+      (page.path && page.path.toLowerCase().includes(query))
+    );
+  };
+
+  const getTotalPages = () => {
+    const filteredPages = getFilteredPages();
+    return Math.ceil(filteredPages.length / pagesPerPage);
+  };
+
+  const getCurrentPagePages = () => {
+    const filteredPages = getFilteredPages();
+    const startIndex = (currentPage - 1) * pagesPerPage;
+    const endIndex = startIndex + pagesPerPage;
+    return filteredPages.slice(startIndex, endIndex);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < getTotalPages()) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
   if (extracting) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -334,27 +386,112 @@ const ConfirmPage: React.FC = () => {
       <div className="flex">
         {/* Left Sidebar - Only on Content tab */}
         {activeTab === 'content' && (
-          <div className="w-64 bg-white shadow-sm border-r border-gray-200 p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">All Pages</h3>
-            <div className="space-y-1">
-              {primeData.pages.map((page) => (
-                <button
-                  key={page.pageId}
-                  onClick={() => handlePageSelect(page.path)}
-                  className={`w-full text-left px-3 py-2 rounded text-sm ${
-                    selectedPagePath === page.path
-                      ? 'bg-blue-100 text-blue-900'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="font-medium truncate">{page.titleGuess || 'Untitled'}</div>
-                  <div className="text-xs text-gray-500 truncate">{page.path}</div>
-                  <div className="text-xs text-gray-400">
-                    {page.words || 0} words • {page.mediaCount || 0} media
+          <div className="w-64 bg-white shadow-sm border-r border-gray-200 flex flex-col">
+            <div className="p-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">All Pages</h3>
+              
+              <div className="text-xs text-gray-500 mb-3">
+                {searchQuery.trim() ? (
+                  <>
+                    Showing {getCurrentPagePages().length} of {getFilteredPages().length} filtered pages
+                  </>
+                ) : (
+                  <>
+                    Showing {((currentPage - 1) * pagesPerPage) + 1}-{Math.min(currentPage * pagesPerPage, primeData.pages.length)} of {primeData.pages.length} pages
+                  </>
+                )}
+              </div>
+              
+              {/* Search Bar */}
+              <div className="mb-3">
+                <input
+                  type="text"
+                  placeholder="Search pages..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Page Numbers */}
+              {getTotalPages() > 1 && (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <button
+                      onClick={handlePreviousPage}
+                      disabled={currentPage === 1}
+                      className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Page {currentPage} of {getTotalPages()}
+                    </span>
+                    <button
+                      onClick={handleNextPage}
+                      disabled={currentPage === getTotalPages()}
+                      className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
                   </div>
-                </button>
-              ))}
+                  
+                  {/* Page Number Buttons */}
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {Array.from({ length: Math.min(5, getTotalPages()) }, (_, i) => {
+                      let pageNum;
+                      if (getTotalPages() <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= getTotalPages() - 2) {
+                        pageNum = getTotalPages() - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-2 py-1 text-xs rounded ${
+                            currentPage === pageNum
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
+            
+            {/* Pages List */}
+            <div className="flex-1 overflow-y-auto px-4">
+              <div className="space-y-1">
+                {getCurrentPagePages().map((page) => (
+                  <button
+                    key={page.pageId}
+                    onClick={() => handlePageSelect(page.path)}
+                    className={`w-full text-left px-3 py-2 rounded text-sm ${
+                      selectedPagePath === page.path
+                        ? 'bg-blue-100 text-blue-900'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="font-medium truncate">{page.titleGuess || 'Untitled'}</div>
+                    <div className="text-xs text-gray-500 truncate">{page.path}</div>
+                    <div className="text-xs text-gray-400">
+                      {page.words || 0} words • {page.mediaCount || 0} media
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -377,6 +514,7 @@ const ConfirmPage: React.FC = () => {
                 onContentUpdate={handlePageContentUpdate}
                 loading={loading}
                 saving={saving}
+                selectedPagePath={selectedPagePath}
               />
             )}
             
