@@ -227,6 +227,10 @@ const ConfirmPage: React.FC = () => {
       setSaving(true);
       const result = await confirmationApi.generateSeed(runId);
       showToast(`Seed exported successfully: ${result.seedPath}`, 'success');
+      // Navigate to theme designer page after successful export
+      setTimeout(() => {
+        navigate('/theme-designer');
+      }, 1000);
     } catch (err) {
       if (err instanceof ConfirmationApiError) {
         showToast(`Failed to export seed: ${err.message}`, 'error');
