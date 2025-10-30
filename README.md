@@ -1,3 +1,218 @@
+<div align="center">
+
+# Site Test Generator
+Robust full‑stack crawler and content extractor with a review and confirmation workflow
+
+<br/>
+
+<a href="#"><img src="https://img.shields.io/badge/BUILD-PASSING-FF006E?style=for-the-badge" alt="Build Status"/></a>
+<a href="#license"><img src="https://img.shields.io/badge/LICENSE-PROPRIETARY-00D9FF?style=for-the-badge" alt="License"/></a>
+<a href="#"><img src="https://img.shields.io/badge/VERSION-2.0.0-8B5CF6?style=for-the-badge" alt="Version"/></a>
+
+</div>
+
+---
+
+## About
+Site Test Generator is a production‑ready toolkit for crawling websites, rendering pages when needed, and extracting structured content (HTML, images, PDFs, DOCX) into organized datasets. It includes a React frontend to review, summarize, and confirm extracted data before export/packaging.
+
+It focuses on reliability at scale with a modular crawler, robust parsing pipeline, and a clean UI for human‑in‑the‑loop verification.
+
+<br/>
+
+---
+
+## Key Features
+- **Full‑stack extraction pipeline**: Crawl, render, and parse HTML, PDFs, DOCX, and images
+- **Human‑in‑the‑loop review**: Rich React UI to review pages, summaries, and assets
+- **High‑performance backend**: FastAPI + Uvicorn with efficient parsers and orjson
+- **Content aggregation & rollups**: Summaries, truth tables, and navigation/footer extraction
+- **Local, file‑based runs**: Deterministic run folders with indexed pages and metadata
+- **Dockerized dev**: One‑command startup for API and web UI with proxying
+
+<br/>
+
+---
+
+## Tech Stack
+
+<div align="center">
+
+<b>Languages</b><br/>
+<img src="https://img.shields.io/badge/Python-FF006E?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/TypeScript-8B5CF6?style=for-the-badge&logo=typescript&logoColor=white" />
+<img src="https://img.shields.io/badge/JavaScript-00D9FF?style=for-the-badge&logo=javascript&logoColor=black" />
+<img src="https://img.shields.io/badge/HTML5-FF006E?style=for-the-badge&logo=html5&logoColor=white" />
+
+<br/>
+
+<b>Frontend</b><br/>
+<img src="https://img.shields.io/badge/React-00D9FF?style=for-the-badge&logo=react&logoColor=white" />
+<img src="https://img.shields.io/badge/Vite-8B5CF6?style=for-the-badge&logo=vite&logoColor=white" />
+<img src="https://img.shields.io/badge/Tailwind_CSS-FF006E?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+<img src="https://img.shields.io/badge/React_Router-00D9FF?style=for-the-badge&logo=reactrouter&logoColor=white" />
+
+<br/>
+
+<b>Backend</b><br/>
+<img src="https://img.shields.io/badge/FastAPI-8B5CF6?style=for-the-badge&logo=fastapi&logoColor=white" />
+<img src="https://img.shields.io/badge/Uvicorn-FF006E?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/aiohttp-00D9FF?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/Pydantic_v2-8B5CF6?style=for-the-badge&logo=pydantic&logoColor=white" />
+
+<br/>
+
+<b>Parsing & Extraction</b><br/>
+<img src="https://img.shields.io/badge/BeautifulSoup-FF006E?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/lxml-00D9FF?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/trafilatura-8B5CF6?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/readability--lxml-FF006E?style=for-the-badge&logo=python&logoColor=white" />
+
+<br/>
+
+<b>Documents & Media</b><br/>
+<img src="https://img.shields.io/badge/PyPDF2-00D9FF?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/pdfminer--six-8B5CF6?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/python--docx-FF006E?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/Pillow-00D9FF?style=for-the-badge&logo=python&logoColor=white" />
+
+<br/>
+
+<b>DevOps & Tools</b><br/>
+<img src="https://img.shields.io/badge/Docker-8B5CF6?style=for-the-badge&logo=docker&logoColor=white" />
+<img src="https://img.shields.io/badge/Docker_Compose-FF006E?style=for-the-badge&logo=docker&logoColor=white" />
+<img src="https://img.shields.io/badge/Playwright-00D9FF?style=for-the-badge&logo=microsoft&logoColor=white" />
+<img src="https://img.shields.io/badge/ORJSON-8B5CF6?style=for-the-badge&logo=json&logoColor=white" />
+
+</div>
+
+<br/>
+
+---
+
+## Architecture
+This project is organized as a **monorepo** with a FastAPI backend and a React (Vite) frontend.
+
+- **Backend (`backend/`)**: FastAPI application exposing endpoints for runs, pages, review, and confirmation. Crawler/extractor modules handle fetching, rendering, parsing, and aggregation. Data is written to run‑scoped folders under `backend/runs/`.
+- **Frontend (`frontend/`)**: React app using Vite and Tailwind for a responsive UI. It proxies API calls to the backend during development.
+- **Docker**: `docker-compose.yml` builds and runs both services for local development.
+
+<br/>
+
+---
+
+ 
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Python 3.11+
+- Docker & Docker Compose (optional, for containerized dev)
+
+<br/>
+
+### Installation (local dev)
+```bash
+# 1) Backend
+cd backend
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# If using Playwright-based rendering:
+python -m playwright install --with-deps || true
+
+# 2) Frontend
+cd ../frontend
+npm install
+```
+
+<br/>
+
+### Running (local dev)
+```bash
+# Terminal A - Backend
+cd backend
+uvicorn backend.app:app --host 0.0.0.0 --port 5051
+
+# Terminal B - Frontend (with API proxy)
+cd frontend
+npm run dev
+```
+
+Open the web app at `http://localhost:5173`.
+
+API docs available at `http://localhost:5051/docs` and `http://localhost:5051/redoc`.
+
+<br/>
+
+### Running with Docker Compose
+```bash
+docker-compose up --build
+```
+
+- API: `http://localhost:5051`
+- Web: `http://localhost:5173`
+
+<br/>
+
+---
+
+## API Documentation
+The FastAPI backend exposes these main routes (see interactive docs at `/docs`):
+
+- `GET /health` — health check
+- `GET /api/runs/*` — run management endpoints
+- `GET /api/pages/*` — page retrieval and detail
+- `GET /api/review/*` — review pipeline endpoints
+- `GET /api/confirm/*` — confirmation workflow endpoints
+
+Full OpenAPI schema and try‑it‑out UI are available at `/docs` and `/redoc`.
+
+<br/>
+
+---
+
+## Project Structure
+```text
+SiteTestGenerator/
+├─ backend/
+│  ├─ app.py                 # FastAPI app + routers
+│  ├─ core/                  # config, deps, types, utils
+│  ├─ crawl/                 # fetch, frontier, render, robots, runner
+│  ├─ extract/               # html, images, pdfs, docx, aggregations
+│  ├─ routers/               # runs, pages, review, confirm
+│  ├─ runs/                  # run artifacts (site.json, pages, indexes)
+│  ├─ storage/               # run storage, simhash, seed helpers
+│  └─ requirements.txt
+├─ frontend/
+│  ├─ src/                   # React app (Vite + Tailwind)
+│  ├─ index.html
+│  └─ vite.config.ts         # dev proxy to backend
+├─ docker-compose.yml        # dev orchestration (API + Web)
+├─ scripts/                  # dev/build helper scripts
+└─ README.md
+```
+
+<br/>
+
+---
+
+ 
+
+## License
+This project is released under a proprietary license. See the [`LICENSE`](./LICENSE) file for details.
+
+<br/>
+
+---
+
+<div align="center">
+
+Built with ♥ using <b style="color:#FF006E">FastAPI</b>, <b style="color:#8B5CF6">React</b>, and <b style="color:#00D9FF">Vite</b>.
+
+</div>
+
 # Universal Site Extractor v2
 
 A clean, production-ready fullstack site extractor with FastAPI backend, React frontend, and comprehensive content extraction capabilities.
@@ -363,14 +578,6 @@ For large sites (500+ pages):
 - Set `PER_HOST_LIMIT` to 10-15
 - Use SSD storage for better I/O performance
 - Consider running on multiple machines
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
 
 ## License
 
