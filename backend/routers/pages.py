@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Query
 from storage.runs import RunStore
 from core.types import PageSummary, PageDetail
+from typing import Optional, List
 
 router = APIRouter()
 
-@router.get("/{run_id}", response_model=list[PageSummary])
+@router.get("/{run_id}", response_model=List[PageSummary])
 async def list_pages(run_id: str, page: int = 1, size: int = 50,
-                     q: str | None = None, type: str | None = None, minText: int = 0):
+                     q: Optional[str] = None, type: Optional[str] = None, minText: int = 0):
     store = RunStore(run_id)
     return store.list_pages(page=page, size=size, q=q, type_filter=type, min_words=minText)
 

@@ -1,94 +1,94 @@
 from pydantic import BaseModel, Field
-from typing import Any, List, Optional, Dict, Tuple
+from typing import Any, List, Optional, Dict, Tuple, Union
 
 class StartRunRequest(BaseModel):
     url: str
-    maxPages: int | None = None
+    maxPages: Optional[int] = None
     maxDepth: int = 5
-    concurrency: int | None = None
-    renderBudget: float | None = None
+    concurrency: Optional[int] = None
+    renderBudget: Optional[float] = None
 
 class RunProgress(BaseModel):
     runId: str
     queued: int
     visited: int
     errors: int
-    etaSeconds: int | None
-    hosts: dict[str, int]
+    etaSeconds: Optional[int]
+    hosts: Dict[str, int]
 
 class PageSummary(BaseModel):
     pageId: str
     url: str
     contentType: str
-    title: str | None = None
+    title: Optional[str] = None
     words: int = 0
     images: int = 0
     links: int = 0
-    status: int | None = None
-    path: str | None = None
-    type: str | None = None  # HTML/PDF/DOCX/JSON/CSV/IMG
+    status: Optional[int] = None
+    path: Optional[str] = None
+    type: Optional[str] = None  # HTML/PDF/DOCX/JSON/CSV/IMG
 
 class PageDetail(BaseModel):
     summary: PageSummary
     meta: dict
-    text: str | None = None
-    htmlExcerpt: str | None = None
-    headings: list[str] = []
-    images: list[str] = []
-    links: list[str] = []
-    tables: list[dict] = []
-    structuredData: list[dict] = []
-    stats: dict = {}
+    text: Optional[str] = None
+    htmlExcerpt: Optional[str] = None
+    headings: List[str] = []
+    images: List[str] = []
+    links: List[str] = []
+    tables: List[Dict] = []
+    structuredData: List[Dict] = []
+    stats: Dict = {}
 
 # Review and Confirmation Models
 class BusinessProfile(BaseModel):
-    name: str | None = None
-    tagline: str | None = None
-    phones: list[str] = []
-    emails: list[str] = []
-    socials: dict[str, str] = {}  # {"facebook": "...", "instagram": "..."}
-    logo: str | None = None
-    brand_colors: list[str] = []  # hex list
-    sources: list[str] = []       # pageIds
+    name: Optional[str] = None
+    tagline: Optional[str] = None
+    phones: List[str] = []
+    emails: List[str] = []
+    socials: Dict[str, str] = {}  # {"facebook": "...", "instagram": "..."}
+    logo: Optional[str] = None
+    brand_colors: List[str] = []  # hex list
+    sources: List[str] = []       # pageIds
 
 class ItemBase(BaseModel):
     id: str
     title: str
-    description: str | None = None
-    image: str | None = None
-    price: str | None = None
-    cta: dict[str, str] | None = None
+    description: Optional[str] = None
+    image: Optional[str] = None
+    price: Optional[str] = None
+    cta: Optional[Dict[str, str]] = None
     confidence: float = 0.0
-    sources: list[str] = []
+    sources: List[str] = []
 
 class Location(BaseModel):
     id: str
-    name: str | None = None
-    address: str | None = None
-    phone: str | None = None
-    hours: dict[str, str] | None = None
-    latlng: tuple[float, float] | None = None
+    name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    hours: Optional[Dict[str, str]] = None
+    latlng: Optional[Tuple[float, float]] = None
     confidence: float = 0.0
-    sources: list[str] = []
+    sources: List[str] = []
 
 class NavItem(BaseModel):
     label: str
-    href: str | None = None
-    children: list["NavItem"] = []
+    href: Optional[str] = None
+    children: List["NavItem"] = []
 
 class DraftModel(BaseModel):
     runId: str
     business: BusinessProfile
-    services: list[ItemBase] = []
-    products: list[ItemBase] = []
-    menu: list[ItemBase] = []
-    locations: list[Location] = []
-    team: list[ItemBase] = []          # use title as name, description as role
-    faqs: list[dict] = []              # {q,a,confidence,sources}
-    testimonials: list[dict] = []      # {author,text,confidence,sources}
-    policies: list[dict] = []          # privacy/terms
-    media: list[dict] = []             # {src,alt,role}
-    sitemap: dict = Field(default_factory=lambda: {  # proposed navs
+    services: List[ItemBase] = []
+    products: List[ItemBase] = []
+    menu: List[ItemBase] = []
+    locations: List[Location] = []
+    team: List[ItemBase] = []          # use title as name, description as role
+    faqs: List[Dict] = []              # {q,a,confidence,sources}
+    testimonials: List[Dict] = []      # {author,text,confidence,sources}
+    policies: List[Dict] = []          # privacy/terms
+    media: List[Dict] = []             # {src,alt,role}
+    sitemap: Dict = Field(default_factory=lambda: {  # proposed navs
         "primary": [],
         "secondary": [],
         "footer": [],
