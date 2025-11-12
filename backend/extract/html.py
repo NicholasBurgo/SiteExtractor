@@ -5,9 +5,9 @@ import json
 from bs4 import BeautifulSoup
 from readability import Document
 import trafilatura
-from crawl.fetch import FetchResponse
-from extract.nav_footer import extract_navigation, extract_footer
-from extract.files_words_links import extract_structured_content
+from backend.crawl.fetch import FetchResponse
+from backend.extract.nav_footer import extract_navigation, extract_footer
+from backend.extract.files_words_links import extract_structured_content
 
 async def extract_html(resp: FetchResponse, run_id: str = None) -> dict:
     """

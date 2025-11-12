@@ -1,7 +1,7 @@
 import io
 import hashlib
 from PIL import Image
-from crawl.fetch import FetchResponse
+from backend.crawl.fetch import FetchResponse
 
 async def extract_images(resp: FetchResponse) -> dict:
     """

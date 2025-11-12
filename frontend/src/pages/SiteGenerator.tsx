@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { startRun, getProgress } from "../lib/api";
+import { startRun, getExtractionStatus } from "../lib/api";
 import CheckpointDropdown from "../components/CheckpointDropdown";
 
 export default function SiteGenerator() {
@@ -9,14 +9,30 @@ export default function SiteGenerator() {
   const [maxPages, setMaxPages] = useState(20);
   const [timeout, setTimeout] = useState(10);
   const [usePlaywright, setUsePlaywright] = useState(true);
+  const [botAvoidanceEnabled, setBotAvoidanceEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearPoll = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearPoll();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    clearPoll();
     
     if (!url || !url.startsWith('http')) {
       setError('Please enter a valid URL starting with http:// or https://');
@@ -25,33 +41,43 @@ export default function SiteGenerator() {
     }
     
     try {
-      const body = { url, maxPages, timeout, usePlaywright };
+      const body = {
+        url,
+        maxPages,
+        timeout,
+        usePlaywright,
+        botAvoidanceEnabled: botAvoidanceEnabled || undefined
+      };
       const res = await startRun(body);
       setRunId(res.runId);
       
-      // Start polling for progress
+      // Start polling extraction status until completion
       const poll = setInterval(async () => {
         if (!res.runId) return;
         try {
-          const prog = await getProgress(res.runId);
-          
-          // Check if run is completed (no more queued items or status indicates completion)
-          console.log('Progress check:', { queued: prog.queued, visited: prog.visited, status: prog.status });
-          if (prog.queued === 0 || prog.status === 'completed') {
-            console.log('Run completed, navigating to confirm page');
-            clearInterval(poll);
+          const status = await getExtractionStatus(res.runId);
+          console.log('Extraction status check:', status);
+
+          if (status.isComplete) {
+            console.log('Run completed. hasData:', status.hasData);
+            clearPoll();
             setLoading(false);
-            // Navigate directly to confirm page instead of showing results
             navigate(`/confirm/${res.runId}`);
           }
         } catch (error) {
           console.error("Polling error:", error);
+          clearPoll();
+          setLoading(false);
+          setError('Failed to check extraction status. Please try again.');
         }
       }, 1500);
+      pollRef.current = poll;
       
     } catch (error) {
       console.error("Start run error:", error);
       setError('Unable to connect to the backend server. Please make sure the backend is running.');
+      clearPoll();
+      setRunId(null);
       setLoading(false);
     }
   };
@@ -68,11 +94,7 @@ export default function SiteGenerator() {
           </p>
           
           {/* Header Buttons */}
-          <div className="flex gap-3 mb-8">
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors">
-              <span>▷</span>
-              Run Generator
-            </button>
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
             <CheckpointDropdown />
           </div>
         </div>
@@ -145,20 +167,42 @@ export default function SiteGenerator() {
                     Use Playwright for JavaScript sites
                   </label>
                 </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="botAvoid"
+                    type="checkbox"
+                    checked={botAvoidanceEnabled}
+                    onChange={(e) => setBotAvoidanceEnabled(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <label htmlFor="botAvoid" className="text-sm text-gray-600">
+                    Enable bot-avoidance safeguards (slower crawling)
+                  </label>
+                </div>
               </div>
             </details>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-4 rounded-xl font-medium text-white transition-all ${
-                loading
-                  ? "bg-blue-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
-              }`}
-            >
-              {loading ? "Running..." : "▷ Run Generator"}
-            </button>
+            <div className="flex gap-3 items-center">
+              <button
+                type="submit"
+                disabled={loading}
+                className={`flex-1 py-4 rounded-full font-medium text-white transition-all text-lg ${
+                  loading
+                    ? "bg-blue-300 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200"
+                }`}
+              >
+                {loading ? "Running..." : "▷ Run Generator"}
+              </button>
+              
+              <button
+                type="button"
+                className="flex items-center gap-2 px-5 py-3.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium shadow-sm hover:bg-amber-200 transition-colors whitespace-nowrap"
+              >
+                <span className="text-base">⏭</span>
+                Skip Extraction
+              </button>
+            </div>
 
             {runId && (
               <div className="text-center space-y-2">

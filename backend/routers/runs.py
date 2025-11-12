@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from core.types import StartRunRequest, RunProgress
-from crawl.runner import RunManager
+from backend.core.types import StartRunRequest, RunProgress
+from backend.crawl.runner import RunManager
 import os
 import json
 import shutil
@@ -87,3 +87,35 @@ async def delete_run(run_id: str):
         return {"deleted": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting run: {str(e)}")
+
+
+@router.delete("/delete-all")
+async def delete_all_runs():
+    """Delete all runs and their data."""
+    runs_dir = "runs"
+    if not os.path.exists(runs_dir):
+        return {"deleted": 0}
+
+    deleted = 0
+    errors = []
+
+    for run_id in os.listdir(runs_dir):
+        run_path = os.path.join(runs_dir, run_id)
+        if not os.path.isdir(run_path):
+            continue
+        try:
+            await manager.stop(run_id)
+        except Exception as e:
+            # Record stop errors but continue deletion attempt
+            errors.append(f"{run_id}: stop failed ({e})")
+
+        try:
+            shutil.rmtree(run_path)
+            deleted += 1
+        except Exception as e:
+            errors.append(f"{run_id}: delete failed ({e})")
+
+    if errors:
+        raise HTTPException(status_code=500, detail={"deleted": deleted, "errors": errors})
+
+    return {"deleted": deleted}

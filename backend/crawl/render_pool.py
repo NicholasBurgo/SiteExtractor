@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional, List
 from playwright.async_api import async_playwright, Browser, Page
-from core.config import Settings
+from backend.core.config import Settings
 
 class RenderPool:
     """

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import runs, pages, review, confirm
-from core.config import settings
+from backend.core.config import settings
+from backend.routers import runs, pages, review, confirm
 
 app = FastAPI(
     title="Site Generator API",

@@ -4,6 +4,7 @@ export interface StartRunRequest {
   maxDepth?: number;
   concurrency?: number;
   renderBudget?: number;
+  botAvoidanceEnabled?: boolean;
 }
 
 export interface RunProgress {

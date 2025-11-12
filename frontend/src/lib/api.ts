@@ -1,10 +1,15 @@
-export async function startRun(body: { url: string; maxPages?: number; maxDepth?: number; concurrency?: number; renderBudget?: number; }) {
+export async function startRun(body: { url: string; maxPages?: number; maxDepth?: number; concurrency?: number; renderBudget?: number; botAvoidanceEnabled?: boolean; }) {
   const r = await fetch("/api/runs/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   return r.json();
 }
 
 export async function getProgress(runId: string) {
   const r = await fetch(`/api/runs/${runId}/progress`);
+  return r.json();
+}
+
+export async function getExtractionStatus(runId: string) {
+  const r = await fetch(`/api/confirm/${runId}/status`);
   return r.json();
 }
 
