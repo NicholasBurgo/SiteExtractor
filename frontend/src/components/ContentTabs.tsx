@@ -11,13 +11,15 @@ interface ContentTabsProps {
   onContentUpdate: (content: Partial<PageContent>) => void;
   loading: boolean;
   saving: boolean;
+  selectedPagePath?: string;
 }
 
 const ContentTabs: React.FC<ContentTabsProps> = ({
   pageContent,
   onContentUpdate,
   loading,
-  saving
+  saving,
+  selectedPagePath
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ContentSubTab>('media');
   const [editingContent, setEditingContent] = useState(false);
@@ -88,8 +90,10 @@ const ContentTabs: React.FC<ContentTabsProps> = ({
 
   return (
     <div>
-      {/* Sub-tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
+      {/* Page Info and Tabs Header */}
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        {/* Sub-tab Navigation - Left Side */}
+        <div className="flex-shrink-0">
         <nav className="flex space-x-8">
           {[
             { id: 'media', label: 'Images / GIFs / Videos' },
@@ -110,11 +114,24 @@ const ContentTabs: React.FC<ContentTabsProps> = ({
             </button>
           ))}
         </nav>
+        </div>
+
+        {/* Page Information - Right Side */}
+        {pageContent && (
+          <div className="flex-1 min-w-0 ml-6 text-right">
+            <h2 className="text-sm font-bold text-gray-900 truncate">
+              {pageContent.title || 'Untitled Page'}
+            </h2>
+            <div className="text-xs text-gray-500 truncate">
+              {pageContent.url || selectedPagePath || 'Unknown'}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end mb-4">
-        {editingContent ? (
+      {editingContent && (
+        <div className="flex justify-end mb-4">
           <div className="space-x-2">
             <button
               onClick={() => {
@@ -128,27 +145,28 @@ const ContentTabs: React.FC<ContentTabsProps> = ({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
-        ) : (
-          <button
-            onClick={() => setEditingContent(true)}
-            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-          >
-            Edit Content
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Media Tab */}
       {activeSubTab === 'media' && (
         <div className="space-y-6">
           {/* Images */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Images</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Images</h3>
+              <button
+                onClick={() => setEditingContent(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700"
+              >
+                Edit Content
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {currentContent.media.images.map((image, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
@@ -228,7 +246,15 @@ const ContentTabs: React.FC<ContentTabsProps> = ({
       {/* Files Tab */}
       {activeSubTab === 'files' && (
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Downloadable Files</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Downloadable Files</h3>
+            <button
+              onClick={() => setEditingContent(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700"
+            >
+              Edit Content
+            </button>
+          </div>
           {currentContent.files.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No files found</p>
           ) : (
@@ -275,6 +301,15 @@ const ContentTabs: React.FC<ContentTabsProps> = ({
       {/* Words Tab */}
       {activeSubTab === 'words' && (
         <div className="space-y-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Words</h3>
+            <button
+              onClick={() => setEditingContent(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700"
+            >
+              Edit Content
+            </button>
+          </div>
           {/* Title and Description */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -354,7 +389,15 @@ const ContentTabs: React.FC<ContentTabsProps> = ({
         <div className="space-y-6">
           {/* Internal Links */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Internal Links</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Internal Links</h3>
+              <button
+                onClick={() => setEditingContent(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700"
+              >
+                Edit Content
+              </button>
+            </div>
             {currentContent.links.internal.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No internal links found</p>
             ) : (
@@ -397,7 +440,15 @@ const ContentTabs: React.FC<ContentTabsProps> = ({
 
           {/* External Links */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">External Links</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">External Links</h3>
+              <button
+                onClick={() => setEditingContent(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700"
+              >
+                Edit Content
+              </button>
+            </div>
             {currentContent.links.external.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No external links found</p>
             ) : (
