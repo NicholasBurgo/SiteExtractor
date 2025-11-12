@@ -7,6 +7,7 @@ class StartRunRequest(BaseModel):
     maxDepth: int = 5
     concurrency: int | None = None
     renderBudget: float | None = None
+    botAvoidanceEnabled: bool | None = None
 
 class RunProgress(BaseModel):
     runId: str

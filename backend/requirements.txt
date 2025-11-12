@@ -13,3 +13,5 @@ pydantic
 pydantic-settings
 playwright
 Pillow
+requests
+Brotli

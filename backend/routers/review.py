@@ -5,9 +5,9 @@ Review API routes for site generator confirmation workflow.
 import os
 import json
 from fastapi import APIRouter, HTTPException, Response
-from core.types import DraftModel, ConfirmRequest
-from extract.aggregate import build_draft_model
-from storage.runs import RunStore
+from backend.core.types import DraftModel, ConfirmRequest
+from backend.extract.aggregate import build_draft_model
+from backend.storage.runs import RunStore
 
 router = APIRouter()
 

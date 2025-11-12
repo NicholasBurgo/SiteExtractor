@@ -2,15 +2,15 @@ import os
 import json
 import time
 from typing import List, Optional, Dict, Any
-from core.types import PageSummary, PageDetail
-from crawl.frontier import Frontier
+from backend.core.types import PageSummary, PageDetail
+from backend.crawl.frontier import Frontier
 
 class RunStore:
     """
     File-based storage for extraction runs.
     """
     
-    def __init__(self, run_id: str, data_dir: str = "runs"):
+    def __init__(self, run_id: str, data_dir: str = "runs", meta_overrides: dict | None = None):
         self.run_id = run_id
         self.data_dir = data_dir
         self.run_dir = os.path.join(data_dir, run_id)
@@ -34,6 +34,16 @@ class RunStore:
                     "pages": [],
                     "errors": []
                 }, f)
+        
+        if meta_overrides:
+            try:
+                with open(self.meta_file, 'r') as f:
+                    meta = json.load(f)
+                meta.update(meta_overrides)
+                with open(self.meta_file, 'w') as f:
+                    json.dump(meta, f)
+            except Exception as e:
+                print(f"Error updating run meta: {e}")
     
     def save_doc(self, doc: dict):
         """Save extracted document."""

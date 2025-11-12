@@ -6,8 +6,8 @@ from datetime import datetime
 from collections import Counter, defaultdict
 import re
 
-from core.types import PageResult, RunRollup, ContactInfo, ServiceInfo, NavItem
-from core.utils import extract_emails, extract_phones, clean_text
+from backend.core.types import PageResult, RunRollup, ContactInfo, ServiceInfo, NavItem
+from backend.core.utils import extract_emails, extract_phones, clean_text
 
 
 class RollupGenerator:

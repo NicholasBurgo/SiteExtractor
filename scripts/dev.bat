@@ -1,15 +1,31 @@
 @echo off
-echo Starting Universal Site Extractor v2...
+setlocal
 
-echo Starting FastAPI backend...
-start "Backend" cmd /k "cd backend && py -m pip install -r requirements.txt && py -m uvicorn app:app --reload --port 5051"
+set "SCRIPT_DIR=%~dp0"
+set "ROOT_DIR=%SCRIPT_DIR%.."
 
-echo Starting React frontend...
-start "Frontend" cmd /k "cd frontend && npm install && npm run dev"
+pushd "%ROOT_DIR%"
 
-echo Services starting...
-echo Backend API: http://localhost:5051
-echo Frontend UI: http://localhost:5173
-echo API Docs: http://localhost:5051/docs
+if exist ".venv\Scripts\python.exe" (
+    set "DEV_PYTHON=.venv\Scripts\python.exe"
+) else (
+    where py >nul 2>nul
+    if %errorlevel%==0 (
+        set "DEV_PYTHON=py"
+    ) else (
+        where python >nul 2>nul
+        if %errorlevel%==0 (
+            set "DEV_PYTHON=python"
+        ) else (
+            echo Python 3.10+ is required but was not found on PATH.
+            popd
+            exit /b 1
+        )
+    )
+)
 
-pause
+%DEV_PYTHON% scripts\dev.py
+
+set "EXIT_CODE=%errorlevel%"
+popd
+exit /b %EXIT_CODE%
