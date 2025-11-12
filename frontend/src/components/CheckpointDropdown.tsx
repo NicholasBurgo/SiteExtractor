@@ -85,7 +85,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 px-6 py-3 bg-gray-50 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-100 transition-all duration-200 border border-gray-200 hover:border-gray-300"
       >
         <span>🕒</span>
         Checkpoint
@@ -100,7 +100,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-2xl shadow-lg z-50">
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900">Available Runs</h3>
             <p className="text-xs text-gray-600 mt-1">Select a run to view its checkpoint</p>
@@ -124,7 +124,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
                   <button
                     key={run.runId}
                     onClick={() => handleRunSelect(run.runId)}
-                    className="w-full text-left p-4 hover:bg-gray-50 transition-colors"
+                    className="w-full text-left p-4 hover:bg-gray-50 transition-colors rounded-lg mx-2 my-1"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-900">Run {run.runId}</span>
@@ -156,3 +156,4 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
 };
 
 export default CheckpointDropdown;
+

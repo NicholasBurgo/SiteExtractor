@@ -1,8 +1,15 @@
 @echo off
 echo Starting Universal Site Extractor v2...
 
+REM Setup virtual environment
+if not exist "venv" (
+    echo Creating virtual environment...
+    py -m venv venv
+)
+
+REM Activate virtual environment and start backend
 echo Starting FastAPI backend...
-start "Backend" cmd /k "cd backend && py -m pip install -r requirements.txt && py -m uvicorn app:app --reload --port 5051"
+start "Backend" cmd /k "call venv\Scripts\activate && cd backend && pip install -q -r requirements.txt && cd .. && uvicorn backend.app:app --reload --port 5051"
 
 echo Starting React frontend...
 start "Frontend" cmd /k "cd frontend && npm install && npm run dev"
