@@ -69,7 +69,7 @@ export default function SiteGenerator() {
           
           {/* Header Buttons */}
           <div className="flex gap-3 mb-8">
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors">
+             <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition-colors">
               <span>▷</span>
               Run Generator
             </button>
@@ -94,7 +94,7 @@ export default function SiteGenerator() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
                 >
                   📋
                 </button>
@@ -148,15 +148,15 @@ export default function SiteGenerator() {
               </div>
             </details>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-4 rounded-xl font-medium text-white transition-all ${
-                loading
-                  ? "bg-blue-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
-              }`}
-            >
+             <button
+               type="submit"
+               disabled={loading}
+               className={`w-full py-4 rounded-full font-medium text-white transition-all ${
+                 loading
+                   ? "bg-blue-300 cursor-not-allowed"
+                   : "bg-blue-500 hover:bg-blue-600"
+               }`}
+             >
               {loading ? "Running..." : "▷ Run Generator"}
             </button>
 
