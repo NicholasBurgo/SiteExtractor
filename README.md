@@ -29,29 +29,65 @@ This is a **complete rewrite** that replaces the old extraction system with:
 
 1. **Start both servers**:
    ```bash
-   # On Windows (PowerShell)
-   .\scripts\dev.sh
+   # On Fedora Linux (recommended)
+   ./start-fedora.sh
    
-   # On Linux/Mac
+   # Or on any Linux/Mac
    chmod +x scripts/dev.sh
    ./scripts/dev.sh
+   
+   # On Windows
+   scripts\dev.bat
    ```
+   
+   The script will automatically:
+   - Check and install Python 3 and Node.js if needed (Fedora only)
+   - Create a Python virtual environment if it doesn't exist
+   - Upgrade pip to latest version
+   - Install backend dependencies in the virtual environment
+   - Install frontend dependencies
+   - Start both frontend and backend servers
 
 2. **Access the application**:
    - **Frontend UI**: http://localhost:5173
    - **Backend API**: http://localhost:5051  
    - **Swagger Docs**: http://localhost:5051/docs
 
+### Option 1b: Run Services Separately (Better for Debugging)
+
+For better visibility of logs and easier debugging, run each service in its own terminal:
+
+**Terminal 1 - Backend:**
+```bash
+./start-backend.sh
+```
+
+**Terminal 2 - Frontend:**
+```bash
+./start-frontend.sh
+```
+
+This allows you to:
+- See backend logs without frontend noise
+- Restart one service without affecting the other
+- Debug issues more easily
+
 ### Option 2: Manual Setup
 
-1. **Backend**:
+1. **Create and activate virtual environment** (recommended):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+2. **Backend**:
    ```bash
    cd backend
    pip install -r requirements.txt
-   uvicorn backend.app:app --reload --port 5051
+   uvicorn app:app --reload --port 5051
    ```
 
-2. **Frontend** (in new terminal):
+3. **Frontend** (in new terminal):
    ```bash
    cd frontend
    npm install
@@ -67,13 +103,15 @@ docker-compose up --build
 ### Production Build
 
 ```bash
-# On Windows (PowerShell)
-.\scripts\build.sh
-
 # On Linux/Mac
 chmod +x scripts/build.sh
 ./scripts/build.sh
+
+# On Windows
+scripts\build.bat
 ```
+
+**Note**: The build script will automatically create a virtual environment if it doesn't exist.
 
 ## 📖 How to Use
 
