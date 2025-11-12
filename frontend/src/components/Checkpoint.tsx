@@ -155,7 +155,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
           <p className="text-gray-600">No run ID provided</p>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mt-4"
+            className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 mt-4"
           >
             Back to Generator
           </button>
@@ -297,7 +297,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
         <div className="flex justify-center space-x-4">
           <button
             onClick={handleContinue}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            className="px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 font-medium"
           >
             Continue to Confirmation
           </button>
@@ -305,7 +305,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50"
+            className="px-6 py-3 bg-red-600 text-white rounded-full hover:bg-red-700 font-medium disabled:opacity-50"
           >
             {deleting ? 'Deleting...' : 'Delete Run'}
           </button>
