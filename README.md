@@ -25,16 +25,36 @@ This is a **complete rewrite** that replaces the old extraction system with:
 - **Node.js 18+** (for React frontend)
 - **Git** (for cloning)
 
+### Fedora Linux Setup
+
+Fedora ships with most prerequisites, but a few development headers are needed to compile Python packages such as `lxml` and `Pillow`.
+
+```bash
+sudo dnf install \
+  python3 python3-pip python3-virtualenv \
+  nodejs npm \
+  libxml2-devel libxslt-devel \
+  gcc-c++ make file
+
+# Optional: install browser deps for Playwright rendering
+python3 -m pip install --upgrade pip
+python3 -m pip install playwright
+python3 -m playwright install-deps
+python3 -m playwright install chromium
+```
+
+With the dependencies in place, the provided `scripts/dev.sh` and `scripts/build.sh` will create a project-local virtual environment (`.venv`) automatically when you run them.
+
 ### Option 1: Development Mode (Recommended)
 
 1. **Start both servers**:
    ```bash
-   # On Windows (PowerShell)
-   .\scripts\dev.sh
-   
-   # On Linux/Mac
-   chmod +x scripts/dev.sh
-   ./scripts/dev.sh
+   # Cross-platform (recommended)
+   python scripts/dev.py
+
+   # Legacy helpers
+   #   macOS/Linux: ./scripts/dev.sh
+   #   Windows:     scripts\dev.bat
    ```
 
 2. **Access the application**:

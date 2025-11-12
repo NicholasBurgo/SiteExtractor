@@ -21,6 +21,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
   const [isOpen, setIsOpen] = useState(false);
   const [runs, setRuns] = useState<RunInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,6 +58,34 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (deletingAll) return;
+
+    const confirmed = window.confirm('Are you sure you want to delete all checkpoints? This cannot be undone.');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingAll(true);
+      const response = await fetch('/api/runs/delete-all', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Delete all failed with status ${response.status}`);
+      }
+
+      await loadRuns();
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error deleting all runs:', error);
+      alert('Failed to delete all checkpoints. Please try again.');
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   const handleRunSelect = (runId: string) => {
     navigate(`/checkpoint/${runId}`);
     setIsOpen(false);
@@ -85,7 +114,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 px-5 py-2.5 bg-white/80 border border-gray-200 rounded-full text-sm text-gray-600 shadow-sm hover:bg-white transition-colors"
       >
         <span>🕒</span>
         Checkpoint
@@ -100,7 +129,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <div className="absolute top-full left-0 mt-3 w-96 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900">Available Runs</h3>
             <p className="text-xs text-gray-600 mt-1">Select a run to view its checkpoint</p>
@@ -148,6 +177,15 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
                 ))}
               </div>
             )}
+          </div>
+          <div className="p-3 border-t border-gray-200 bg-gray-50">
+            <button
+              onClick={handleDeleteAll}
+              disabled={deletingAll || runs.length === 0}
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-full hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {deletingAll ? 'Deleting...' : 'Delete All Checkpoints'}
+            </button>
           </div>
         </div>
       )}

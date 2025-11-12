@@ -7,7 +7,7 @@ import json
 import time
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
-from extract.nav_footer import extract_navigation, extract_footer
+from backend.extract.nav_footer import extract_navigation, extract_footer
 
 
 class ConfirmationStore:

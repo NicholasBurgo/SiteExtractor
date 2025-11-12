@@ -2,7 +2,8 @@ import aiohttp
 import asyncio
 from typing import Optional
 from dataclasses import dataclass
-from core.config import Settings
+from backend.core.config import Settings
+from backend.crawl.bot_avoidance import BotAvoidanceStrategy
 
 @dataclass
 class FetchResponse:
@@ -12,16 +13,18 @@ class FetchResponse:
     status: int
     headers: dict
     path: str
+    blocked_reason: str | None = None
 
 class Fetcher:
     """
     Async HTTP fetcher with rate limiting and retry logic.
     """
     
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, bot_strategy: BotAvoidanceStrategy | None = None):
         self.settings = settings
         self.session: Optional[aiohttp.ClientSession] = None
         self._semaphore = asyncio.Semaphore(settings.GLOBAL_CONCURRENCY)
+        self.bot_strategy = bot_strategy
         
     async def __aenter__(self):
         timeout = aiohttp.ClientTimeout(total=self.settings.REQUEST_TIMEOUT_SEC)
@@ -42,9 +45,20 @@ class Fetcher:
             
         async with self._semaphore:
             try:
-                async with self.session.get(url) as response:
+                if self.bot_strategy:
+                    await self.bot_strategy.before_request(url)
+                    request_kwargs = self.bot_strategy.prepare_request_kwargs(url)
+                else:
+                    request_kwargs = {}
+
+                status = None
+                async with self.session.get(url, **request_kwargs) as response:
                     content = await response.read()
                     content_type = response.headers.get('content-type', 'text/html')
+                    status = response.status
+                    blocked_reason = None
+                    if self.bot_strategy:
+                        blocked_reason = self.bot_strategy.detect_block(url, status, dict(response.headers), content)
                     
                     return FetchResponse(
                         url=str(response.url),
@@ -52,11 +66,15 @@ class Fetcher:
                         content_type=content_type,
                         status=response.status,
                         headers=dict(response.headers),
-                        path=url
+                        path=url,
+                        blocked_reason=blocked_reason
                     )
             except Exception as e:
                 print(f"Fetch error for {url}: {e}")
                 return None
+            finally:
+                if self.bot_strategy:
+                    self.bot_strategy.after_request(url, status)
                 
     async def fetch_text(self, url: str) -> Optional[str]:
         """
