@@ -1,7 +1,7 @@
 import io
 import hashlib
 from docx import Document
-from crawl.fetch import FetchResponse
+from backend.crawl.fetch import FetchResponse
 
 async def extract_docx(resp: FetchResponse) -> dict:
     """

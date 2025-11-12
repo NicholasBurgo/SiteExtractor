@@ -1,15 +1,16 @@
 import asyncio, time, orjson as json
 from dataclasses import dataclass
 from typing import Dict
-from core.config import settings
-from crawl.frontier import Frontier
-from crawl.fetch import Fetcher
-from extract.html import extract_html
-from extract.pdfs import extract_pdf
-from extract.docx_ import extract_docx
-from extract.json_csv import extract_json_csv
-from storage.runs import RunStore
-from storage.confirmation import ConfirmationStore
+from backend.core.config import settings
+from backend.crawl.frontier import Frontier
+from backend.crawl.fetch import Fetcher
+from backend.crawl.bot_avoidance import BotAvoidanceStrategy
+from backend.extract.html import extract_html
+from backend.extract.pdfs import extract_pdf
+from backend.extract.docx_ import extract_docx
+from backend.extract.json_csv import extract_json_csv
+from backend.storage.runs import RunStore
+from backend.storage.confirmation import ConfirmationStore
 
 @dataclass
 class RunState:
@@ -19,6 +20,7 @@ class RunState:
     confirmation_store: ConfirmationStore
     started_at: float
     max_pages: int
+    bot_strategy: BotAvoidanceStrategy | None = None
 
 class RunManager:
     def __init__(self):
@@ -26,11 +28,13 @@ class RunManager:
 
     async def start(self, req) -> str:
         run_id = str(int(time.time()))
-        store = RunStore(run_id)
+        bot_enabled = bool(req.botAvoidanceEnabled) if hasattr(req, "botAvoidanceEnabled") else False
+        store = RunStore(run_id, meta_overrides={"botAvoidanceEnabled": bot_enabled})
         confirmation_store = ConfirmationStore(run_id)
         frontier = Frontier(req.url, max_pages=req.maxPages or settings.MAX_PAGES_DEFAULT)
-        fetcher = Fetcher(settings)
-        self._runs[run_id] = RunState(frontier, fetcher, store, confirmation_store, time.time(), req.maxPages or settings.MAX_PAGES_DEFAULT)
+        bot_strategy = BotAvoidanceStrategy() if bot_enabled else None
+        fetcher = Fetcher(settings, bot_strategy=bot_strategy)
+        self._runs[run_id] = RunState(frontier, fetcher, store, confirmation_store, time.time(), req.maxPages or settings.MAX_PAGES_DEFAULT, bot_strategy)
         asyncio.create_task(self._worker_loop(run_id))
         return run_id
 
@@ -42,6 +46,12 @@ class RunManager:
                 resp = await state.fetcher.fetch(url)
                 if not resp:
                     state.store.log_error(url, "fetch_failed")
+                    return
+                if getattr(resp, "blocked_reason", None):
+                    reason = resp.blocked_reason
+                    state.store.log_error(url, f"bot_blocked:{reason}")
+                    if state.bot_strategy:
+                        state.bot_strategy.record_block(url, reason, resp.status)
                     return
                 ct = resp.content_type
                 if ct.startswith("text/html"):

@@ -12,6 +12,7 @@ export function Generator() {
   const [concurrency, setConcurrency] = useState(12);
   const [renderBudget, setRenderBudget] = useState(0.1);
   const [usePlaywright, setUsePlaywright] = useState(true);
+  const [botAvoidanceEnabled, setBotAvoidanceEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [progress, setProgress] = useState<any>(null);
@@ -27,7 +28,8 @@ export function Generator() {
         maxPages,
         maxDepth,
         concurrency,
-        renderBudget: usePlaywright ? renderBudget : undefined
+        renderBudget: usePlaywright ? renderBudget : undefined,
+        botAvoidanceEnabled: botAvoidanceEnabled || undefined
       };
       
       const result = await startRun(body);
@@ -192,6 +194,19 @@ export function Generator() {
                     />
                     <label htmlFor="playwright" className="text-sm text-gray-600">
                       Use Playwright for JavaScript sites
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="bot-avoidance"
+                      type="checkbox"
+                      checked={botAvoidanceEnabled}
+                      onChange={(e) => setBotAvoidanceEnabled(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <label htmlFor="bot-avoidance" className="text-sm text-gray-600">
+                      Enable bot-avoidance safeguards (slower, safer crawling)
                     </label>
                   </div>
                 </div>

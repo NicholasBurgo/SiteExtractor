@@ -2,7 +2,7 @@ import json
 import csv
 import io
 import hashlib
-from crawl.fetch import FetchResponse
+from backend.crawl.fetch import FetchResponse
 
 async def extract_json_csv(resp: FetchResponse) -> dict:
     """

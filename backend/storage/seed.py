@@ -5,7 +5,7 @@ Builds generator-ready seed.json from edited site data and page content.
 import os
 import json
 from typing import Dict, Any, List
-from storage.confirmation import ConfirmationStore
+from backend.storage.confirmation import ConfirmationStore
 
 
 class SeedBuilder:

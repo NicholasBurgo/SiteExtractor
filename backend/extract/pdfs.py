@@ -1,7 +1,7 @@
 import io
 import hashlib
 from pypdf import PdfReader
-from crawl.fetch import FetchResponse
+from backend.crawl.fetch import FetchResponse
 
 async def extract_pdf(resp: FetchResponse) -> dict:
     """

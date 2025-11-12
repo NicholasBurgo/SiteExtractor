@@ -4,8 +4,8 @@ Provides endpoints for Prime, Content, and Seed operations.
 """
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any, Optional
-from storage.confirmation import ConfirmationStore
-from storage.seed import SeedBuilder
+from backend.storage.confirmation import ConfirmationStore
+from backend.storage.seed import SeedBuilder
 
 router = APIRouter()
 
@@ -17,8 +17,8 @@ async def get_extraction_status(run_id: str):
     Returns: { isComplete: bool, hasData: bool, pagesCount: int }
     """
     try:
-        from storage.runs import RunStore
-        from crawl.runner import RunManager
+        from backend.storage.runs import RunStore
+        from backend.crawl.runner import RunManager
         
         # Check if run is still active
         run_manager = RunManager()

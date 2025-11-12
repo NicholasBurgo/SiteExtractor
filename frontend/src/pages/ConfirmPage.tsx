@@ -2,7 +2,7 @@
  * Main confirmation page component.
  * Provides Prime, Content, and Summary tabs for data review and editing.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { confirmationApi, ConfirmationApiError } from '../lib/api.confirm';
 import { PrimeResponse, PageContent, ConfirmationTab } from '../lib/types.confirm';
@@ -25,72 +25,86 @@ const ConfirmPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Load prime data on mount
-  useEffect(() => {
-    if (runId) {
-      checkExtractionStatus();
-    }
-  }, [runId]);
+  const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>('Preparing extraction…');
 
-  const checkExtractionStatus = async () => {
-    if (!runId) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const status = await confirmationApi.getExtractionStatus(runId);
-      console.log('Extraction status:', status);
-      
-      if (status.isComplete && status.hasData) {
-        // Extraction is complete and data is available
-        setExtracting(false);
-        await loadPrimeData();
-      } else if (status.isComplete && !status.hasData) {
-        // Extraction is complete but no data was extracted
-        setExtracting(false);
-        setError('No data was extracted from the website. Please try a different URL.');
-      } else {
-        // Still extracting
-        setExtracting(true);
-        setLoading(false);
-        
-        // Poll every 2 seconds until extraction is complete
-        const pollInterval = setInterval(async () => {
-          try {
-            const newStatus = await confirmationApi.getExtractionStatus(runId);
-            if (newStatus.isComplete) {
-              clearInterval(pollInterval);
-              if (newStatus.hasData) {
-                await loadPrimeData();
-              } else {
-                setExtracting(false);
-                setError('No data was extracted from the website. Please try a different URL.');
-              }
-            }
-          } catch (err) {
-            console.error('Error polling extraction status:', err);
-            clearInterval(pollInterval);
-            setExtracting(false);
-            setError('Failed to check extraction status');
-          }
-        }, 2000);
-        
-        // Cleanup interval on component unmount
-        return () => clearInterval(pollInterval);
-      }
-    } catch (err) {
-      console.error('Error checking extraction status:', err);
-      if (err instanceof ConfirmationApiError) {
-        setError(`Failed to check extraction status: ${err.message}`);
-      } else {
-        setError('An unexpected error occurred');
-      }
-      setExtracting(false);
-    } finally {
-      setLoading(false);
+  const clearPollTimer = () => {
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    clearPollTimer();
+
+    if (!runId) return;
+
+    setLoading(true);
+    setExtracting(true);
+    setError(null);
+    setStatusMessage('Starting extraction…');
+
+    const POLL_INTERVAL_MS = 2000;
+
+    const pollStatus = async () => {
+      if (cancelled) return;
+
+      try {
+        setExtracting(true);
+        setError(null);
+
+        const status = await confirmationApi.getExtractionStatus(runId);
+        console.log('Extraction status:', status);
+        const progress = status.progress || {};
+        const queued = progress.queued ?? 0;
+        const visited = progress.visited ?? 0;
+        const messageBase = status.isComplete
+          ? 'Finalizing extracted data…'
+          : 'Crawling site…';
+        const details = status.isComplete
+          ? ''
+          : ` (${visited} pages processed, ${queued} remaining)`;
+        setStatusMessage(`${messageBase}${details}`);
+
+        if (status.isComplete && status.hasData) {
+          await loadPrimeData();
+          if (!cancelled) {
+            setExtracting(false);
+          }
+          return;
+        }
+
+        if (status.isComplete && !status.hasData) {
+          setExtracting(true);
+          setLoading(false);
+          setError(null);
+          setStatusMessage('Finalizing extracted data…');
+        }
+      } catch (err) {
+        console.error('Error polling extraction status:', err);
+        if (err instanceof ConfirmationApiError) {
+          setError(`Failed to check extraction status: ${err.message}`);
+        } else {
+          setError('Failed to check extraction status');
+        }
+        setExtracting(false);
+        return;
+      } finally {
+        setLoading(false);
+      }
+
+      pollTimeoutRef.current = setTimeout(pollStatus, POLL_INTERVAL_MS);
+    };
+
+    pollStatus();
+
+    return () => {
+      cancelled = true;
+      clearPollTimer();
+    };
+  }, [runId]);
 
   const loadPrimeData = async () => {
     if (!runId) return;
@@ -102,6 +116,7 @@ const ConfirmPage: React.FC = () => {
       const data = await confirmationApi.getPrime(runId);
       console.log('Prime data loaded:', data);
       setPrimeData(data);
+      setExtracting(false);
       
       // Select first page by default
       if (data.pages.length > 0) {
@@ -237,8 +252,11 @@ const ConfirmPage: React.FC = () => {
         <div className="text-center max-w-md">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Extracting Website Data</h2>
-          <p className="text-gray-600 mb-4">
-            We're crawling and extracting content from the website. This may take a few minutes depending on the site size.
+          <p className="text-gray-600 mb-2">
+            {statusMessage}
+          </p>
+          <p className="text-gray-500 mb-4 text-sm">
+            This may take a few minutes depending on the site size. You can leave this tab open while we finish.
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">

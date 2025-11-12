@@ -10,11 +10,11 @@ from typing import Dict, List, Any, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 from collections import defaultdict, Counter
 
-from core.types import (
+from backend.core.types import (
     DraftModel, BusinessProfile, ItemBase, Location, NavItem,
     PageDetail, PageSummary
 )
-from storage.runs import RunStore
+from backend.storage.runs import RunStore
 
 
 class BusinessAggregator:
