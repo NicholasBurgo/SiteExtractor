@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any, Optional
 from backend.storage.confirmation import ConfirmationStore
 from backend.storage.seed import SeedBuilder
+from backend.routers.runs import manager as run_manager
 
 router = APIRouter()
 
@@ -17,11 +18,7 @@ async def get_extraction_status(run_id: str):
     Returns: { isComplete: bool, hasData: bool, pagesCount: int }
     """
     try:
-        from backend.storage.runs import RunStore
-        from backend.crawl.runner import RunManager
-        
         # Check if run is still active
-        run_manager = RunManager()
         progress = await run_manager.progress(run_id)
         
         # Check if confirmation data exists
@@ -30,8 +27,10 @@ async def get_extraction_status(run_id: str):
         site_data = store.get_site_data()
         
         # Determine if extraction is complete
-        is_complete = progress is None or (progress.get("queued", 0) == 0 and progress.get("status") == "completed")
-        has_data = len(pages_index) > 0 and site_data.get("baseUrl")
+        # Run is complete when progress is None (run finished and cleaned up) OR when is_complete flag is True
+        is_complete = progress is None or progress.get("is_complete", False)
+        # Only return hasData=true when extraction is fully complete to avoid showing partial results
+        has_data = is_complete and len(pages_index) > 0 and site_data.get("baseUrl")
         
         return {
             "isComplete": is_complete,

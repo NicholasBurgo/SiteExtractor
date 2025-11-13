@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Settings, Clock, CheckCircle } from 'lucide-react';
-import { startRun, getProgress } from '../lib/api';
+import { startRun } from '../lib/api';
 import CheckpointDropdown from '../components/CheckpointDropdown';
 
 export function Generator() {
@@ -14,8 +14,6 @@ export function Generator() {
   const [usePlaywright, setUsePlaywright] = useState(true);
   const [botAvoidanceEnabled, setBotAvoidanceEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [runId, setRunId] = useState<string | null>(null);
-  const [progress, setProgress] = useState<any>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,27 +31,9 @@ export function Generator() {
       };
       
       const result = await startRun(body);
-      setRunId(result.runId);
       
-      // Start polling for progress
-      const pollInterval = setInterval(async () => {
-        try {
-          const prog = await getProgress(result.runId);
-          setProgress(prog);
-          
-          // Check if run is complete
-          if (prog.visited >= prog.queued && prog.queued > 0) {
-            clearInterval(pollInterval);
-            setLoading(false);
-            // Navigate to confirmation page
-            navigate(`/confirm/${result.runId}`);
-          }
-        } catch (error) {
-          console.error('Progress polling error:', error);
-          clearInterval(pollInterval);
-          setLoading(false);
-        }
-      }, 2000);
+      // Immediately navigate to confirmation page where extraction progress is shown
+      navigate(`/confirm/${result.runId}`);
       
     } catch (error) {
       console.error('Start run error:', error);
@@ -214,19 +194,6 @@ export function Generator() {
             </div>
           </div>
 
-          {/* Progress Display */}
-          {progress && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Extraction Progress</span>
-              </div>
-              <div className="text-sm text-blue-700">
-                Visited: {progress.visited} / Queued: {progress.queued} | Errors: {progress.errors}
-              </div>
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={loading || !url}
@@ -239,7 +206,7 @@ export function Generator() {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Running...
+                Starting...
               </>
             ) : (
               <>
@@ -248,12 +215,6 @@ export function Generator() {
               </>
             )}
           </button>
-
-          {runId && (
-            <p className="text-center text-sm text-green-600">
-              Generator started! Run ID: {runId}
-            </p>
-          )}
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">

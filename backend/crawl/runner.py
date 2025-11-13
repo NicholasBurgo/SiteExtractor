@@ -21,6 +21,7 @@ class RunState:
     started_at: float
     max_pages: int
     bot_strategy: BotAvoidanceStrategy | None = None
+    is_complete: bool = False
 
 class RunManager:
     def __init__(self):
@@ -100,11 +101,14 @@ class RunManager:
             batch = state.frontier.next_batch(settings.GLOBAL_CONCURRENCY)
             await asyncio.gather(*(work(u) for u in batch))
         state.store.finalize()
+        state.is_complete = True
 
     async def progress(self, run_id: str):
         st = self._runs.get(run_id)
         if not st: return None
-        return st.store.progress_snapshot(st.frontier)
+        snapshot = st.store.progress_snapshot(st.frontier)
+        snapshot["is_complete"] = st.is_complete
+        return snapshot
 
     async def stop(self, run_id: str):
         st = self._runs.pop(run_id, None)
