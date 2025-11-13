@@ -34,6 +34,7 @@ const ConfirmPage: React.FC = () => {
 
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Preparing extraction…');
+  const [progressPercent, setProgressPercent] = useState<number>(0);
 
   const clearPollTimer = () => {
     if (pollTimeoutRef.current) {
@@ -67,6 +68,10 @@ const ConfirmPage: React.FC = () => {
         const progress = status.progress || {};
         const queued = progress.queued ?? 0;
         const visited = progress.visited ?? 0;
+        const total = visited + queued;
+        const percent = total > 0 ? Math.round((visited / total) * 100) : 0;
+        setProgressPercent(percent);
+        
         const messageBase = status.isComplete
           ? 'Finalizing extracted data…'
           : 'Crawling site…';
@@ -167,11 +172,20 @@ const ConfirmPage: React.FC = () => {
   // Auto-load first page content when switching to Content tab
   useEffect(() => {
     if (activeTab === 'content' && primeData && primeData.pages.length > 0 && !selectedPagePath) {
+      // Auto-select and load first page when entering content tab with no selection
       const firstPage = primeData.pages[0];
       setSelectedPagePath(firstPage.path);
       loadPageContent(firstPage.path);
     }
   }, [activeTab, primeData]);
+
+  // Clear page content when switching away from content tab
+  useEffect(() => {
+    if (activeTab !== 'content') {
+      setPageContent(null);
+      setSelectedPagePath('');
+    }
+  }, [activeTab]);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -305,12 +319,26 @@ const ConfirmPage: React.FC = () => {
   if (extracting) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
+        <div className="text-center max-w-md w-full px-4">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Extracting Website Data</h2>
-          <p className="text-gray-600 mb-2">
+          <p className="text-gray-600 mb-4">
             {statusMessage}
           </p>
+          
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-blue-600 h-3 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              {progressPercent}% complete
+            </p>
+          </div>
+          
           <p className="text-gray-500 mb-4 text-sm">
             This may take a few minutes depending on the site size. You can leave this tab open while we finish.
           </p>
