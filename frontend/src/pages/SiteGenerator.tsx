@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { startRun, getExtractionStatus } from "../lib/api";
+import { startRun } from "../lib/api";
 import CheckpointDropdown from "../components/CheckpointDropdown";
 
 export default function SiteGenerator() {
@@ -11,28 +11,12 @@ export default function SiteGenerator() {
   const [usePlaywright, setUsePlaywright] = useState(true);
   const [botAvoidanceEnabled, setBotAvoidanceEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [runId, setRunId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  const clearPoll = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      clearPoll();
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    clearPoll();
     
     if (!url || !url.startsWith('http')) {
       setError('Please enter a valid URL starting with http:// or https://');
@@ -49,35 +33,13 @@ export default function SiteGenerator() {
         botAvoidanceEnabled: botAvoidanceEnabled || undefined
       };
       const res = await startRun(body);
-      setRunId(res.runId);
       
-      // Start polling extraction status until completion
-      const poll = setInterval(async () => {
-        if (!res.runId) return;
-        try {
-          const status = await getExtractionStatus(res.runId);
-          console.log('Extraction status check:', status);
-
-          if (status.isComplete) {
-            console.log('Run completed. hasData:', status.hasData);
-            clearPoll();
-            setLoading(false);
-            navigate(`/confirm/${res.runId}`);
-          }
-        } catch (error) {
-          console.error("Polling error:", error);
-          clearPoll();
-          setLoading(false);
-          setError('Failed to check extraction status. Please try again.');
-        }
-      }, 1500);
-      pollRef.current = poll;
+      // Immediately navigate to confirmation page where extraction progress is shown
+      navigate(`/confirm/${res.runId}`);
       
     } catch (error) {
       console.error("Start run error:", error);
       setError('Unable to connect to the backend server. Please make sure the backend is running.');
-      clearPoll();
-      setRunId(null);
       setLoading(false);
     }
   };
@@ -192,7 +154,7 @@ export default function SiteGenerator() {
                     : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200"
                 }`}
               >
-                {loading ? "Running..." : "▷ Run Generator"}
+                {loading ? "Starting..." : "▷ Run Generator"}
               </button>
               
               <button
@@ -203,18 +165,6 @@ export default function SiteGenerator() {
                 Skip Extraction
               </button>
             </div>
-
-            {runId && (
-              <div className="text-center space-y-2">
-                <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span>Extracting website data... Run ID: {runId}</span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  This may take a few minutes. You will be automatically redirected to the confirmation page when complete.
-                </p>
-              </div>
-            )}
           </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
