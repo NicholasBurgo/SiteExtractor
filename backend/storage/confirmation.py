@@ -90,8 +90,11 @@ class ConfirmationStore:
                     "path": page_data.get("path", "/"),
                     "url": page_data.get("url"),
                     "status": page_data.get("status"),
+                    "status_code": page_data.get("status_code"),
                     "words": page_data.get("words", 0),
-                    "mediaCount": page_data.get("mediaCount", 0)
+                    "mediaCount": page_data.get("mediaCount", 0),
+                    "loadTimeMs": page_data.get("loadTimeMs"),
+                    "contentLengthBytes": page_data.get("contentLengthBytes")
                 })
             else:
                 # Add new page
@@ -101,8 +104,11 @@ class ConfirmationStore:
                     "path": page_data.get("path", "/"),
                     "url": page_data.get("url"),
                     "status": page_data.get("status"),
+                    "status_code": page_data.get("status_code"),
                     "words": page_data.get("words", 0),
-                    "mediaCount": page_data.get("mediaCount", 0)
+                    "mediaCount": page_data.get("mediaCount", 0),
+                    "loadTimeMs": page_data.get("loadTimeMs"),
+                    "contentLengthBytes": page_data.get("contentLengthBytes")
                 })
             
             with open(self.pages_index_file, 'w') as f:

@@ -84,8 +84,11 @@ class RunManager:
                             "path": summary.get("path", "/"),
                             "url": summary.get("url"),
                             "status": summary.get("status"),
+                            "status_code": summary.get("status_code"),
                             "words": summary.get("words", 0),
-                            "mediaCount": summary.get("images", 0)
+                            "mediaCount": summary.get("images", 0),
+                            "loadTimeMs": summary.get("load_time_ms"),
+                            "contentLengthBytes": summary.get("content_length_bytes")
                         })
                         print(f"Added page to index: {summary.get('pageId')}")
                     except Exception as e:
