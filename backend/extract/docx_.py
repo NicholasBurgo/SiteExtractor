@@ -50,8 +50,11 @@ async def extract_docx(resp: FetchResponse) -> dict:
                 "images": 0,
                 "links": 0,
                 "status": resp.status,
+                "status_code": resp.status,
                 "path": resp.path,
-                "type": "DOCX"
+                "type": "DOCX",
+                "load_time_ms": resp.load_time_ms,
+                "content_length_bytes": resp.content_length_bytes
             },
             "meta": meta,
             "text": text,
@@ -85,8 +88,11 @@ def _create_error_response(resp: FetchResponse, content_type: str) -> dict:
             "images": 0,
             "links": 0,
             "status": resp.status,
+            "status_code": resp.status,
             "path": resp.path,
-            "type": content_type
+            "type": content_type,
+            "load_time_ms": resp.load_time_ms,
+            "content_length_bytes": resp.content_length_bytes
         },
         "meta": {},
         "text": None,
