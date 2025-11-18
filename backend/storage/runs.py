@@ -2,7 +2,7 @@ import os
 import json
 import time
 from typing import List, Optional, Dict, Any
-from backend.core.types import PageSummary, PageDetail
+from backend.core.types import PageSummary, PageDetail, PageResult
 from backend.crawl.frontier import Frontier
 
 class RunStore:
@@ -266,12 +266,90 @@ class RunStore:
         try:
             with open(self.meta_file, 'r') as f:
                 meta = json.load(f)
+            try:
+                with open(self.pages_file, 'r') as pf:
+                    pages_data = json.load(pf)
+            except Exception as read_err:
+                print(f"Error reading pages for performance summary: {read_err}")
+                pages_data = []
+
+            page_results: List[PageResult] = []
+            page_load_pages: List[Dict[str, Any]] = []
+
+            for page in pages_data:
+                summary = page.get("summary", {})
+                if not summary:
+                    continue
+                result = PageResult(
+                    pageId=summary.get("pageId"),
+                    url=summary.get("url"),
+                    contentType=summary.get("contentType"),
+                    title=summary.get("title"),
+                    words=summary.get("words", 0),
+                    images=summary.get("images", 0),
+                    links=summary.get("links", 0),
+                    status=summary.get("status"),
+                    status_code=summary.get("status_code"),
+                    path=summary.get("path"),
+                    type=summary.get("type"),
+                    load_time_ms=summary.get("load_time_ms"),
+                    content_length_bytes=summary.get("content_length_bytes"),
+                )
+                page_results.append(result)
+                page_load_pages.append({
+                    "pageId": result.pageId,
+                    "url": result.url,
+                    "status": result.status,
+                    "status_code": result.status_code,
+                    "words": result.words,
+                    "images": result.images,
+                    "links": result.links,
+                    "load_time_ms": result.load_time_ms,
+                    "content_length_bytes": result.content_length_bytes
+                })
+
+            performance_summary = compute_performance_summary(page_results)
             
             meta["status"] = "completed"
             meta["completed_at"] = time.time()
+            meta["pages"] = [result.pageId for result in page_results if result.pageId]
+            meta["pageLoad"] = {
+                "pages": page_load_pages,
+                "summary": performance_summary
+            }
             
             with open(self.meta_file, 'w') as f:
                 json.dump(meta, f)
                 
         except Exception as e:
             print(f"Error finalizing run: {e}")
+
+
+def compute_performance_summary(pages: List[PageResult]) -> Dict[str, Any]:
+    """Compute aggregate performance metrics from page results."""
+    successful_pages = [
+        page for page in pages
+        if page.status == 200 and page.load_time_ms is not None
+    ]
+
+    if not successful_pages:
+        return {}
+
+    total_load = sum(page.load_time_ms for page in successful_pages if page.load_time_ms is not None)
+    count = len(successful_pages)
+    avg_load_ms = int(round(total_load / count)) if count else None
+
+    fastest_page = min(successful_pages, key=lambda p: p.load_time_ms or float('inf'))
+    slowest_page = max(successful_pages, key=lambda p: p.load_time_ms or float('-inf'))
+
+    return {
+        "avg_load_ms": avg_load_ms,
+        "fastest": {
+            "url": fastest_page.url,
+            "load_ms": fastest_page.load_time_ms
+        },
+        "slowest": {
+            "url": slowest_page.url,
+            "load_ms": slowest_page.load_time_ms
+        }
+    }

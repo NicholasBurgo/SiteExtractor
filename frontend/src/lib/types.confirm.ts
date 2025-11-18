@@ -33,8 +33,11 @@ export type PageIndexItem = {
   path: string;
   url: string;
   status?: number;
+  status_code?: number;
   words?: number;
   mediaCount?: number;
+  loadTimeMs?: number;
+  contentLengthBytes?: number;
 };
 
 export type PrimeResponse = {
