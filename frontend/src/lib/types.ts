@@ -25,8 +25,11 @@ export interface PageSummary {
   images: number;
   links: number;
   status?: number;
+  status_code?: number;
   path?: string;
   type?: string;
+  load_time_ms?: number;
+  content_length_bytes?: number;
 }
 
 export interface PageDetail {
@@ -120,6 +123,9 @@ export interface PageResult {
   images: number;
   links: number;
   status: number;
+  status_code?: number;
+  load_time_ms?: number | null;
+  content_length_bytes?: number | null;
 }
 
 export interface SortOptions {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { PageSummary } from '../lib/types';
 
 interface RunTableProps {
@@ -8,6 +8,42 @@ interface RunTableProps {
 }
 
 export function RunTable({ pages, onPageSelect, selectedPageId }: RunTableProps) {
+  const [loadSortDirection, setLoadSortDirection] = useState<'none' | 'asc' | 'desc'>('none');
+
+  const sortedPages = useMemo(() => {
+    if (loadSortDirection === 'none') {
+      return pages;
+    }
+
+    const sorted = [...pages];
+    sorted.sort((a, b) => {
+      const fallback = loadSortDirection === 'asc' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+      const aHasLoad = typeof a.load_time_ms === 'number';
+      const bHasLoad = typeof b.load_time_ms === 'number';
+      const aLoad = aHasLoad ? (a.load_time_ms as number) : fallback;
+      const bLoad = bHasLoad ? (b.load_time_ms as number) : fallback;
+
+      if (!aHasLoad && !bHasLoad) {
+        return 0;
+      }
+      if (loadSortDirection === 'asc') {
+        return aLoad - bLoad;
+      }
+
+      return bLoad - aLoad;
+    });
+
+    return sorted;
+  }, [pages, loadSortDirection]);
+
+  const toggleLoadSort = () => {
+    setLoadSortDirection((prev) => {
+      if (prev === 'none') return 'asc';
+      if (prev === 'asc') return 'desc';
+      return 'none';
+    });
+  };
+
   if (pages.length === 0) {
     return (
       <div className="bg-white rounded-lg border p-8 text-center">
@@ -27,11 +63,25 @@ export function RunTable({ pages, onPageSelect, selectedPageId }: RunTableProps)
               <th className="text-center p-3 font-medium text-gray-900">Words</th>
               <th className="text-center p-3 font-medium text-gray-900">Images</th>
               <th className="text-center p-3 font-medium text-gray-900">Links</th>
+              <th className="text-center p-3 font-medium text-gray-900">
+                <button
+                  type="button"
+                  className="flex items-center justify-center gap-1 w-full text-gray-900 hover:text-blue-600"
+                  onClick={toggleLoadSort}
+                >
+                  <span>Load (ms)</span>
+                  <span className="text-xs">
+                    {loadSortDirection === 'asc' && '▲'}
+                    {loadSortDirection === 'desc' && '▼'}
+                    {loadSortDirection === 'none' && ''}
+                  </span>
+                </button>
+              </th>
               <th className="text-center p-3 font-medium text-gray-900">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {pages.map((page) => (
+            {sortedPages.map((page) => (
               <tr
                 key={page.pageId}
                 className={`hover:bg-gray-50 cursor-pointer ${
@@ -68,6 +118,11 @@ export function RunTable({ pages, onPageSelect, selectedPageId }: RunTableProps)
                 </td>
                 <td className="text-center p-3 text-gray-900">
                   {page.links}
+                </td>
+                <td className="text-center p-3 text-gray-900">
+                  {typeof page.load_time_ms === 'number'
+                    ? page.load_time_ms.toLocaleString()
+                    : '—'}
                 </td>
                 <td className="text-center p-3">
                   <span className={`px-2 py-1 rounded text-xs ${
