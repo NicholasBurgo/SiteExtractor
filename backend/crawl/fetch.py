@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 from typing import Optional
 from dataclasses import dataclass
+from time import perf_counter
 from backend.core.config import Settings
 from backend.crawl.bot_avoidance import BotAvoidanceStrategy
 
@@ -14,6 +15,8 @@ class FetchResponse:
     headers: dict
     path: str
     blocked_reason: str | None = None
+    load_time_ms: Optional[int] = None
+    content_length_bytes: Optional[int] = None
 
 class Fetcher:
     """
@@ -51,9 +54,16 @@ class Fetcher:
                 else:
                     request_kwargs = {}
 
-                status = None
+                status: int | None = None
+                load_time_ms: Optional[int] = None
+                content_length_bytes: Optional[int] = None
+
+                start_time = perf_counter()
                 async with self.session.get(url, **request_kwargs) as response:
                     content = await response.read()
+                    end_time = perf_counter()
+                    load_time_ms = int((end_time - start_time) * 1000)
+                    content_length_bytes = len(content)
                     content_type = response.headers.get('content-type', 'text/html')
                     status = response.status
                     blocked_reason = None
@@ -67,7 +77,9 @@ class Fetcher:
                         status=response.status,
                         headers=dict(response.headers),
                         path=url,
-                        blocked_reason=blocked_reason
+                        blocked_reason=blocked_reason,
+                        load_time_ms=load_time_ms,
+                        content_length_bytes=content_length_bytes
                     )
             except Exception as e:
                 print(f"Fetch error for {url}: {e}")

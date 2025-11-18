@@ -283,6 +283,8 @@ async def get_run_summary(run_id: str):
         completed_at = meta_data.get('completed_at', started_at)
         runtime_seconds = completed_at - started_at
         runtime_str = f"{int(runtime_seconds // 60)}m {int(runtime_seconds % 60)}s"
+
+        performance_summary = meta_data.get("pageLoad", {}).get("summary", {})
         
         return {
             "runId": run_id,
@@ -290,6 +292,7 @@ async def get_run_summary(run_id: str):
             "startedAt": meta_data.get('started_at'),
             "completedAt": meta_data.get('completed_at'),
             "runtime": runtime_str,
+            "performance": performance_summary,
             "pages": {
                 "total": len(meta_data.get('pages', [])),
                 "successful": len(meta_data.get('pages', [])),

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 from typing import Any, List, Optional, Dict, Tuple
 
 class StartRunRequest(BaseModel):
@@ -28,6 +28,19 @@ class PageSummary(BaseModel):
     status: int | None = None
     path: str | None = None
     type: str | None = None  # HTML/PDF/DOCX/JSON/CSV/IMG
+    load_time_ms: Optional[int] = None
+    content_length_bytes: Optional[int] = None
+    status_code: int | None = None
+
+    @root_validator(pre=True)
+    def _sync_status_codes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        status = values.get("status")
+        status_code = values.get("status_code")
+        if status is None and status_code is not None:
+            values["status"] = status_code
+        elif status_code is None and status is not None:
+            values["status_code"] = status
+        return values
 
 class PageDetail(BaseModel):
     summary: PageSummary
@@ -40,6 +53,32 @@ class PageDetail(BaseModel):
     tables: list[dict] = []
     structuredData: list[dict] = []
     stats: dict = {}
+
+
+class PageResult(BaseModel):
+    pageId: str
+    url: str
+    contentType: str | None = None
+    title: str | None = None
+    words: int = 0
+    images: int = 0
+    links: int = 0
+    status: int | None = None
+    status_code: int | None = None
+    path: str | None = None
+    type: str | None = None
+    load_time_ms: Optional[int] = None
+    content_length_bytes: Optional[int] = None
+
+    @root_validator(pre=True)
+    def _sync_status_codes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        status = values.get("status")
+        status_code = values.get("status_code")
+        if status is None and status_code is not None:
+            values["status"] = status_code
+        elif status_code is None and status is not None:
+            values["status_code"] = status
+        return values
 
 # Review and Confirmation Models
 class BusinessProfile(BaseModel):

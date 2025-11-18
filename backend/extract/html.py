@@ -68,8 +68,11 @@ async def extract_html(resp: FetchResponse, run_id: str = None) -> dict:
                 "images": len(images),
                 "links": len(links),
                 "status": resp.status,
+                "status_code": resp.status,
                 "path": resp.path,
-                "type": "HTML"
+                "type": "HTML",
+                "load_time_ms": resp.load_time_ms,
+                "content_length_bytes": resp.content_length_bytes
             },
             "meta": meta,
             "text": readable_text,
@@ -357,8 +360,11 @@ def _create_error_response(resp: FetchResponse, content_type: str) -> dict:
             "images": 0,
             "links": 0,
             "status": resp.status,
+            "status_code": resp.status,
             "path": resp.path,
-            "type": content_type
+            "type": content_type,
+            "load_time_ms": resp.load_time_ms,
+            "content_length_bytes": resp.content_length_bytes
         },
         "meta": {},
         "text": None,
