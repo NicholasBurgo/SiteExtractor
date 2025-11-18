@@ -18,6 +18,25 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ primeData, pages }) => {
   const successfulPages = pages.filter(page => page.status === 200).length;
   const failedPages = pages.filter(page => page.status !== 200).length;
 
+  const loadTimePages = pages.filter(
+    page => page.status === 200 && typeof page.loadTimeMs === 'number' && page.loadTimeMs !== null
+  );
+  const averageLoadMs = loadTimePages.length > 0
+    ? Math.round(
+        loadTimePages.reduce((sum, page) => sum + (page.loadTimeMs || 0), 0) / loadTimePages.length
+      )
+    : null;
+  const fastestPage = loadTimePages.length > 0
+    ? loadTimePages.reduce((fastest, page) =>
+        (page.loadTimeMs || Infinity) < (fastest.loadTimeMs || Infinity) ? page : fastest
+      )
+    : null;
+  const slowestPage = loadTimePages.length > 0
+    ? loadTimePages.reduce((slowest, page) =>
+        (page.loadTimeMs || -Infinity) > (slowest.loadTimeMs || -Infinity) ? page : slowest
+      )
+    : null;
+
   // Count navigation items
   const countNavItems = (nav: any[]): number => {
     return nav.reduce((count, item) => {
@@ -174,6 +193,39 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ primeData, pages }) => {
               {primeData.baseUrl || 'Not specified'}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Page Load Performance */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Page Load Performance</h2>
+        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+          {loadTimePages.length === 0 ? (
+            <div className="text-sm text-gray-500">
+              No load time data available yet.
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between text-sm text-gray-700">
+                <span className="font-medium">Average Load Time</span>
+                <span>{averageLoadMs?.toLocaleString()} ms</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-700">
+                <span className="font-medium">Fastest Page</span>
+                <span>
+                  {fastestPage?.path || fastestPage?.url} ·{' '}
+                  {fastestPage?.loadTimeMs?.toLocaleString()} ms
+                </span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-700">
+                <span className="font-medium">Slowest Page</span>
+                <span>
+                  {slowestPage?.path || slowestPage?.url} ·{' '}
+                  {slowestPage?.loadTimeMs?.toLocaleString()} ms
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
