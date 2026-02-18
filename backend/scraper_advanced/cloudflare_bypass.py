@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import json
+import os
 import time
 import logging
 from typing import Optional, Dict, Any, Tuple
@@ -13,7 +14,10 @@ class CloudflareBypass:
 
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.flaresolverr_url = config.get('flaresolverr_url', 'http://localhost:8191/v1')
+        self.flaresolverr_url = os.getenv(
+            'FLARESOLVERR_URL',
+            config.get('flaresolverr_url', 'http://localhost:8191/v1')
+        )
         self.challenge_timeout = config.get('challenge_timeout', 60)
         self.cloudscraper_enabled = config.get('cloudscraper_enabled', True)
 
