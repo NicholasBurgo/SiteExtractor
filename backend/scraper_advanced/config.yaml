@@ -20,18 +20,11 @@ scraper:
     max_failures_before_ban: 3
     geo_target: "US"
 
-    # Residential proxy lists (replace with your actual proxy credentials)
-    residential:
-      - host: "proxy1.residential.proxy-provider.com"
-        port: 8080
-        username: "user1"
-        password: "pass1"
-        country: "US"
-      - host: "proxy2.residential.proxy-provider.com"
-        port: 8080
-        username: "user2"
-        password: "pass2"
-        country: "US"
+    # Residential proxy lists — configure via environment variables:
+    #   PROXY_1_HOST, PROXY_1_PORT, PROXY_1_USERNAME, PROXY_1_PASSWORD, PROXY_1_COUNTRY
+    #   PROXY_2_HOST, PROXY_2_PORT, PROXY_2_USERNAME, PROXY_2_PASSWORD, PROXY_2_COUNTRY
+    # Proxies are loaded from env vars in proxy_manager.py.
+    residential: []
 
   # Browser fingerprinting
   fingerprinting:
