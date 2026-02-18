@@ -47,7 +47,7 @@ export function FramerExample({ mode }: { mode: "light" | "dark" | "system" }) {
         {[1, 2, 3].map((i) => (
           <div key={i} className={dm(mode, "rounded-3xl border border-slate-200 p-6 backdrop-blur-xl bg-white/60 shadow-xl", "rounded-3xl border border-slate-700 p-6 backdrop-blur-xl bg-slate-900/50 shadow-xl")}>
             <h3 className={dm(mode, "font-semibold text-xl mb-2 text-slate-900", "font-semibold text-xl mb-2 text-slate-100")}>Feature {i}</h3>
-            <p className={dm(mode, "text-slate-600", "text-slate-300")}>Signature Framer look — glowing shadows and soft, glassy surfaces.</p>
+            <p className={dm(mode, "text-slate-600", "text-slate-300")}>Signature Framer look - glowing shadows and soft, glassy surfaces.</p>
           </div>
         ))}
       </main>
@@ -100,7 +100,7 @@ export function TraditionalExample({ mode }: { mode: "light" | "dark" | "system"
         <button className={dm(mode, "mt-8 px-6 py-2 rounded border border-slate-400 bg-white text-slate-900", "mt-8 px-6 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100")}>Learn More</button>
       </header>
       <main className="grid md:grid-cols-3 gap-8 mt-16">
-        {[1,2,3].map(i => (
+        {[1, 2, 3].map(i => (
           <div key={i} className={dm(mode, "rounded-md border border-slate-300 bg-white p-6 shadow-sm", "rounded-md border border-slate-700 bg-slate-900 p-6 shadow-sm")}>
             <h3 className="font-serif text-xl mb-2">Section {i}</h3>
             <p className={dm(mode, "text-slate-700", "text-slate-300")}>A more traditional, content-first layout with sensible spacing.</p>
@@ -127,7 +127,7 @@ export function MinimalistExample({ mode }: { mode: "light" | "dark" | "system" 
         <p className={dm(mode, "mt-6 max-w-2xl text-slate-600", "mt-6 max-w-2xl text-slate-400")}>Whitespace-forward layout, thin rules, and restrained typography. Great for portfolios and calm brands.</p>
       </header>
       <main className="mt-20 grid md:grid-cols-3 gap-6">
-        {[1,2,3,4,5,6].map(i => (
+        {[1, 2, 3, 4, 5, 6].map(i => (
           <div key={i} className={dm(mode, "aspect-[4/3] border border-slate-200 rounded-md", "aspect-[4/3] border border-slate-800 rounded-md")} />
         ))}
       </main>
@@ -142,7 +142,7 @@ export function CyberpunkExample({ mode }: { mode: "light" | "dark" | "system" }
       <nav className="flex justify-between items-center pb-3 border-b border-fuchsia-500/40">
         <div className="font-mono text-xl">NEON_SYS</div>
         <div className="flex gap-6">
-          {["Nodes","Mesh","Console"].map((l,i)=> (
+          {["Nodes", "Mesh", "Console"].map((l, i) => (
             <a key={i} href="#" className="relative group">{l}<span className="absolute left-0 -bottom-1 w-0 group-hover:w-full h-0.5 bg-fuchsia-500 transition-all" /></a>
           ))}
         </div>
@@ -151,9 +151,9 @@ export function CyberpunkExample({ mode }: { mode: "light" | "dark" | "system" }
         <h1 className="text-5xl font-extrabold tracking-tight"><span className="bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">Neon Interface</span></h1>
         <p className="mt-4 text-slate-300 max-w-2xl mx-auto font-mono">Glowing borders, chromatic gradients, and console-flavored typography.</p>
         <button className="mt-8 px-6 py-2 rounded-md bg-gradient-to-r from-fuchsia-600 to-cyan-500 text-white shadow-[0_0_20px_#d946ef]">Jack In</button>
-</header>
+      </header>
       <main className="mt-16 grid md:grid-cols-3 gap-6">
-        {[1,2,3].map(i => (
+        {[1, 2, 3].map(i => (
           <div key={i} className="p-6 rounded-lg border border-cyan-400/40 bg-slate-900/60 shadow-[0_0_15px_#22d3ee]">
             <h3 className="font-mono text-cyan-300 mb-2">Module {i}</h3>
             <p className="text-slate-300">Realtime telemetry and neon aesthetics for immersive UIs.</p>
@@ -176,12 +176,12 @@ export function EditorialExample({ mode }: { mode: "light" | "dark" | "system" }
       <main className="mt-10 grid lg:grid-cols-3 gap-8">
         <article className="lg:col-span-2 space-y-4">
           <div className={dm(mode, "aspect-[16/9] rounded-md border border-slate-200 bg-white", "aspect-[16/9] rounded-md border border-slate-800 bg-slate-900")} />
-          {[1,2,3].map(i => (
+          {[1, 2, 3].map(i => (
             <p key={i} className={dm(mode, "text-slate-800", "text-slate-300")}>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer facilisis, arcu vitae placerat dictum, metus urna hendrerit neque.</p>
           ))}
         </article>
         <aside className="space-y-4">
-          {[1,2,3,4].map(i => (
+          {[1, 2, 3, 4].map(i => (
             <div key={i} className={dm(mode, "p-4 border border-slate-200 rounded-md bg-white", "p-4 border border-slate-800 rounded-md bg-slate-900")}>
               <h3 className="font-serif text-xl mb-1">Sidebar {i}</h3>
               <p className={dm(mode, "text-slate-700", "text-slate-300")}>Short kicker and excerpt to related story.</p>
@@ -216,7 +216,7 @@ export function EnterpriseExample({ mode }: { mode: "light" | "dark" | "system" 
         <div className={dm(mode, "aspect-[16/10] rounded-lg border border-slate-200 bg-white", "aspect-[16/10] rounded-lg border border-slate-800 bg-slate-900")} />
       </header>
       <section className="mt-12 grid sm:grid-cols-3 gap-6">
-        {[["99.99%","Uptime"],["500M+","Requests/day"],["24/7","Support"]].map(([k,v],i)=> (
+        {[["99.99%", "Uptime"], ["500M+", "Requests/day"], ["24/7", "Support"]].map(([k, v], i) => (
           <div key={i} className={dm(mode, "rounded-md p-5 border border-slate-200 bg-white", "rounded-md p-5 border border-slate-800 bg-slate-900")}>
             <div className="text-3xl font-semibold">{k}</div>
             <div className={dm(mode, "text-slate-600", "text-slate-400")}>{v}</div>
@@ -230,17 +230,17 @@ export function EnterpriseExample({ mode }: { mode: "light" | "dark" | "system" 
 export default function ThemeDemos() {
   const [mode, setMode] = useState<"light" | "dark" | "system">("system");
   const [theme, setTheme] = useState<"framer" | "modern" | "traditional" | "minimalist" | "cyberpunk" | "editorial" | "enterprise">("framer");
-  
+
   // Listen for system color scheme changes
   useEffect(() => {
     if (mode === "system" && typeof window !== 'undefined' && window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      
+
       const handleChange = () => {
         // Force re-render by updating a dummy state
         setMode((prev) => prev === "system" ? "system" : prev);
       };
-      
+
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
@@ -262,7 +262,7 @@ export default function ThemeDemos() {
   return (
     <div className={dm(mode, "min-h-screen bg-white text-slate-900", "min-h-screen bg-slate-950 text-slate-100")}>
       <div className={dm(mode, "sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur px-4 py-3 flex items-center justify-between", "sticky top-0 z-50 border-b border-slate-800 bg-slate-950/70 backdrop-blur px-4 py-3 flex items-center justify-between")}>
-        <div className="text-sm opacity-70">Theme Demo — pick **one** design & light/dark</div>
+        <div className="text-sm opacity-70">Theme Demo - pick **one** design & light/dark</div>
         <div className="flex items-center gap-3">
           <label className="text-sm">Theme</label>
           <select className={dm(mode, "px-2 py-1 rounded-md border bg-white", "px-2 py-1 rounded-md border bg-slate-900 text-slate-100")} value={theme} onChange={(e) => setTheme(e.target.value as any)} aria-label="Theme">

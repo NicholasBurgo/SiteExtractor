@@ -117,11 +117,11 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
         className="flex items-center gap-2 px-5 py-2.5 bg-white/80 border border-gray-200 rounded-full text-sm text-gray-600 shadow-sm hover:bg-white transition-colors"
       >
         <span>🕒</span>
-        Checkpoint
-        <svg 
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
+        Previous Runs
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -132,9 +132,9 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
         <div className="absolute top-full left-0 mt-3 w-96 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900">Available Runs</h3>
-            <p className="text-xs text-gray-600 mt-1">Select a run to view its checkpoint</p>
+            <p className="text-xs text-gray-600 mt-1">Select a run to view its details</p>
           </div>
-          
+
           <div className="max-h-80 overflow-y-auto">
             {loading ? (
               <div className="p-4 text-center">
@@ -161,7 +161,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
                         {run.status.charAt(0).toUpperCase() + run.status.slice(1)}
                       </span>
                     </div>
-                    
+
                     <div className="text-xs text-gray-600 space-y-1">
                       <div>Started: {formatTimestamp(run.started_at)}</div>
                       {run.completed_at && (
@@ -184,7 +184,7 @@ const CheckpointDropdown: React.FC<CheckpointDropdownProps> = ({ className = "" 
               disabled={deletingAll || runs.length === 0}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-full hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {deletingAll ? 'Deleting...' : 'Delete All Checkpoints'}
+              {deletingAll ? 'Deleting...' : 'Delete All Previous Runs'}
             </button>
           </div>
         </div>

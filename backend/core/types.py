@@ -1,6 +1,18 @@
 from pydantic import BaseModel, Field, root_validator
 from typing import Any, List, Optional, Dict, Tuple
 
+
+class AssetDownloadConfig(BaseModel):
+    """Configuration for optional asset downloading during export."""
+    download_assets: str = "none"          # none | images | all
+    assets_scope: str = "same-origin"      # same-origin | include-cdn | all
+    max_asset_bytes: int = 5_242_880       # 5 MB per file
+    max_total_asset_bytes: int = 104_857_600  # 100 MB total
+    request_timeout: int = 15             # seconds per request
+    max_retries: int = 2
+    assets_dir: str = "assets"
+
+
 class StartRunRequest(BaseModel):
     url: str
     maxPages: int | None = None

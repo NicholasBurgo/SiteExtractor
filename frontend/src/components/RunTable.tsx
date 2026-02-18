@@ -84,9 +84,8 @@ export function RunTable({ pages, onPageSelect, selectedPageId }: RunTableProps)
             {sortedPages.map((page) => (
               <tr
                 key={page.pageId}
-                className={`hover:bg-gray-50 cursor-pointer ${
-                  selectedPageId === page.pageId ? 'bg-blue-50' : ''
-                }`}
+                className={`hover:bg-gray-50 cursor-pointer ${selectedPageId === page.pageId ? 'bg-blue-50' : ''
+                  }`}
                 onClick={() => onPageSelect(page.pageId)}
               >
                 <td className="p-3">
@@ -98,15 +97,14 @@ export function RunTable({ pages, onPageSelect, selectedPageId }: RunTableProps)
                   </div>
                 </td>
                 <td className="text-center p-3">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    page.type === 'HTML' ? 'bg-blue-100 text-blue-800' :
-                    page.type === 'PDF' ? 'bg-red-100 text-red-800' :
-                    page.type === 'DOCX' ? 'bg-green-100 text-green-800' :
-                    page.type === 'JSON' ? 'bg-yellow-100 text-yellow-800' :
-                    page.type === 'CSV' ? 'bg-purple-100 text-purple-800' :
-                    page.type === 'IMG' ? 'bg-pink-100 text-pink-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`px-2 py-1 rounded text-xs ${page.type === 'HTML' ? 'bg-blue-100 text-blue-800' :
+                      page.type === 'PDF' ? 'bg-red-100 text-red-800' :
+                        page.type === 'DOCX' ? 'bg-green-100 text-green-800' :
+                          page.type === 'JSON' ? 'bg-yellow-100 text-yellow-800' :
+                            page.type === 'CSV' ? 'bg-purple-100 text-purple-800' :
+                              page.type === 'IMG' ? 'bg-pink-100 text-pink-800' :
+                                'bg-gray-100 text-gray-800'
+                    }`}>
                     {page.type || 'Unknown'}
                   </span>
                 </td>
@@ -122,14 +120,13 @@ export function RunTable({ pages, onPageSelect, selectedPageId }: RunTableProps)
                 <td className="text-center p-3 text-gray-900">
                   {typeof page.load_time_ms === 'number'
                     ? page.load_time_ms.toLocaleString()
-                    : '—'}
+                    : '-'}
                 </td>
                 <td className="text-center p-3">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    page.status === 200 ? 'bg-green-100 text-green-800' :
-                    page.status && page.status >= 400 ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`px-2 py-1 rounded text-xs ${page.status === 200 ? 'bg-green-100 text-green-800' :
+                      page.status && page.status >= 400 ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                    }`}>
                     {page.status || 'Unknown'}
                   </span>
                 </td>

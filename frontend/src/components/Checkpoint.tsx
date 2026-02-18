@@ -44,10 +44,10 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
 
   const loadCheckpointData = async () => {
     if (!runId) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Load progress data
       const progressResponse = await fetch(`/api/runs/${runId}/progress`);
       if (progressResponse.ok) {
@@ -70,7 +70,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
 
   const handleDelete = async () => {
     if (!runId) return;
-    
+
     if (!confirm('Are you sure you want to delete this run? This action cannot be undone.')) {
       return;
     }
@@ -141,10 +141,10 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
 
   const getProgressPercentage = () => {
     if (!progress || !meta) return 0;
-    
+
     const total = progress.queued + progress.visited;
     if (total === 0) return 0;
-    
+
     return Math.round((progress.visited / total) * 100);
   };
 
@@ -157,7 +157,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
             onClick={() => navigate('/')}
             className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 mt-4"
           >
-            Back to Generator
+            Back to Home
           </button>
         </div>
       </div>
@@ -169,7 +169,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading checkpoint...</p>
+          <p className="text-gray-600">Loading run details...</p>
         </div>
       </div>
     );
@@ -191,7 +191,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
               <span>Back</span>
             </button>
             <div>
-              <h1 className="text-xl font-semibold">Run Checkpoint</h1>
+              <h1 className="text-xl font-semibold">Run Details</h1>
               <p className="text-sm text-gray-600 mt-1">Run ID: {runId}</p>
             </div>
           </div>
@@ -284,7 +284,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
                 <span>{getProgressPercentage()}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${getProgressPercentage()}%` }}
                 ></div>
@@ -301,7 +301,7 @@ const Checkpoint: React.FC<CheckpointProps> = ({ onContinue, onDelete }) => {
           >
             Continue to Confirmation
           </button>
-          
+
           <button
             onClick={handleDelete}
             disabled={deleting}

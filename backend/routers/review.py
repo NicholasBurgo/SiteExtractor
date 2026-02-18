@@ -1,5 +1,5 @@
 """
-Review API routes for site generator confirmation workflow.
+Review API routes for extraction data review workflow.
 """
 
 import os

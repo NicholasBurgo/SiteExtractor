@@ -76,7 +76,7 @@ echo
 
 # Backend (background)
 echo "Starting FastAPI backend..."
-(cd backend && "$PROJECT_ROOT/venv/bin/python" -m uvicorn app:app --reload --port 5051) &
+"$PROJECT_ROOT/venv/bin/python" -m uvicorn backend.app:app --reload --port 5051 &
 BACKEND_PID=$!
 
 sleep 2
@@ -95,12 +95,12 @@ echo "========================================="
 echo
 
 cat <<MSG
-📍 Access the application:
+   Access the application:
    Frontend UI:  http://localhost:5173
    Backend API:  http://localhost:5051
    API Docs:     http://localhost:5051/docs
 
-⚠️  Press Ctrl+C in this window to stop all services
+  Press Ctrl+C in this window to stop all services
 MSG
 
 trap "echo; echo 'Stopping services...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit" INT TERM
