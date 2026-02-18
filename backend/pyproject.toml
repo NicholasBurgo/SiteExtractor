@@ -2,7 +2,7 @@
 name = "universal-site-extractor"
 version = "2.0.0"
 description = "Universal Site Extractor v2 - Large-scale site extraction with HTML, PDF, DOCX, and image support"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["Site Extractor Team"]
 readme = "README.md"
 packages = [{include = "backend"}]
 

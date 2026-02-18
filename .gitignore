@@ -19,6 +19,21 @@ venv/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Python eggs & distribution
+*.egg
+*.egg-info/
+*.whl
+.eggs/
+
+# Python testing / tools
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+
 # IDE
 .vscode/
 .idea/
@@ -75,3 +90,19 @@ temp/
 
 # Extracted data runs
 runs/
+
+# OS-specific (Linux editor backups)
+*~
+
+# Secrets / certs
+*.pem
+*.key
+
+# Docker
+docker-compose.override.yml
+
+# ESLint cache
+.eslintcache
+
+# Jupyter
+.ipynb_checkpoints/
