@@ -10,8 +10,8 @@ from backend.core.types import PageResult, RunRollup, ContactInfo, ServiceInfo, 
 from backend.core.utils import extract_emails, extract_phones, clean_text
 
 
-class RollupGenerator:
-    """Generate rollup data from page results"""
+class RollupAggregator:
+    """Aggregate rollup data from page results"""
     
     def __init__(self):
         pass
