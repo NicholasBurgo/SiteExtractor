@@ -44,7 +44,7 @@ export function Review() {
 
   const handleSaveDraft = async () => {
     if (!draft) return;
-    
+
     setSaving(true);
     try {
       await confirmDraft(runId!, draft);
@@ -155,11 +155,11 @@ export function Review() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Error loading draft</p>
-          <button 
-            onClick={() => navigate('/generator')}
+          <button
+            onClick={() => navigate('/')}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
-            Back to Generator
+            Back to Home
           </button>
         </div>
       </div>
@@ -185,18 +185,18 @@ export function Review() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/generator')}
+                onClick={() => navigate('/')}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Generator
+                Back to Home
               </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">Review & Confirm</h1>
                 <p className="text-sm text-gray-500">Run ID: {runId}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSaveDraft}
@@ -206,7 +206,7 @@ export function Review() {
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : 'Save Draft'}
               </button>
-              
+
               <button
                 onClick={handleSaveDraft}
                 disabled={saving}
@@ -257,11 +257,10 @@ export function Review() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
-                        activeTab === tab.id
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${activeTab === tab.id
                           ? 'bg-blue-50 text-blue-700 border border-blue-200'
                           : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       {tab.label}
@@ -375,7 +374,7 @@ function OverviewTab({ draft, onUpdate }: { draft: DraftModel; onUpdate: (field:
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-gray-900">Business Profile</h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
@@ -386,7 +385,7 @@ function OverviewTab({ draft, onUpdate }: { draft: DraftModel; onUpdate: (field:
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Tagline</label>
           <input
@@ -396,7 +395,7 @@ function OverviewTab({ draft, onUpdate }: { draft: DraftModel; onUpdate: (field:
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Phone Numbers</label>
           <textarea
@@ -406,7 +405,7 @@ function OverviewTab({ draft, onUpdate }: { draft: DraftModel; onUpdate: (field:
             rows={3}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Email Addresses</label>
           <textarea
@@ -417,7 +416,7 @@ function OverviewTab({ draft, onUpdate }: { draft: DraftModel; onUpdate: (field:
           />
         </div>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Social Media</label>
         <div className="space-y-2">
@@ -438,18 +437,18 @@ function OverviewTab({ draft, onUpdate }: { draft: DraftModel; onUpdate: (field:
   );
 }
 
-function ItemsTab({ 
-  title, 
-  items, 
-  onUpdate, 
-  onAdd, 
-  onDelete 
-}: { 
-  title: string; 
-  items: ItemBase[]; 
-  onUpdate: (item: ItemBase) => void; 
-  onAdd: () => void; 
-  onDelete: (itemId: string) => void; 
+function ItemsTab({
+  title,
+  items,
+  onUpdate,
+  onAdd,
+  onDelete
+}: {
+  title: string;
+  items: ItemBase[];
+  onUpdate: (item: ItemBase) => void;
+  onAdd: () => void;
+  onDelete: (itemId: string) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -463,7 +462,7 @@ function ItemsTab({
           Add {title.slice(0, -1)}
         </button>
       </div>
-      
+
       <div className="space-y-3">
         {items.map((item) => (
           <ItemEditor
@@ -480,15 +479,15 @@ function ItemsTab({
 
 function ItemEditor({ item, onUpdate, onDelete }: { item: ItemBase; onUpdate: (item: ItemBase) => void; onDelete: () => void }) {
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const handleSave = () => {
     setIsEditing(false);
   };
-  
+
   const handleCancel = () => {
     setIsEditing(false);
   };
-  
+
   if (isEditing) {
     return (
       <div className="border border-gray-200 rounded-lg p-4 space-y-3">
@@ -501,7 +500,7 @@ function ItemEditor({ item, onUpdate, onDelete }: { item: ItemBase; onUpdate: (i
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
@@ -511,7 +510,7 @@ function ItemEditor({ item, onUpdate, onDelete }: { item: ItemBase; onUpdate: (i
             rows={3}
           />
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
@@ -529,7 +528,7 @@ function ItemEditor({ item, onUpdate, onDelete }: { item: ItemBase; onUpdate: (i
       </div>
     );
   }
-  
+
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <div className="flex items-start justify-between">
@@ -543,7 +542,7 @@ function ItemEditor({ item, onUpdate, onDelete }: { item: ItemBase; onUpdate: (i
             <span>Sources: {item.sources.length}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsEditing(true)}
@@ -581,7 +580,7 @@ function LocationsTab({ locations, onUpdate, onAdd, onDelete }: {
           Add Location
         </button>
       </div>
-      
+
       <div className="space-y-3">
         {locations.map((location) => (
           <LocationEditor
@@ -602,7 +601,7 @@ function LocationEditor({ location, onUpdate, onDelete }: {
   onDelete: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  
+
   if (isEditing) {
     return (
       <div className="border border-gray-200 rounded-lg p-4 space-y-3">
@@ -615,7 +614,7 @@ function LocationEditor({ location, onUpdate, onDelete }: {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
           <textarea
@@ -625,7 +624,7 @@ function LocationEditor({ location, onUpdate, onDelete }: {
             rows={2}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
           <input
@@ -635,7 +634,7 @@ function LocationEditor({ location, onUpdate, onDelete }: {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
           />
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsEditing(false)}
@@ -653,7 +652,7 @@ function LocationEditor({ location, onUpdate, onDelete }: {
       </div>
     );
   }
-  
+
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <div className="flex items-start justify-between">
@@ -670,7 +669,7 @@ function LocationEditor({ location, onUpdate, onDelete }: {
             <span>Sources: {location.sources.length}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsEditing(true)}
@@ -694,7 +693,7 @@ function MediaTab({ media }: { media: any[] }) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">Media Library</h2>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {media.map((item, index) => (
           <div key={index} className="border border-gray-200 rounded-lg p-3">
@@ -727,7 +726,7 @@ function NavigationTab({ sitemap }: { sitemap: any }) {
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-gray-900">Navigation Structure</h2>
-      
+
       <div>
         <h3 className="font-medium text-gray-900 mb-3">Primary Navigation</h3>
         <div className="space-y-2">
@@ -742,7 +741,7 @@ function NavigationTab({ sitemap }: { sitemap: any }) {
           ))}
         </div>
       </div>
-      
+
       <div>
         <h3 className="font-medium text-gray-900 mb-3">Secondary Navigation</h3>
         <div className="space-y-2">
@@ -757,7 +756,7 @@ function NavigationTab({ sitemap }: { sitemap: any }) {
           ))}
         </div>
       </div>
-      
+
       <div>
         <h3 className="font-medium text-gray-900 mb-3">Footer Navigation</h3>
         <div className="space-y-2">
@@ -784,7 +783,7 @@ function PagesTab({ pages, selectedPage, onPageSelect }: {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">Crawled Pages</h2>
-      
+
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="bg-gray-50 px-4 py-2 border-b">
           <h3 className="font-medium text-gray-900">Pages ({pages.length})</h3>
@@ -804,9 +803,8 @@ function PagesTab({ pages, selectedPage, onPageSelect }: {
               {pages.map((page) => (
                 <tr
                   key={page.pageId}
-                  className={`hover:bg-gray-50 cursor-pointer border-b ${
-                    selectedPage?.summary?.pageId === page.pageId ? 'bg-blue-50' : ''
-                  }`}
+                  className={`hover:bg-gray-50 cursor-pointer border-b ${selectedPage?.summary?.pageId === page.pageId ? 'bg-blue-50' : ''
+                    }`}
                   onClick={() => onPageSelect(page.pageId)}
                 >
                   <td className="p-3">{page.title || page.url}</td>
