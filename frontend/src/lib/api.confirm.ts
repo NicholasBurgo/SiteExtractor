@@ -9,7 +9,6 @@ import {
   UpdateNavigationRequest,
   UpdateFooterRequest,
   UpdatePageContentRequest,
-  SeedResponse,
   ApiError
 } from './types.confirm';
 
@@ -95,8 +94,8 @@ export const confirmationApi = {
    * Update page content
    */
   async updatePageContent(
-    runId: string, 
-    pagePath: string, 
+    runId: string,
+    pagePath: string,
     content: UpdatePageContentRequest
   ): Promise<void> {
     const response = await fetch(`${API_BASE}/${runId}/content?page_path=${encodeURIComponent(pagePath)}`, {
@@ -107,15 +106,6 @@ export const confirmationApi = {
     await handleResponse(response);
   },
 
-  /**
-   * Generate seed.json
-   */
-  async generateSeed(runId: string): Promise<SeedResponse> {
-    const response = await fetch(`${API_BASE}/${runId}/seed`, {
-      method: 'POST'
-    });
-    return handleResponse<SeedResponse>(response);
-  }
 };
 
 // Utility functions for common operations
@@ -147,16 +137,16 @@ export const confirmationUtils = {
    */
   formatFileSize(bytes?: number): string {
     if (!bytes) return 'Unknown size';
-    
+
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   },
 
@@ -165,7 +155,7 @@ export const confirmationUtils = {
    */
   validateNavigation(nav: any[]): string[] {
     const errors: string[] = [];
-    
+
     const validateNode = (node: any, path: string = ''): void => {
       if (!node.label || node.label.trim() === '') {
         errors.push(`Navigation item at ${path} has empty label`);
@@ -179,11 +169,11 @@ export const confirmationUtils = {
         });
       }
     };
-    
+
     nav.forEach((node, index) => {
       validateNode(node, `[${index}]`);
     });
-    
+
     return errors;
   },
 
@@ -192,7 +182,7 @@ export const confirmationUtils = {
    */
   flattenNavigation(nav: any[], level: number = 0): Array<{ node: any; level: number; path: number[] }> {
     const result: Array<{ node: any; level: number; path: number[] }> = [];
-    
+
     nav.forEach((node, index) => {
       result.push({ node, level, path: [index] });
       if (node.children) {
@@ -203,7 +193,7 @@ export const confirmationUtils = {
         result.push(...childResults);
       }
     });
-    
+
     return result;
   },
 
@@ -218,9 +208,9 @@ export const confirmationUtils = {
     return nodes
       .slice()
       .sort(sortFn)
-      .map(n => ({ 
-        ...n, 
-        children: n.children ? this.applySort(n.children, mode) : undefined 
+      .map(n => ({
+        ...n,
+        children: n.children ? this.applySort(n.children, mode) : undefined
       }));
   },
 

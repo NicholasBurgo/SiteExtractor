@@ -4,14 +4,14 @@
 
 The backend has been updated with mock data generation for testing the confirmation page. Here's what's been implemented:
 
-### ✅ **Fixed Issues:**
+### **Fixed Issues:**
 
 1. **404 Errors**: Added mock data generation for empty runs
 2. **Data Format**: Fixed PageDetail model to work with string-based images and links
 3. **Extraction Pipeline**: Enhanced aggregate.py to create realistic mock data
 4. **API Endpoints**: All endpoints now return proper data
 
-### 🧪 **Mock Data Generated:**
+### **Mock Data Generated:**
 
 - **Business Profile**: "Example Business" with contact info and social media
 - **Services**: 4 services (Web Development, Consulting, Digital Marketing, etc.)
@@ -21,7 +21,7 @@ The backend has been updated with mock data generation for testing the confirmat
 - **Media**: 4 images (logo, hero, service images)
 - **Navigation**: Basic sitemap structure
 
-### 🔧 **How to Test:**
+### **How to Test:**
 
 1. **Start the backend server**:
    ```bash
@@ -47,7 +47,7 @@ The backend has been updated with mock data generation for testing the confirmat
    - Confirmation toggles should work properly
    - Summary statistics should show realistic numbers
 
-### 📊 **Expected Results:**
+### **Expected Results:**
 
 - **Summary Tab**: Shows 9 total fields, 8 high confidence, runtime, etc.
 - **Business Tab**: Displays company info, services, contact details
@@ -56,7 +56,7 @@ The backend has been updated with mock data generation for testing the confirmat
 - **Navbar Tab**: Shows navigation structure
 - **Truth Table Tab**: Unified view of all extracted data
 
-### 🚀 **Next Steps:**
+### **Next Steps:**
 
 The confirmation page is now fully functional with realistic test data. Users can:
 - Review all extracted information

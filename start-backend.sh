@@ -30,12 +30,12 @@ pip install -q -r backend/requirements.txt
 echo ""
 echo "Starting backend server..."
 echo ""
-echo "📍 Access points:"
-echo "   Backend API: http://localhost:5051"
-echo "   API Docs:    http://localhost:5051/docs"
-echo "   ReDoc:       http://localhost:5051/redoc"
+echo "   Access points:"
+   Backend API: http://localhost:5051"
+   API Docs:    http://localhost:5051/docs"
+   ReDoc:       http://localhost:5051/redoc"
 echo ""
-echo "⚠️  Press Ctrl+C to stop"
+echo "  Press Ctrl+C to stop"
 echo ""
 
 # Run the backend from inside the backend directory

@@ -8,6 +8,7 @@ import magic
 from urllib.parse import urljoin, urlparse, parse_qs, urlunparse
 from typing import Optional, Tuple, Dict, Any
 import tiktoken
+from backend.core.config import settings
 
 
 def normalize_url(url: str, base_url: Optional[str] = None) -> str:
@@ -202,8 +203,10 @@ def calculate_text_hash(text: str, title: str = "") -> str:
     return hashlib.sha1(content.encode('utf-8')).hexdigest()
 
 
-def count_tokens(text: str, model: str = "gpt-3.5-turbo") -> int:
+def count_tokens(text: str, model: str = None) -> int:
     """Count tokens in text using tiktoken"""
+    if model is None:
+        model = settings.TIKTOKEN_MODEL
     try:
         encoding = tiktoken.encoding_for_model(model)
         return len(encoding.encode(text))
