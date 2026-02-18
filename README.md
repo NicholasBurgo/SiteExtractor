@@ -2,7 +2,7 @@
 
 A clean, production-ready fullstack site extractor with FastAPI backend, React frontend, and comprehensive content extraction capabilities.
 
-## ✨ What's New in v2
+## What's New in v2
 
 This is a **complete rewrite** that replaces the old extraction system with:
 
@@ -17,7 +17,7 @@ This is a **complete rewrite** that replaces the old extraction system with:
 - **Confirmation Workflow**: Review and edit extracted data before seeding
 - **Seed Generation**: Export generator-ready JSON for site building
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -95,7 +95,7 @@ chmod +x scripts/build.sh
 ./scripts/build.sh
 ```
 
-## 📖 How to Use
+## How to Use
 
 ### 1. Starting an Extraction
 
@@ -142,7 +142,70 @@ Click any page in the table to see:
 - **Images** and links found
 - **Statistics** (word count, image count, etc.)
 
-## ⚙️ Configuration
+## Export System
+
+### Data Formats
+
+- **JSON is the canonical format.** All extraction data is stored as JSON. It is the source of truth for page content, metadata, images, links, and audit findings.
+- **Markdown is a derived view.** Each page in the export bundle includes a `content.md` file rendered from the JSON data for human readability.
+
+### Downloading the Export Bundle
+
+```
+GET /api/runs/{run_id}/export
+```
+
+By default, the export creates a lightweight zip with remote image URLs in Markdown. No images are downloaded.
+
+### Asset Downloading (Optional)
+
+To download referenced images and rewrite Markdown links to local paths, pass query parameters:
+
+| Parameter | Values | Default | Description |
+|-----------|--------|---------|-------------|
+| `download_assets` | `none`, `images`, `all` | `none` | What to download |
+| `assets_scope` | `same-origin`, `include-cdn`, `all` | `same-origin` | URL scope filter |
+| `max_asset_bytes` | integer (bytes) | `5242880` (5 MB) | Max size per file |
+| `max_total_asset_bytes` | integer (bytes) | `104857600` (100 MB) | Total download budget |
+| `assets_dir` | string | `assets` | Asset folder name in bundle |
+
+**Example — download same-origin images:**
+```
+GET /api/runs/abc123/export?download_assets=images
+```
+
+**Example — download all images including CDNs:**
+```
+GET /api/runs/abc123/export?download_assets=images&assets_scope=include-cdn
+```
+
+### Export Bundle Layout
+
+```
+export_<run_id>.zip
+├── run.json
+├── pages/
+│   ├── index.json
+│   └── <page_id>/
+│       ├── page.json          # full structured extraction (canonical)
+│       ├── content.md         # derived Markdown view
+│       ├── content.txt        # plain text
+│       └── snapshot.html      # sanitized HTML snapshot
+├── assets/
+│   ├── manifest.json          # asset registry (downloaded + skipped)
+│   └── images/                # downloaded files (when enabled)
+│       └── <sha256>.<ext>     # content-hash named files
+├── reports/
+│   ├── audit.json
+│   └── audit.md
+└── graphs/
+    ├── links.csv
+    └── crawl_graph.json
+```
+
+Assets are deduplicated by SHA-256 content hash. If the same image appears on multiple pages, it is stored once. Skipped assets (too large, out of scope, failed) are recorded in `assets/manifest.json` with a reason.
+
+## Configuration
 
 Copy `env.example` to `.env` and customize:
 
@@ -161,7 +224,7 @@ cp env.example .env
 | `RENDER_ENABLED` | false | Enable JavaScript rendering |
 | `RENDER_BUDGET` | 0.10 | Percentage of pages to render with JS |
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 site_extractor_v2/

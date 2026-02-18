@@ -1,11 +1,10 @@
 """
 Confirmation API router.
-Provides endpoints for Prime, Content, and Seed operations.
+Provides endpoints for Prime and Content operations.
 """
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any, Optional
 from backend.storage.confirmation import ConfirmationStore
-from backend.storage.seed import SeedBuilder
 from backend.routers.runs import manager as run_manager
 
 router = APIRouter()
@@ -198,20 +197,3 @@ async def update_page_content(run_id: str, page_path: str = Query(..., descripti
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating page content: {str(e)}")
 
-
-@router.post("/{run_id}/seed")
-async def generate_seed(run_id: str):
-    """
-    Generate seed.json using edited site.json + selected/cleaned page files.
-    Returns the path to the generated seed.json file.
-    """
-    try:
-        seed_builder = SeedBuilder(run_id)
-        seed_path = seed_builder.build_seed()
-        
-        return {
-            "message": "Seed generated successfully",
-            "seedPath": seed_path
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating seed: {str(e)}")

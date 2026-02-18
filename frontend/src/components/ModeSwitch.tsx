@@ -1,5 +1,5 @@
 /**
- * Mode switch component for switching between Run Generator and Checkpoint modes.
+ * Mode switch component for switching between Run Extractor and Previous Runs modes.
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,10 +15,10 @@ interface RunInfo {
 interface ModeSwitchProps {
   className?: string;
   onModeChange?: (isCheckpointMode: boolean) => void;
-  generatorForm?: React.ReactNode;
+  extractorForm?: React.ReactNode;
 }
 
-const ModeSwitch: React.FC<ModeSwitchProps> = ({ className = "", onModeChange, generatorForm }) => {
+const ModeSwitch: React.FC<ModeSwitchProps> = ({ className = "", onModeChange, extractorForm }) => {
   const navigate = useNavigate();
   const [isCheckpointMode, setIsCheckpointMode] = useState(false);
   const [runs, setRuns] = useState<RunInfo[]>([]);
@@ -53,6 +53,21 @@ const ModeSwitch: React.FC<ModeSwitchProps> = ({ className = "", onModeChange, g
     return new Date(timestamp * 1000).toLocaleDateString();
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'running':
+        return 'bg-blue-100 text-blue-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      case 'stopped':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const handleModeChange = (newMode: boolean) => {
     setIsCheckpointMode(newMode);
     if (onModeChange) {
@@ -66,24 +81,22 @@ const ModeSwitch: React.FC<ModeSwitchProps> = ({ className = "", onModeChange, g
       <div className="flex items-center bg-gray-100 rounded-full p-1 mb-6">
         <button
           onClick={() => handleModeChange(false)}
-          className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${
-            !isCheckpointMode
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${!isCheckpointMode
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+            }`}
         >
-          Run Generator
+          Run Extractor
         </button>
         <button
           onClick={() => handleModeChange(true)}
-          className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2 ${
-            isCheckpointMode
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2 ${isCheckpointMode
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+            }`}
         >
           <span>🕒</span>
-          Checkpoint
+          Previous Runs
         </button>
       </div>
 
@@ -92,9 +105,9 @@ const ModeSwitch: React.FC<ModeSwitchProps> = ({ className = "", onModeChange, g
         <>
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900">Available Runs</h3>
-            <p className="text-sm text-gray-600 mt-1">Select a run to view its checkpoint</p>
+            <p className="text-sm text-gray-600 mt-1">Select a run to view its details</p>
           </div>
-          
+
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
               <div className="p-8 text-center">
@@ -121,7 +134,7 @@ const ModeSwitch: React.FC<ModeSwitchProps> = ({ className = "", onModeChange, g
                         {run.status.charAt(0).toUpperCase() + run.status.slice(1)}
                       </span>
                     </div>
-                    
+
                     <div className="text-xs text-gray-600 space-y-1">
                       <div>Started: {formatTimestamp(run.started_at)}</div>
                       {run.completed_at && (
@@ -140,7 +153,7 @@ const ModeSwitch: React.FC<ModeSwitchProps> = ({ className = "", onModeChange, g
           </div>
         </>
       ) : (
-        generatorForm
+        extractorForm
       )}
     </div>
   );
