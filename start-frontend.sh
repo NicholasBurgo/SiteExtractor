@@ -21,9 +21,9 @@ fi
 echo ""
 echo "Starting frontend server..."
 echo ""
-echo "📍 Access point: http://localhost:5173"
+echo "   Access point: http://localhost:5173"
 echo ""
-echo "⚠️  Press Ctrl+C to stop"
+echo "  Press Ctrl+C to stop"
 echo ""
 
 # Run the frontend

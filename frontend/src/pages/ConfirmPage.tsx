@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { confirmationApi, ConfirmationApiError } from '../lib/api.confirm';
+import { downloadExport, ExportOptions } from '../lib/api';
 import { PrimeResponse, PageContent, ConfirmationTab } from '../lib/types.confirm';
 import PrimeTabs from '../components/PrimeTabs';
 import ContentTabs from '../components/ContentTabs';
@@ -14,7 +15,7 @@ import { TopBar } from '../components/TopBar';
 const ConfirmPage: React.FC = () => {
   const { runId } = useParams<{ runId: string }>();
   const navigate = useNavigate();
-  
+
   const [activeTab, setActiveTab] = useState<ConfirmationTab>('prime');
   const [primeData, setPrimeData] = useState<PrimeResponse | null>(null);
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
@@ -24,11 +25,11 @@ const ConfirmPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const pagesPerPage = 20;
-  
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -71,7 +72,7 @@ const ConfirmPage: React.FC = () => {
         const total = visited + queued;
         const percent = total > 0 ? Math.round((visited / total) * 100) : 0;
         setProgressPercent(percent);
-        
+
         const messageBase = status.isComplete
           ? 'Finalizing extracted data…'
           : 'Crawling site…';
@@ -120,7 +121,7 @@ const ConfirmPage: React.FC = () => {
 
   const loadPrimeData = async () => {
     if (!runId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -129,7 +130,7 @@ const ConfirmPage: React.FC = () => {
       console.log('Prime data loaded:', data);
       setPrimeData(data);
       setExtracting(false);
-      
+
       // Select first page by default
       if (data.pages.length > 0) {
         setSelectedPagePath(data.pages[0].path);
@@ -148,7 +149,7 @@ const ConfirmPage: React.FC = () => {
 
   const loadPageContent = async (pagePath: string) => {
     if (!runId) return;
-    
+
     try {
       setLoading(true);
       const content = await confirmationApi.getPageContent(runId, pagePath);
@@ -194,7 +195,7 @@ const ConfirmPage: React.FC = () => {
 
   const handleNavigationUpdate = async (nav: any[]) => {
     if (!runId) return;
-    
+
     try {
       setSaving(true);
       await confirmationApi.updateNavigation(runId, nav);
@@ -213,7 +214,7 @@ const ConfirmPage: React.FC = () => {
 
   const handleFooterUpdate = async (footer: any) => {
     if (!runId) return;
-    
+
     try {
       setSaving(true);
       await confirmationApi.updateFooter(runId, footer);
@@ -232,7 +233,7 @@ const ConfirmPage: React.FC = () => {
 
   const handlePageContentUpdate = async (content: Partial<PageContent>) => {
     if (!runId || !selectedPagePath) return;
-    
+
     try {
       setSaving(true);
       await confirmationApi.updatePageContent(runId, selectedPagePath, content);
@@ -249,20 +250,16 @@ const ConfirmPage: React.FC = () => {
     }
   };
 
-  const handleExportSeed = async () => {
+  const handleExport = async (options: ExportOptions = {}) => {
     if (!runId) return;
-    
+
     try {
       setSaving(true);
-      const result = await confirmationApi.generateSeed(runId);
-      showToast(`Seed exported successfully: ${result.seedPath}`, 'success');
-      // Navigate to theme designer page after successful export
-      setTimeout(() => {
-        navigate('/theme-designer');
-      }, 1000);
+      await downloadExport(runId, options);
+      showToast('Export bundle downloaded successfully', 'success');
     } catch (err) {
-      if (err instanceof ConfirmationApiError) {
-        showToast(`Failed to export seed: ${err.message}`, 'error');
+      if (err instanceof Error) {
+        showToast(`Failed to export: ${err.message}`, 'error');
       } else {
         showToast('An unexpected error occurred', 'error');
       }
@@ -275,9 +272,9 @@ const ConfirmPage: React.FC = () => {
   const getFilteredPages = () => {
     if (!primeData) return [];
     if (!searchQuery.trim()) return primeData.pages;
-    
+
     const query = searchQuery.toLowerCase();
-    return primeData.pages.filter(page => 
+    return primeData.pages.filter(page =>
       (page.titleGuess && page.titleGuess.toLowerCase().includes(query)) ||
       (page.path && page.path.toLowerCase().includes(query))
     );
@@ -325,11 +322,11 @@ const ConfirmPage: React.FC = () => {
           <p className="text-gray-600 mb-4">
             {statusMessage}
           </p>
-          
+
           {/* Progress Bar */}
           <div className="mb-6">
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div 
+              <div
                 className="bg-blue-600 h-3 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${progressPercent}%` }}
               ></div>
@@ -338,7 +335,7 @@ const ConfirmPage: React.FC = () => {
               {progressPercent}% complete
             </p>
           </div>
-          
+
           <p className="text-gray-500 mb-4 text-sm">
             This may take a few minutes depending on the site size. You can leave this tab open while we finish.
           </p>
@@ -376,7 +373,7 @@ const ConfirmPage: React.FC = () => {
             onClick={() => navigate('/')}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Back to Generator
+            Back to Extractor
           </button>
         </div>
       </div>
@@ -392,7 +389,7 @@ const ConfirmPage: React.FC = () => {
             onClick={() => navigate('/')}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mt-4"
           >
-            Back to Generator
+            Back to Extractor
           </button>
         </div>
       </div>
@@ -405,7 +402,7 @@ const ConfirmPage: React.FC = () => {
       <TopBar
         runId={runId || ''}
         baseUrl={primeData.baseUrl}
-        onExportSeed={handleExportSeed}
+        onExport={handleExport}
         onBack={() => navigate('/')}
         saving={saving}
       />
@@ -421,11 +418,10 @@ const ConfirmPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as ConfirmationTab)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               {tab.label}
             </button>
@@ -439,7 +435,7 @@ const ConfirmPage: React.FC = () => {
           <div className="w-64 bg-white shadow-sm border-r border-gray-200 flex flex-col">
             <div className="p-4">
               <h3 className="text-sm font-medium text-gray-900 mb-3">All Pages</h3>
-              
+
               <div className="text-xs text-gray-500 mb-3">
                 {searchQuery.trim() ? (
                   <>
@@ -451,7 +447,7 @@ const ConfirmPage: React.FC = () => {
                   </>
                 )}
               </div>
-              
+
               {/* Search Bar */}
               <div className="mb-3">
                 <input
@@ -485,7 +481,7 @@ const ConfirmPage: React.FC = () => {
                       Next
                     </button>
                   </div>
-                  
+
                   {/* Page Number Buttons */}
                   <div className="flex flex-wrap gap-1 justify-center">
                     {Array.from({ length: Math.min(5, getTotalPages()) }, (_, i) => {
@@ -499,16 +495,15 @@ const ConfirmPage: React.FC = () => {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-                      
+
                       return (
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`px-2 py-1 text-xs rounded ${
-                            currentPage === pageNum
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
+                          className={`px-2 py-1 text-xs rounded ${currentPage === pageNum
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -518,7 +513,7 @@ const ConfirmPage: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Pages List */}
             <div className="flex-1 overflow-y-auto px-4">
               <div className="space-y-1">
@@ -526,11 +521,10 @@ const ConfirmPage: React.FC = () => {
                   <button
                     key={page.pageId}
                     onClick={() => handlePageSelect(page.path)}
-                    className={`w-full text-left px-3 py-2 rounded text-sm ${
-                      selectedPagePath === page.path
-                        ? 'bg-blue-100 text-blue-900'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`w-full text-left px-3 py-2 rounded text-sm ${selectedPagePath === page.path
+                      ? 'bg-blue-100 text-blue-900'
+                      : 'text-gray-700 hover:bg-gray-100'
+                      }`}
                   >
                     <div className="font-medium truncate">{page.titleGuess || 'Untitled'}</div>
                     <div className="text-xs text-gray-500 truncate">{page.path}</div>
@@ -557,7 +551,7 @@ const ConfirmPage: React.FC = () => {
                 saving={saving}
               />
             )}
-            
+
             {activeTab === 'content' && (
               <ContentTabs
                 pageContent={pageContent}
@@ -567,7 +561,7 @@ const ConfirmPage: React.FC = () => {
                 selectedPagePath={selectedPagePath}
               />
             )}
-            
+
             {activeTab === 'summary' && (
               <SummaryTab
                 primeData={primeData}
@@ -580,9 +574,8 @@ const ConfirmPage: React.FC = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-4 right-4 p-4 rounded shadow-lg z-50 ${
-          toast.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div className={`fixed top-4 right-4 p-4 rounded shadow-lg z-50 ${toast.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           {toast.message}
         </div>
       )}

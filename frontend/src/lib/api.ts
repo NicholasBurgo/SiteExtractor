@@ -81,7 +81,7 @@ export function getStatusColor(status: string): string {
 // Mock React Query hooks (these would normally be real hooks)
 export function useRuns() {
   return {
-    data: { 
+    data: {
       runs: [
         {
           run_id: "run_123",
@@ -164,4 +164,43 @@ export function usePageDetail(runId: string, pageId: string) {
     isLoading: false,
     error: null
   };
+}
+
+// Export API functions
+export async function getExportManifest(runId: string) {
+  const r = await fetch(`/api/runs/${runId}/export/manifest`);
+  if (!r.ok) throw new Error('Failed to load export manifest');
+  return r.json();
+}
+
+export interface ExportOptions {
+  format?: 'both' | 'markdown' | 'json';
+  download_assets?: 'none' | 'images' | 'all';
+  assets_scope?: 'same-origin' | 'include-cdn' | 'all';
+}
+
+export async function downloadExport(runId: string, options: ExportOptions = {}) {
+  const params = new URLSearchParams();
+  if (options.format && options.format !== 'both') {
+    params.set('format', options.format);
+  }
+  if (options.download_assets && options.download_assets !== 'none') {
+    params.set('download_assets', options.download_assets);
+  }
+  if (options.assets_scope && options.assets_scope !== 'same-origin') {
+    params.set('assets_scope', options.assets_scope);
+  }
+  const qs = params.toString();
+  const url = `/api/runs/${runId}/export${qs ? '?' + qs : ''}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Failed to download export');
+  const blob = await r.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = `export_${runId}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
 }
