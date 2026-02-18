@@ -61,9 +61,10 @@ class ProxyManager:
         self._load_proxies()
 
     def _load_proxies(self):
-        """Load proxy configurations from config"""
+        """Load proxy configurations from config or environment variables"""
         residential_proxies = self.config.get('residential', [])
 
+        # Load from YAML config if present
         for proxy_config in residential_proxies:
             proxy = Proxy(
                 host=proxy_config['host'],
@@ -73,6 +74,22 @@ class ProxyManager:
                 country=proxy_config.get('country', 'US')
             )
             self.proxies.append(proxy)
+
+        # Fallback: load from PROXY_N_* environment variables
+        if not self.proxies:
+            import os
+            for i in range(1, 11):  # Support up to 10 proxies
+                host = os.getenv(f'PROXY_{i}_HOST')
+                if not host:
+                    break
+                proxy = Proxy(
+                    host=host,
+                    port=int(os.getenv(f'PROXY_{i}_PORT', '8080')),
+                    username=os.getenv(f'PROXY_{i}_USERNAME'),
+                    password=os.getenv(f'PROXY_{i}_PASSWORD'),
+                    country=os.getenv(f'PROXY_{i}_COUNTRY', 'US')
+                )
+                self.proxies.append(proxy)
 
         if not self.proxies:
             logger.warning("No proxies configured, running without proxy support")

@@ -3,6 +3,7 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     BASE_USER_AGENT: str = Field("UniversalExtractor/2.0 (+contact@example.com)")
+    CONTACT_EMAIL: str = "contact@example.com"
     GLOBAL_CONCURRENCY: int = 12
     PER_HOST_LIMIT: int = 6
     REQUEST_TIMEOUT_SEC: int = 20
@@ -11,5 +12,8 @@ class Settings(BaseSettings):
     RENDER_BUDGET: float = 0.10
     DATA_DIR: str = "runs"
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "*"]
+    FLARESOLVERR_URL: str = "http://localhost:8191/v1"
+    TIKTOKEN_MODEL: str = "gpt-3.5-turbo"
+    API_PORT: int = 5051
 
 settings = Settings()

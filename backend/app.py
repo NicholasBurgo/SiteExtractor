@@ -11,7 +11,7 @@ app = FastAPI(
         "and export structured bundles. No site generation — extraction only."
     ),
     version="2.0.0",
-    contact={"name": "Site Extractor Team", "email": "contact@example.com"},
+    contact={"name": "Site Extractor Team", "email": settings.CONTACT_EMAIL},
     license_info={"name": "MIT"},
     docs_url="/docs",
     redoc_url="/redoc",
