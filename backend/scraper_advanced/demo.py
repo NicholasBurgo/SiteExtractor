@@ -11,9 +11,9 @@ from scraper_advanced.scraper import AdvancedNewsScraper
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
 
 async def demo():
     """Comprehensive scraper demonstration"""
@@ -28,7 +28,7 @@ async def demo():
         print("\n📊 Health Check:")
         health = await scraper.health_check()
         print(f"   Status: {health['overall']}")
-        for component, status in health['components'].items():
+        for component, status in health["components"].items():
             print(f"   {component}: {status['status']}")
 
         # 2. Test Scrape (Safe test URLs)
@@ -53,9 +53,11 @@ async def demo():
         print(f"   Requests Made: {stats['requests_made']}")
         print(f"   Success Rate: {stats['success_rate']:.1f}%")
 
-        if 'proxy_stats' in stats and stats['proxy_stats']['total_proxies'] > 0:
-            proxy = stats['proxy_stats']
-            print(f"   Proxies: {proxy['healthy_proxies']}/{proxy['total_proxies']} healthy")
+        if "proxy_stats" in stats and stats["proxy_stats"]["total_proxies"] > 0:
+            proxy = stats["proxy_stats"]
+            print(
+                f"   Proxies: {proxy['healthy_proxies']}/{proxy['total_proxies']} healthy"
+            )
 
         # 4. Feature Demonstration
         print("\n🎯 Key Features Demonstrated:")
@@ -95,6 +97,7 @@ async def demo():
     finally:
         await scraper.cleanup()
 
+
 def main():
     """Main demo entry point"""
     print("Advanced News Scraper - Production Demo")
@@ -110,6 +113,7 @@ def main():
         return 1
 
     return 0
+
 
 if __name__ == "__main__":
     exit(main())

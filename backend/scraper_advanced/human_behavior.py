@@ -8,22 +8,29 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class HumanBehaviorEngine:
     """Simulate human browsing behavior"""
 
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.min_delay = config.get('human_delays', {}).get('min_delay', 3.2)
-        self.max_delay = config.get('human_delays', {}).get('max_delay', 9.7)
-        self.homepage_visit_chance = config.get('human_delays', {}).get('homepage_visit_chance', 0.15)
-        self.asset_fetch_chance = config.get('human_delays', {}).get('asset_fetch_chance', 0.10)
+        self.min_delay = config.get("human_delays", {}).get("min_delay", 3.2)
+        self.max_delay = config.get("human_delays", {}).get("max_delay", 9.7)
+        self.homepage_visit_chance = config.get("human_delays", {}).get(
+            "homepage_visit_chance", 0.15
+        )
+        self.asset_fetch_chance = config.get("human_delays", {}).get(
+            "asset_fetch_chance", 0.10
+        )
 
         # Track session state
         self.session_start_time = time.time()
         self.pages_visited = []
         self.last_request_time = 0
 
-    async def pre_request_delay(self, url: str, is_first_request: bool = False) -> float:
+    async def pre_request_delay(
+        self, url: str, is_first_request: bool = False
+    ) -> float:
         """Apply human-like delay before making request"""
         if is_first_request:
             # Shorter delay for first request
@@ -44,7 +51,9 @@ class HumanBehaviorEngine:
         self.last_request_time = time.time()
         return delay
 
-    async def simulate_homepage_visit(self, base_url: str, target_url: str) -> Optional[str]:
+    async def simulate_homepage_visit(
+        self, base_url: str, target_url: str
+    ) -> Optional[str]:
         """Sometimes visit homepage first before going to article"""
         if random.random() < self.homepage_visit_chance:
             logger.info(f"Simulating homepage visit before {target_url}")
@@ -78,7 +87,7 @@ class HumanBehaviorEngine:
         for pattern in [css_pattern, js_pattern]:
             matches = re.findall(pattern, html_content, re.IGNORECASE)
             for match in matches:
-                if match.startswith('http'):
+                if match.startswith("http"):
                     asset_url = match
                 else:
                     asset_url = urljoin(url, match)
@@ -113,7 +122,7 @@ class HumanBehaviorEngine:
                 };
             """)
 
-            width, height = viewport['width'], viewport['height']
+            width, height = viewport["width"], viewport["height"]
 
             # Generate natural mouse path
             points = self._generate_mouse_path(width, height, num_points=5)
@@ -124,6 +133,7 @@ class HumanBehaviorEngine:
 
                 # Use ActionChains for smooth movement
                 from selenium.webdriver.common.action_chains import ActionChains
+
                 actions = ActionChains(driver)
                 actions.move_by_offset(x, y).perform()
 
@@ -163,7 +173,9 @@ class HumanBehaviorEngine:
         except Exception as e:
             logger.debug(f"Scroll behavior simulation failed: {e}")
 
-    def _generate_mouse_path(self, width: int, height: int, num_points: int = 5) -> List[tuple]:
+    def _generate_mouse_path(
+        self, width: int, height: int, num_points: int = 5
+    ) -> List[tuple]:
         """Generate natural-looking mouse movement path"""
         points = []
 
@@ -188,8 +200,16 @@ class HumanBehaviorEngine:
 
         # Skip certain types of links
         skip_patterns = [
-            'login', 'signup', 'register', 'advertisement', 'popup',
-            'cookie', 'privacy', 'terms', 'contact', 'about'
+            "login",
+            "signup",
+            "register",
+            "advertisement",
+            "popup",
+            "cookie",
+            "privacy",
+            "terms",
+            "contact",
+            "about",
         ]
 
         link_lower = link_text.lower()
@@ -198,11 +218,22 @@ class HumanBehaviorEngine:
 
         # Favor article-like links
         article_indicators = [
-            'news', 'article', 'story', 'report', 'breaking', 'update',
-            'politics', 'world', 'business', 'sports', 'entertainment'
+            "news",
+            "article",
+            "story",
+            "report",
+            "breaking",
+            "update",
+            "politics",
+            "world",
+            "business",
+            "sports",
+            "entertainment",
         ]
 
-        is_article_like = any(indicator in link_lower for indicator in article_indicators)
+        is_article_like = any(
+            indicator in link_lower for indicator in article_indicators
+        )
 
         # 70% chance to follow article-like links, 20% for others
         if is_article_like:

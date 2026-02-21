@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class Proxy:
     host: str
@@ -35,6 +36,7 @@ class Proxy:
             return f"{self.username}:{self.password}@{self.host}:{self.port}"
         return f"{self.host}:{self.port}"
 
+
 @dataclass
 class ProxyHealthMetrics:
     response_time: float
@@ -43,6 +45,7 @@ class ProxyHealthMetrics:
     total_requests: int
     successful_requests: int
 
+
 class ProxyManager:
     """Manages residential proxy rotation and health checking"""
 
@@ -50,10 +53,10 @@ class ProxyManager:
         self.config = config
         self.proxies: List[Proxy] = []
         self.health_metrics: Dict[str, ProxyHealthMetrics] = {}
-        self.rotation_strategy = config.get('rotation_strategy', 'round_robin')
-        self.health_check_interval = config.get('health_check_interval', 300)
-        self.max_failures = config.get('max_failures_before_ban', 3)
-        self.geo_target = config.get('geo_target', 'US')
+        self.rotation_strategy = config.get("rotation_strategy", "round_robin")
+        self.health_check_interval = config.get("health_check_interval", 300)
+        self.max_failures = config.get("max_failures_before_ban", 3)
+        self.geo_target = config.get("geo_target", "US")
         self._current_index = 0
         self._lock = asyncio.Lock()
 
@@ -62,32 +65,33 @@ class ProxyManager:
 
     def _load_proxies(self):
         """Load proxy configurations from config or environment variables"""
-        residential_proxies = self.config.get('residential', [])
+        residential_proxies = self.config.get("residential", [])
 
         # Load from YAML config if present
         for proxy_config in residential_proxies:
             proxy = Proxy(
-                host=proxy_config['host'],
-                port=proxy_config['port'],
-                username=proxy_config.get('username'),
-                password=proxy_config.get('password'),
-                country=proxy_config.get('country', 'US')
+                host=proxy_config["host"],
+                port=proxy_config["port"],
+                username=proxy_config.get("username"),
+                password=proxy_config.get("password"),
+                country=proxy_config.get("country", "US"),
             )
             self.proxies.append(proxy)
 
         # Fallback: load from PROXY_N_* environment variables
         if not self.proxies:
             import os
+
             for i in range(1, 11):  # Support up to 10 proxies
-                host = os.getenv(f'PROXY_{i}_HOST')
+                host = os.getenv(f"PROXY_{i}_HOST")
                 if not host:
                     break
                 proxy = Proxy(
                     host=host,
-                    port=int(os.getenv(f'PROXY_{i}_PORT', '8080')),
-                    username=os.getenv(f'PROXY_{i}_USERNAME'),
-                    password=os.getenv(f'PROXY_{i}_PASSWORD'),
-                    country=os.getenv(f'PROXY_{i}_COUNTRY', 'US')
+                    port=int(os.getenv(f"PROXY_{i}_PORT", "8080")),
+                    username=os.getenv(f"PROXY_{i}_USERNAME"),
+                    password=os.getenv(f"PROXY_{i}_PASSWORD"),
+                    country=os.getenv(f"PROXY_{i}_COUNTRY", "US"),
                 )
                 self.proxies.append(proxy)
 
@@ -100,7 +104,11 @@ class ProxyManager:
             return None
 
         async with self._lock:
-            healthy_proxies = [p for p in self.proxies if p.is_healthy and p.failures < self.max_failures]
+            healthy_proxies = [
+                p
+                for p in self.proxies
+                if p.is_healthy and p.failures < self.max_failures
+            ]
 
             if not healthy_proxies:
                 logger.warning("No healthy proxies available")
@@ -108,15 +116,17 @@ class ProxyManager:
 
             # Filter by geo target if specified
             if self.geo_target:
-                geo_proxies = [p for p in healthy_proxies if p.country == self.geo_target]
+                geo_proxies = [
+                    p for p in healthy_proxies if p.country == self.geo_target
+                ]
                 if geo_proxies:
                     healthy_proxies = geo_proxies
 
-            if self.rotation_strategy == 'round_robin':
+            if self.rotation_strategy == "round_robin":
                 proxy = self._round_robin_select(healthy_proxies)
-            elif self.rotation_strategy == 'random':
+            elif self.rotation_strategy == "random":
                 proxy = random.choice(healthy_proxies)
-            elif self.rotation_strategy == 'geo_targeted':
+            elif self.rotation_strategy == "geo_targeted":
                 proxy = self._geo_targeted_select(healthy_proxies, domain)
             else:
                 proxy = self._round_robin_select(healthy_proxies)
@@ -136,7 +146,9 @@ class ProxyManager:
         self._current_index += 1
         return proxy
 
-    def _geo_targeted_select(self, proxies: List[Proxy], domain: Optional[str]) -> Proxy:
+    def _geo_targeted_select(
+        self, proxies: List[Proxy], domain: Optional[str]
+    ) -> Proxy:
         """Select proxy based on domain and geographic targeting"""
         # For now, just use round-robin, but could be enhanced with domain-specific logic
         return self._round_robin_select(proxies)
@@ -149,14 +161,18 @@ class ProxyManager:
 
             if proxy.failures >= self.max_failures:
                 proxy.is_healthy = False
-                logger.warning(f"Proxy {proxy.host}:{proxy.port} banned after {proxy.failures} failures")
+                logger.warning(
+                    f"Proxy {proxy.host}:{proxy.port} banned after {proxy.failures} failures"
+                )
 
             logger.debug(f"Proxy failure: {proxy.host}:{proxy.port} - {error}")
 
     async def mark_success(self, proxy: Proxy):
         """Mark proxy as successful"""
         async with self._lock:
-            proxy.failures = max(0, proxy.failures - 1)  # Gradually reduce failure count
+            proxy.failures = max(
+                0, proxy.failures - 1
+            )  # Gradually reduce failure count
             proxy.is_healthy = True
 
     async def health_check_all(self):
@@ -175,7 +191,9 @@ class ProxyManager:
             await asyncio.gather(*tasks, return_exceptions=True)
 
         healthy_count = sum(1 for p in self.proxies if p.is_healthy)
-        logger.info(f"Health check complete: {healthy_count}/{len(self.proxies)} proxies healthy")
+        logger.info(
+            f"Health check complete: {healthy_count}/{len(self.proxies)} proxies healthy"
+        )
 
     async def _check_proxy_health(self, proxy: Proxy) -> bool:
         """Check if proxy is working"""
@@ -186,7 +204,9 @@ class ProxyManager:
             connector = aiohttp.TCPConnector(limit=1, limit_per_host=1)
             timeout = aiohttp.ClientTimeout(total=10)
 
-            async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+            async with aiohttp.ClientSession(
+                connector=connector, timeout=timeout
+            ) as session:
                 start_time = time.time()
 
                 # Test with a reliable endpoint
@@ -199,29 +219,39 @@ class ProxyManager:
                     if response.status == 200:
                         proxy.is_healthy = True
                         proxy.failures = 0
-                        logger.debug(f"Proxy {proxy.host}:{proxy.port} is healthy ({response_time:.2f}s)")
+                        logger.debug(
+                            f"Proxy {proxy.host}:{proxy.port} is healthy ({response_time:.2f}s)"
+                        )
                         return True
                     else:
                         proxy.is_healthy = False
-                        logger.debug(f"Proxy {proxy.host}:{proxy.port} returned status {response.status}")
+                        logger.debug(
+                            f"Proxy {proxy.host}:{proxy.port} returned status {response.status}"
+                        )
                         return False
 
         except Exception as e:
             proxy.is_healthy = False
-            logger.debug(f"Proxy {proxy.host}:{proxy.port} health check failed: {str(e)}")
+            logger.debug(
+                f"Proxy {proxy.host}:{proxy.port} health check failed: {str(e)}"
+            )
             return False
 
     def get_stats(self) -> Dict[str, any]:
         """Get proxy statistics"""
         total = len(self.proxies)
         healthy = sum(1 for p in self.proxies if p.is_healthy)
-        banned = sum(1 for p in self.proxies if not p.is_healthy and p.failures >= self.max_failures)
+        banned = sum(
+            1
+            for p in self.proxies
+            if not p.is_healthy and p.failures >= self.max_failures
+        )
 
         return {
-            'total_proxies': total,
-            'healthy_proxies': healthy,
-            'banned_proxies': banned,
-            'available_proxies': healthy,
-            'rotation_strategy': self.rotation_strategy,
-            'geo_target': self.geo_target
+            "total_proxies": total,
+            "healthy_proxies": healthy,
+            "banned_proxies": banned,
+            "available_proxies": healthy,
+            "rotation_strategy": self.rotation_strategy,
+            "geo_target": self.geo_target,
         }

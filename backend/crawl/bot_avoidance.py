@@ -108,7 +108,9 @@ class BotAvoidanceStrategy:
         self.min_delay = min_delay
         self.max_delay = max_delay
         self.per_host_interval = per_host_interval
-        self.keywords = [kw.lower() for kw in (block_keywords or DEFAULT_BLOCK_KEYWORDS)]
+        self.keywords = [
+            kw.lower() for kw in (block_keywords or DEFAULT_BLOCK_KEYWORDS)
+        ]
         self.status_blocklist = set(status_blocklist or [403, 409, 423, 429, 503])
         self.sample_bytes = sample_bytes
         self.browser_profiles = list(browser_profiles or DEFAULT_BROWSER_PROFILES)
@@ -117,7 +119,7 @@ class BotAvoidanceStrategy:
             for agent in user_agents:
                 fallback_profiles.append(
                     {
-                        "name": f"custom_{hash(agent) & 0xffff}",
+                        "name": f"custom_{hash(agent) & 0xFFFF}",
                         "user_agent": agent,
                         "sec_ch_ua": None,
                         "sec_ch_ua_mobile": None,
@@ -131,7 +133,9 @@ class BotAvoidanceStrategy:
             self.browser_profiles = fallback_profiles
         self.user_agents = [profile["user_agent"] for profile in self.browser_profiles]
         self.accept_languages = accept_languages or [
-            language for profile in self.browser_profiles for language in profile.get("accept_languages", [])  # type: ignore[arg-type]
+            language
+            for profile in self.browser_profiles
+            for language in profile.get("accept_languages", [])  # type: ignore[arg-type]
         ]
         self.profile_ttl = profile_ttl
         self._last_host_request: Dict[str, float] = {}
@@ -175,7 +179,10 @@ class BotAvoidanceStrategy:
 
         headers: Dict[str, str] = {
             "User-Agent": profile["user_agent"],
-            "Accept": profile.get("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"),
+            "Accept": profile.get(
+                "accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            ),
             "Accept-Language": profile_state["accept_language"],
             "Accept-Encoding": profile.get("accept_encoding", "gzip, deflate, br"),
             "Connection": "keep-alive",
@@ -187,7 +194,9 @@ class BotAvoidanceStrategy:
             "Sec-Fetch-Site": profile_state.get("sec_fetch_site", "none"),
             "Sec-Fetch-User": "?1",
             "Upgrade-Insecure-Requests": "1",
-            "Viewport-Width": str(profile_state["viewport_width"]) if profile_state.get("viewport_width") else None,
+            "Viewport-Width": str(profile_state["viewport_width"])
+            if profile_state.get("viewport_width")
+            else None,
         }
         if profile_state.get("send_cache_control"):
             headers["Cache-Control"] = "max-age=0"
@@ -196,7 +205,9 @@ class BotAvoidanceStrategy:
         if profile_state.get("dnt"):
             headers["DNT"] = profile_state["dnt"]  # type: ignore[assignment]
         if profile_state.get("sec_ch_ua_platform_version"):
-            headers["sec-ch-ua-platform-version"] = profile_state["sec_ch_ua_platform_version"]  # type: ignore[index]
+            headers["sec-ch-ua-platform-version"] = profile_state[
+                "sec_ch_ua_platform_version"
+            ]  # type: ignore[index]
         referer = self._last_host_url.get(host)
         if referer and referer != url:
             headers["Referer"] = referer
@@ -204,7 +215,9 @@ class BotAvoidanceStrategy:
         headers = {k: v for k, v in headers.items() if v is not None}
         return {"headers": headers}
 
-    def detect_block(self, url: str, status: Optional[int], headers: Dict[str, str], content: bytes) -> Optional[str]:
+    def detect_block(
+        self, url: str, status: Optional[int], headers: Dict[str, str], content: bytes
+    ) -> Optional[str]:
         """
         Inspect status codes and content for common bot wall patterns.
         """
@@ -212,7 +225,9 @@ class BotAvoidanceStrategy:
         if status and status in self.status_blocklist:
             reason = f"http_status_{status}"
         else:
-            snippet = content[: self.sample_bytes].decode("utf-8", errors="ignore").lower()
+            snippet = (
+                content[: self.sample_bytes].decode("utf-8", errors="ignore").lower()
+            )
             if any(keyword in snippet for keyword in self.keywords):
                 reason = "captcha_content"
         if reason:
@@ -223,7 +238,9 @@ class BotAvoidanceStrategy:
         """
         Store a rolling history of block events for diagnostics.
         """
-        self._blocked_events.append(BotBlockEvent(url=url, reason=reason, status=status))
+        self._blocked_events.append(
+            BotBlockEvent(url=url, reason=reason, status=status)
+        )
         # keep last 100 events to bound memory
         if len(self._blocked_events) > 100:
             self._blocked_events = self._blocked_events[-100:]
@@ -300,4 +317,3 @@ class BotAvoidanceStrategy:
         template = self._profile_queue[0]
         self._profile_queue.rotate(-1)
         return template
-
