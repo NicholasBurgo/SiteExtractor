@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 from typing import List, Optional, Dict, Any
@@ -10,7 +11,11 @@ class RunStore:
     File-based storage for extraction runs.
     """
     
+    _SAFE_RUN_ID = re.compile(r"^[a-zA-Z0-9_-]+$")
+
     def __init__(self, run_id: str, data_dir: str = "runs", meta_overrides: dict | None = None):
+        if not self._SAFE_RUN_ID.match(run_id):
+            raise ValueError(f"Invalid run_id: {run_id!r}")
         self.run_id = run_id
         self.data_dir = data_dir
         self.run_dir = os.path.join(data_dir, run_id)
@@ -209,12 +214,6 @@ class RunStore:
         try:
             with open(self.pages_file, 'r') as f:
                 pages = json.load(f)
-            
-            # If no pages, create mock data for testing
-            if not pages:
-                self.create_mock_data()
-                with open(self.pages_file, 'r') as f:
-                    pages = json.load(f)
             
             for page_data in pages:
                 if page_data.get("summary", {}).get("pageId") == page_id:
