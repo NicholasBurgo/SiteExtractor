@@ -106,9 +106,7 @@ class AdvancedNewsScraper:
             fingerprint = self.fingerprint_spoofer.generate_fingerprint()
 
             # Check if we should visit homepage first
-            await self._maybe_visit_homepage(
-                url, site_name, session_id, fingerprint
-            )
+            await self._maybe_visit_homepage(url, site_name, session_id, fingerprint)
 
             # Make the main request
             response = await self.http_client.request(
