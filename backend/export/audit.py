@@ -36,7 +36,11 @@ class AuditAggregator:
 
             if not summary.get("title", "").strip():
                 findings.append(
-                    {"type": "missing_title", "url": url, "message": "Page has no title"}
+                    {
+                        "type": "missing_title",
+                        "url": url,
+                        "message": "Page has no title",
+                    }
                 )
 
             if not page_meta.get("description", "").strip():

@@ -9,8 +9,4 @@ from .scraper import AdvancedNewsScraper
 from .config_loader import config_loader
 from .cli import ScraperCLI
 
-__all__ = [
-    'AdvancedNewsScraper',
-    'config_loader',
-    'ScraperCLI'
-]
+__all__ = ["AdvancedNewsScraper", "config_loader", "ScraperCLI"]

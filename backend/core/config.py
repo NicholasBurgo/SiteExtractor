@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
+
 class Settings(BaseSettings):
     BASE_USER_AGENT: str = Field("UniversalExtractor/2.0 (+contact@example.com)")
     CONTACT_EMAIL: str = "contact@example.com"
@@ -15,5 +16,6 @@ class Settings(BaseSettings):
     FLARESOLVERR_URL: str = "http://localhost:8191/v1"
     TIKTOKEN_MODEL: str = "gpt-3.5-turbo"
     API_PORT: int = 5051
+
 
 settings = Settings()

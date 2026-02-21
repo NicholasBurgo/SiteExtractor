@@ -1,4 +1,5 @@
 """Tests for export bundle builder."""
+
 import json
 import os
 import pytest
@@ -18,51 +19,65 @@ def run_dir():
 
     # Write meta.json
     with open(os.path.join(rd, "meta.json"), "w") as f:
-        json.dump({
-            "url": "https://example.com",
-            "status": "completed",
-            "started_at": 1700000000,
-            "completed_at": 1700000060,
-        }, f)
+        json.dump(
+            {
+                "url": "https://example.com",
+                "status": "completed",
+                "started_at": 1700000000,
+                "completed_at": 1700000060,
+            },
+            f,
+        )
 
     # Write pages.json
     with open(os.path.join(rd, "pages.json"), "w") as f:
-        json.dump([
-            {
-                "summary": {
-                    "url": "https://example.com/",
-                    "pageId": "p1",
-                    "title": "Home",
-                    "status": 200,
-                    "type": "HTML",
+        json.dump(
+            [
+                {
+                    "summary": {
+                        "url": "https://example.com/",
+                        "pageId": "p1",
+                        "title": "Home",
+                        "status": 200,
+                        "type": "HTML",
+                    },
+                    "meta": {"description": "Homepage"},
+                    "text": "Welcome to Example.com",
+                    "htmlExcerpt": "<html><body><h1>Welcome</h1><script>alert(1)</script></body></html>",
+                    "headings": ["Welcome"],
+                    "images": [
+                        {
+                            "url": "https://example.com/logo.png",
+                            "alt": "Logo",
+                            "size_bytes": 1024,
+                        }
+                    ],
+                    "links": ["https://example.com/about"],
                 },
-                "meta": {"description": "Homepage"},
-                "text": "Welcome to Example.com",
-                "htmlExcerpt": "<html><body><h1>Welcome</h1><script>alert(1)</script></body></html>",
-                "headings": ["Welcome"],
-                "images": [
-                    {"url": "https://example.com/logo.png", "alt": "Logo", "size_bytes": 1024}
-                ],
-                "links": ["https://example.com/about"],
-            },
-            {
-                "summary": {
-                    "url": "https://example.com/about",
-                    "pageId": "p2",
-                    "title": "About",
-                    "status": 200,
-                    "type": "HTML",
+                {
+                    "summary": {
+                        "url": "https://example.com/about",
+                        "pageId": "p2",
+                        "title": "About",
+                        "status": 200,
+                        "type": "HTML",
+                    },
+                    "meta": {"description": "About us"},
+                    "text": "About us page",
+                    "htmlExcerpt": "<html><body><h1>About</h1></body></html>",
+                    "headings": ["About"],
+                    "images": [
+                        {
+                            "url": "https://example.com/logo.png",
+                            "alt": "Logo",
+                            "size_bytes": 1024,
+                        }
+                    ],
+                    "links": [],
                 },
-                "meta": {"description": "About us"},
-                "text": "About us page",
-                "htmlExcerpt": "<html><body><h1>About</h1></body></html>",
-                "headings": ["About"],
-                "images": [
-                    {"url": "https://example.com/logo.png", "alt": "Logo", "size_bytes": 1024}
-                ],
-                "links": [],
-            },
-        ], f)
+            ],
+            f,
+        )
 
     yield tmpdir, run_id, rd
     shutil.rmtree(tmpdir)

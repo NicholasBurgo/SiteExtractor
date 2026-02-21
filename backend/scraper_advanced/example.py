@@ -10,6 +10,7 @@ from scraper_advanced.scraper import AdvancedNewsScraper
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 
+
 async def main():
     """Example scraping session"""
 
@@ -37,9 +38,11 @@ async def main():
         ]
 
         if urls:
-            results = await scraper.scrape_site_articles("newsmax", urls, max_concurrent=2)
+            results = await scraper.scrape_site_articles(
+                "newsmax", urls, max_concurrent=2
+            )
 
-            successful = sum(1 for r in results if r.get('success', False))
+            successful = sum(1 for r in results if r.get("success", False))
             print(f"Completed: {successful}/{len(urls)} successful extractions")
 
         # Example 3: Health check
@@ -47,7 +50,7 @@ async def main():
         health = await scraper.health_check()
         print(f"Overall Status: {health['overall']}")
 
-        for component, status in health['components'].items():
+        for component, status in health["components"].items():
             print(f"  {component}: {status['status']}")
 
         # Example 4: Statistics
@@ -56,13 +59,16 @@ async def main():
         print(f"Requests Made: {stats['requests_made']}")
         print(f"Success Rate: {stats['success_rate']:.1f}%")
 
-        if 'proxy_stats' in stats:
-            proxy = stats['proxy_stats']
-            print(f"Healthy Proxies: {proxy['healthy_proxies']}/{proxy['total_proxies']}")
+        if "proxy_stats" in stats:
+            proxy = stats["proxy_stats"]
+            print(
+                f"Healthy Proxies: {proxy['healthy_proxies']}/{proxy['total_proxies']}"
+            )
 
     finally:
         # Cleanup
         await scraper.cleanup()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
