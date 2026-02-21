@@ -1,13 +1,11 @@
-# Universal Site Extractor v2
+# Universal Site Extractor
 
-A clean, production-ready fullstack site extractor with FastAPI backend, React frontend, and comprehensive content extraction capabilities.
+A fullstack site extractor with FastAPI backend, React frontend, and comprehensive content extraction capabilities.
 
-## What's New in v2
-
-This is a **complete rewrite** that replaces the old extraction system with:
+## Features
 
 - **FastAPI Backend**: High-performance async API with automatic Swagger documentation
-- **React Frontend**: Modern UI with real-time progress updates and advanced filtering  
+- **React Frontend**: Modern UI with real-time progress updates and advanced filtering
 - **Multi-format Support**: HTML, PDF, DOCX, JSON, CSV, and image extraction
 - **JavaScript Rendering**: Optional Playwright integration for JS-heavy sites
 - **Smart Extraction**: Uses readability, trafilatura, and custom extractors
@@ -348,43 +346,6 @@ site_extractor_v2/
 - **JSON/CSV**: Schema inference and sample data
 - **Images**: Metadata extraction (size, format, EXIF)
 
-## Configuration
-
-Copy `env.example` to `.env` and customize settings:
-
-```bash
-cp env.example .env
-```
-
-Key settings:
-- `GLOBAL_CONCURRENCY`: Number of concurrent requests
-- `PER_HOST_LIMIT`: Requests per host
-- `MAX_PAGES_DEFAULT`: Default page limit
-- `RENDER_ENABLED`: Enable JavaScript rendering
-- `RENDER_BUDGET`: Percentage of pages to render with JS
-
-## Usage
-
-### Starting an Extraction
-
-1. Open the web interface
-2. Enter the target URL
-3. Configure settings (max pages, depth, concurrency)
-4. Click "Start Run"
-
-### Monitoring Progress
-
-- View real-time progress in the run summary
-- Monitor queued, visited, and error counts
-- Check per-host statistics
-- View estimated time remaining
-
-### Exploring Results
-
-- **Filter pages**: By content type, word count, errors, etc.
-- **Search**: Find specific pages by title or content
-- **Sort**: By word count, images, links, or processing time
-- **Details**: Click any page to view full content and metadata
 
 ## Advanced Features
 
@@ -399,18 +360,6 @@ playwright install chromium
 
 Set `RENDER_ENABLED=true` in your `.env` file.
 
-### Custom Extractors
-
-Extend the system with custom content extractors:
-
-```python
-from backend.extract.base import BaseExtractor
-
-class CustomExtractor(BaseExtractor):
-    async def extract(self, url, content, headers):
-        # Your extraction logic
-        return PageResult(...)
-```
 
 ### Rate Limiting
 
@@ -449,15 +398,12 @@ For large sites (500+ pages):
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding standards, and the pull request process.
 
 ## License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE).
+Copyright (c) 2025 Nicholas Burgo.
 
 ## Support
 

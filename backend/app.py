@@ -10,7 +10,7 @@ app = FastAPI(
         "Crawl websites, extract content, normalize data, run audits, "
         "and export structured bundles. No site generation — extraction only."
     ),
-    version="2.0.0",
+    version="1.0.0",
     contact={"name": "Site Extractor Team", "email": settings.CONTACT_EMAIL},
     license_info={"name": "MIT"},
     docs_url="/docs",
@@ -20,7 +20,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
