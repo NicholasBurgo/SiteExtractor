@@ -2,6 +2,7 @@
 Deterministic page ID generation from URLs.
 Produces stable, filesystem-safe identifiers for extraction pages.
 """
+
 import hashlib
 from urllib.parse import urlparse, urlunparse, unquote
 

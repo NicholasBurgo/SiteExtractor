@@ -3,24 +3,24 @@ Markdown image link rewriter.
 Rewrites remote image URLs in Markdown content to local relative paths
 when assets have been downloaded.
 """
-import os
+
 import re
 from typing import Dict
 
 
 # Matches Markdown image syntax: ![alt text](url "optional title")
 _MD_IMAGE_RE = re.compile(
-    r'(!\[(?P<alt>[^\]]*)\])'          # ![alt]
-    r'\((?P<url>[^\s\)]+)'             # (url
-    r'(?:\s+"[^"]*")?'                 # optional "title"
-    r'\)',                              # )
+    r"(!\[(?P<alt>[^\]]*)\])"  # ![alt]
+    r"\((?P<url>[^\s\)]+)"  # (url
+    r'(?:\s+"[^"]*")?'  # optional "title"
+    r"\)",  # )
 )
 
 # Matches HTML <img> tags with src attribute
 _HTML_IMG_RE = re.compile(
-    r'(<img\b[^>]*?\bsrc\s*=\s*)'       # <img ... src=
-    r'(["\'])(?P<url>[^"\']+)\2'         # "url" or 'url'
-    r'([^>]*?>)',                         # rest of tag
+    r"(<img\b[^>]*?\bsrc\s*=\s*)"  # <img ... src=
+    r'(["\'])(?P<url>[^"\']+)\2'  # "url" or 'url'
+    r"([^>]*?>)",  # rest of tag
     re.IGNORECASE,
 )
 

@@ -3,10 +3,11 @@ Asset downloader with content-hash deduplication.
 Downloads images (and optionally other assets) and stores them
 keyed by SHA-256 of their content bytes.
 """
+
 import hashlib
 import mimetypes
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -18,11 +19,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AssetDownloadConfig:
     """Configuration for asset downloading."""
-    download_assets: str = "none"          # none | images | all
-    assets_scope: str = "same-origin"      # same-origin | include-cdn | all
-    max_asset_bytes: int = 5_242_880       # 5 MB per file
+
+    download_assets: str = "none"  # none | images | all
+    assets_scope: str = "same-origin"  # same-origin | include-cdn | all
+    max_asset_bytes: int = 5_242_880  # 5 MB per file
     max_total_asset_bytes: int = 104_857_600  # 100 MB total
-    request_timeout: int = 15             # seconds per request
+    request_timeout: int = 15  # seconds per request
     max_retries: int = 2
     assets_dir: str = "assets"
 
@@ -100,7 +102,8 @@ class AssetStore:
             # Check per-file size
             if len(data) > self.config.max_asset_bytes:
                 self._record_skipped(
-                    url, page_id,
+                    url,
+                    page_id,
                     f"exceeds_max_asset_bytes ({len(data)} > {self.config.max_asset_bytes})",
                 )
                 return None
@@ -205,7 +208,8 @@ class AssetStore:
 
                 # Non-retryable HTTP error
                 self._record_skipped(
-                    url, page_id,
+                    url,
+                    page_id,
                     f"http_{resp.status_code}",
                 )
                 return None
@@ -219,24 +223,27 @@ class AssetStore:
 
         # Exhausted retries
         self._record_skipped(
-            url, page_id,
+            url,
+            page_id,
             f"retries_exhausted: {last_exc}",
         )
         return None
 
     def _record_skipped(self, url: str, page_id: str, reason: str) -> None:
         """Record a skipped asset in the manifest."""
-        self._skipped.append({
-            "original_url": url,
-            "local_path": None,
-            "sha256": None,
-            "mime": None,
-            "bytes": 0,
-            "first_seen_on_page_id": page_id,
-            "status": "skipped",
-            "skip_reason": reason,
-            "referenced_by": [page_id],
-        })
+        self._skipped.append(
+            {
+                "original_url": url,
+                "local_path": None,
+                "sha256": None,
+                "mime": None,
+                "bytes": 0,
+                "first_seen_on_page_id": page_id,
+                "status": "skipped",
+                "skip_reason": reason,
+                "referenced_by": [page_id],
+            }
+        )
 
     @staticmethod
     def _guess_type(url: str) -> tuple[str, str]:

@@ -9,18 +9,17 @@ import argparse
 import sys
 import logging
 import json
-from typing import List, Optional
+from typing import Optional
 from pathlib import Path
 
 from .scraper import AdvancedNewsScraper
-from .config_loader import config_loader
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 class ScraperCLI:
     """Command-line interface for the advanced scraper"""
@@ -33,21 +32,21 @@ class ScraperCLI:
 
         try:
             # Initialize scraper
-            config_path = args.config if hasattr(args, 'config') else None
+            config_path = args.config if hasattr(args, "config") else None
             self.scraper = AdvancedNewsScraper(config_path)
 
             logger.info("Advanced News Scraper initialized")
 
             # Execute command
-            if args.command == 'scrape':
+            if args.command == "scrape":
                 await self._cmd_scrape(args)
-            elif args.command == 'scrape-site':
+            elif args.command == "scrape-site":
                 await self._cmd_scrape_site(args)
-            elif args.command == 'health':
+            elif args.command == "health":
                 await self._cmd_health()
-            elif args.command == 'stats':
+            elif args.command == "stats":
                 await self._cmd_stats()
-            elif args.command == 'test':
+            elif args.command == "test":
                 await self._cmd_test(args)
             else:
                 logger.error(f"Unknown command: {args.command}")
@@ -76,7 +75,7 @@ class ScraperCLI:
             output_file = Path(args.output)
             output_file.parent.mkdir(exist_ok=True)
 
-            with open(output_file, 'w', encoding='utf-8') as f:
+            with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2, ensure_ascii=False)
 
             logger.info(f"Result saved to {output_file}")
@@ -100,7 +99,7 @@ class ScraperCLI:
         if args.urls:
             urls = args.urls
         elif args.url_file:
-            with open(args.url_file, 'r') as f:
+            with open(args.url_file, "r") as f:
                 urls = [line.strip() for line in f if line.strip()]
 
         if not urls:
@@ -118,7 +117,7 @@ class ScraperCLI:
             output_file = Path(args.output)
             output_file.parent.mkdir(exist_ok=True)
 
-            with open(output_file, 'w', encoding='utf-8') as f:
+            with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(results, f, indent=2, ensure_ascii=False)
 
             logger.info(f"Results saved to {output_file}")
@@ -126,7 +125,7 @@ class ScraperCLI:
             print(json.dumps(results, indent=2, ensure_ascii=False))
 
         # Print summary
-        successful = sum(1 for r in results if r.get('success', False))
+        successful = sum(1 for r in results if r.get("success", False))
         logger.info(f"Completed: {successful}/{len(urls)} successful extractions")
 
     async def _cmd_health(self):
@@ -142,10 +141,10 @@ class ScraperCLI:
         print(f"Overall Status: {health['overall']}")
 
         print("\nComponent Status:")
-        for component, status in health['components'].items():
+        for component, status in health["components"].items():
             print(f"  {component}: {status['status']}")
 
-        if health.get('issues'):
+        if health.get("issues"):
             print(f"\nIssues: {', '.join(health['issues'])}")
 
         print("\nDetailed Status:")
@@ -167,9 +166,9 @@ class ScraperCLI:
         print(f"Failed Requests: {stats['failed_requests']}")
         print(f"Success Rate: {stats['success_rate']:.1f}%")
 
-        if 'proxy_stats' in stats:
-            proxy = stats['proxy_stats']
-            print(f"\nProxy Stats:")
+        if "proxy_stats" in stats:
+            proxy = stats["proxy_stats"]
+            print("\nProxy Stats:")
             print(f"  Total Proxies: {proxy['total_proxies']}")
             print(f"  Healthy Proxies: {proxy['healthy_proxies']}")
             print(f"  Banned Proxies: {proxy['banned_proxies']}")
@@ -178,12 +177,12 @@ class ScraperCLI:
         """Run test scraping"""
 
         test_urls = {
-            'newsmax': 'https://www.newsmax.com/newsfront/breaking-news/2024/01/15/id/1146800/',
-            'breitbart': 'https://www.breitbart.com/politics/2024/01/15/example-article/',
-            'oann': 'https://www.oann.com/newsroom/example-article/'
+            "newsmax": "https://www.newsmax.com/newsfront/breaking-news/2024/01/15/id/1146800/",
+            "breitbart": "https://www.breitbart.com/politics/2024/01/15/example-article/",
+            "oann": "https://www.oann.com/newsroom/example-article/",
         }
 
-        site = args.site or 'newsmax'
+        site = args.site or "newsmax"
         url = test_urls.get(site)
 
         if not url:
@@ -201,8 +200,9 @@ class ScraperCLI:
         print(f"Author: {result.get('author', 'N/A')}")
         print(f"Date: {result.get('publish_date', 'N/A')}")
 
-        if result.get('error'):
+        if result.get("error"):
             print(f"Error: {result['error']}")
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create argument parser"""
@@ -226,41 +226,56 @@ Examples:
 
   # Test scrape
   python -m scraper_advanced.cli test --site newsmax
-        """
+        """,
     )
 
-    parser.add_argument('--config', help='Path to config file (default: config.yaml)')
-    parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-                       default='INFO', help='Logging level')
+    parser.add_argument("--config", help="Path to config file (default: config.yaml)")
+    parser.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="INFO",
+        help="Logging level",
+    )
 
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Scrape single article
-    scrape_parser = subparsers.add_parser('scrape', help='Scrape single article')
-    scrape_parser.add_argument('url', help='Article URL to scrape')
-    scrape_parser.add_argument('--site', help='Site name (auto-detected if not provided)')
-    scrape_parser.add_argument('--output', '-o', help='Output file path')
+    scrape_parser = subparsers.add_parser("scrape", help="Scrape single article")
+    scrape_parser.add_argument("url", help="Article URL to scrape")
+    scrape_parser.add_argument(
+        "--site", help="Site name (auto-detected if not provided)"
+    )
+    scrape_parser.add_argument("--output", "-o", help="Output file path")
 
     # Scrape site articles
-    site_parser = subparsers.add_parser('scrape-site', help='Scrape multiple articles from site')
-    site_parser.add_argument('site', help='Site name (newsmax, breitbart, oann)')
-    site_parser.add_argument('--urls', nargs='+', help='Article URLs to scrape')
-    site_parser.add_argument('--url-file', help='File containing URLs (one per line)')
-    site_parser.add_argument('--concurrency', type=int, default=3, help='Max concurrent requests')
-    site_parser.add_argument('--output', '-o', help='Output file path')
+    site_parser = subparsers.add_parser(
+        "scrape-site", help="Scrape multiple articles from site"
+    )
+    site_parser.add_argument("site", help="Site name (newsmax, breitbart, oann)")
+    site_parser.add_argument("--urls", nargs="+", help="Article URLs to scrape")
+    site_parser.add_argument("--url-file", help="File containing URLs (one per line)")
+    site_parser.add_argument(
+        "--concurrency", type=int, default=3, help="Max concurrent requests"
+    )
+    site_parser.add_argument("--output", "-o", help="Output file path")
 
     # Health check
-    subparsers.add_parser('health', help='Show scraper health status')
+    subparsers.add_parser("health", help="Show scraper health status")
 
     # Statistics
-    subparsers.add_parser('stats', help='Show scraper statistics')
+    subparsers.add_parser("stats", help="Show scraper statistics")
 
     # Test
-    test_parser = subparsers.add_parser('test', help='Run test scrape')
-    test_parser.add_argument('--site', choices=['newsmax', 'breitbart', 'oann'],
-                           default='newsmax', help='Site to test')
+    test_parser = subparsers.add_parser("test", help="Run test scrape")
+    test_parser.add_argument(
+        "--site",
+        choices=["newsmax", "breitbart", "oann"],
+        default="newsmax",
+        help="Site to test",
+    )
 
     return parser
+
 
 def main():
     """Main CLI entry point"""
@@ -279,5 +294,6 @@ def main():
     cli = ScraperCLI()
     asyncio.run(cli.run(args))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

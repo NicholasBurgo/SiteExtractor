@@ -1,4 +1,5 @@
 """Tests for optional asset downloading feature."""
+
 import asyncio
 import hashlib
 import json
@@ -48,51 +49,69 @@ def run_dir():
     os.makedirs(rd, exist_ok=True)
 
     with open(os.path.join(rd, "meta.json"), "w") as f:
-        json.dump({
-            "url": "https://example.com",
-            "status": "completed",
-            "started_at": 1700000000,
-            "completed_at": 1700000060,
-        }, f)
+        json.dump(
+            {
+                "url": "https://example.com",
+                "status": "completed",
+                "started_at": 1700000000,
+                "completed_at": 1700000060,
+            },
+            f,
+        )
 
     with open(os.path.join(rd, "pages.json"), "w") as f:
-        json.dump([
-            {
-                "summary": {
-                    "url": "https://example.com/",
-                    "pageId": "p1",
-                    "title": "Home",
-                    "status": 200,
-                    "type": "HTML",
+        json.dump(
+            [
+                {
+                    "summary": {
+                        "url": "https://example.com/",
+                        "pageId": "p1",
+                        "title": "Home",
+                        "status": 200,
+                        "type": "HTML",
+                    },
+                    "meta": {"description": "Homepage"},
+                    "text": "Welcome to Example.com",
+                    "htmlExcerpt": '<html><body><h1>Welcome</h1><img src="https://example.com/logo.png" alt="Logo"></body></html>',
+                    "headings": ["Welcome"],
+                    "images": [
+                        {
+                            "url": "https://example.com/logo.png",
+                            "alt": "Logo",
+                            "size_bytes": 1024,
+                        },
+                        {
+                            "url": "https://external.com/banner.jpg",
+                            "alt": "Banner",
+                            "size_bytes": 2048,
+                        },
+                    ],
+                    "links": ["https://example.com/about"],
                 },
-                "meta": {"description": "Homepage"},
-                "text": "Welcome to Example.com",
-                "htmlExcerpt": '<html><body><h1>Welcome</h1><img src="https://example.com/logo.png" alt="Logo"></body></html>',
-                "headings": ["Welcome"],
-                "images": [
-                    {"url": "https://example.com/logo.png", "alt": "Logo", "size_bytes": 1024},
-                    {"url": "https://external.com/banner.jpg", "alt": "Banner", "size_bytes": 2048},
-                ],
-                "links": ["https://example.com/about"],
-            },
-            {
-                "summary": {
-                    "url": "https://example.com/about",
-                    "pageId": "p2",
-                    "title": "About",
-                    "status": 200,
-                    "type": "HTML",
+                {
+                    "summary": {
+                        "url": "https://example.com/about",
+                        "pageId": "p2",
+                        "title": "About",
+                        "status": 200,
+                        "type": "HTML",
+                    },
+                    "meta": {"description": "About us"},
+                    "text": "About us page",
+                    "htmlExcerpt": '<html><body><h1>About</h1><img src="https://example.com/logo.png" alt="Logo"></body></html>',
+                    "headings": ["About"],
+                    "images": [
+                        {
+                            "url": "https://example.com/logo.png",
+                            "alt": "Logo",
+                            "size_bytes": 1024,
+                        },
+                    ],
+                    "links": [],
                 },
-                "meta": {"description": "About us"},
-                "text": "About us page",
-                "htmlExcerpt": '<html><body><h1>About</h1><img src="https://example.com/logo.png" alt="Logo"></body></html>',
-                "headings": ["About"],
-                "images": [
-                    {"url": "https://example.com/logo.png", "alt": "Logo", "size_bytes": 1024},
-                ],
-                "links": [],
-            },
-        ], f)
+            ],
+            f,
+        )
 
     yield tmpdir, run_id, rd
     shutil.rmtree(tmpdir)
@@ -101,6 +120,7 @@ def run_dir():
 # ---------------------------------------------------------------------------
 # Asset Discovery Tests
 # ---------------------------------------------------------------------------
+
 
 class TestAssetDiscovery:
     def test_discover_from_images_list_dict(self):
@@ -176,6 +196,7 @@ class TestAssetDiscovery:
 # URL Normalization Tests
 # ---------------------------------------------------------------------------
 
+
 class TestNormalizeAssetUrl:
     def test_absolute_url_unchanged(self):
         result = normalize_asset_url(
@@ -206,64 +227,88 @@ class TestNormalizeAssetUrl:
 # Scope Enforcement Tests
 # ---------------------------------------------------------------------------
 
+
 class TestScope:
     def test_same_origin_allows_same(self):
-        assert is_in_scope(
-            "https://example.com/img.png",
-            "https://example.com",
-            "same-origin",
-        ) is True
+        assert (
+            is_in_scope(
+                "https://example.com/img.png",
+                "https://example.com",
+                "same-origin",
+            )
+            is True
+        )
 
     def test_same_origin_rejects_different(self):
-        assert is_in_scope(
-            "https://cdn.example.com/img.png",
-            "https://example.com",
-            "same-origin",
-        ) is False
+        assert (
+            is_in_scope(
+                "https://cdn.example.com/img.png",
+                "https://example.com",
+                "same-origin",
+            )
+            is False
+        )
 
     def test_same_origin_rejects_different_scheme(self):
-        assert is_in_scope(
-            "http://example.com/img.png",
-            "https://example.com",
-            "same-origin",
-        ) is False
+        assert (
+            is_in_scope(
+                "http://example.com/img.png",
+                "https://example.com",
+                "same-origin",
+            )
+            is False
+        )
 
     def test_include_cdn_allows_subdomain(self):
-        assert is_in_scope(
-            "https://cdn.example.com/img.png",
-            "https://example.com",
-            "include-cdn",
-        ) is True
+        assert (
+            is_in_scope(
+                "https://cdn.example.com/img.png",
+                "https://example.com",
+                "include-cdn",
+            )
+            is True
+        )
 
     def test_include_cdn_rejects_other_domain(self):
-        assert is_in_scope(
-            "https://other.com/img.png",
-            "https://example.com",
-            "include-cdn",
-        ) is False
+        assert (
+            is_in_scope(
+                "https://other.com/img.png",
+                "https://example.com",
+                "include-cdn",
+            )
+            is False
+        )
 
     def test_scope_all_allows_any_https(self):
-        assert is_in_scope(
-            "https://anywhere.net/img.png",
-            "https://example.com",
-            "all",
-        ) is True
+        assert (
+            is_in_scope(
+                "https://anywhere.net/img.png",
+                "https://example.com",
+                "all",
+            )
+            is True
+        )
 
     def test_scope_rejects_non_http(self):
-        assert is_in_scope(
-            "ftp://example.com/img.png",
-            "https://example.com",
-            "all",
-        ) is False
+        assert (
+            is_in_scope(
+                "ftp://example.com/img.png",
+                "https://example.com",
+                "all",
+            )
+            is False
+        )
 
 
 # ---------------------------------------------------------------------------
 # SHA-256 Dedup Tests
 # ---------------------------------------------------------------------------
 
+
 class TestAssetStoreDedup:
     def test_dedup_same_url_across_pages(self):
         """Same URL downloaded once, referenced by multiple pages."""
+
         async def _run():
             config = AssetDownloadConfig(download_assets="images")
             store = AssetStore(config, "https://example.com")
@@ -276,10 +321,14 @@ class TestAssetStoreDedup:
             mock_client.get = AsyncMock(return_value=mock_response)
 
             entry1 = await store.download_and_store(
-                "https://example.com/logo.png", "p1", mock_client,
+                "https://example.com/logo.png",
+                "p1",
+                mock_client,
             )
             entry2 = await store.download_and_store(
-                "https://example.com/logo.png", "p2", mock_client,
+                "https://example.com/logo.png",
+                "p2",
+                mock_client,
             )
 
             assert entry1 is not None
@@ -295,6 +344,7 @@ class TestAssetStoreDedup:
 
     def test_dedup_by_content_not_url(self):
         """Two different URLs with identical content stored once."""
+
         async def _run():
             config = AssetDownloadConfig(download_assets="images")
             store = AssetStore(config, "https://example.com")
@@ -307,10 +357,14 @@ class TestAssetStoreDedup:
             mock_client.get = AsyncMock(return_value=mock_response)
 
             entry1 = await store.download_and_store(
-                "https://example.com/logo.png", "p1", mock_client,
+                "https://example.com/logo.png",
+                "p1",
+                mock_client,
             )
             entry2 = await store.download_and_store(
-                "https://example.com/logo-copy.png", "p2", mock_client,
+                "https://example.com/logo-copy.png",
+                "p2",
+                mock_client,
             )
 
             assert entry1["sha256"] == entry2["sha256"] == PIXEL_SHA
@@ -321,6 +375,7 @@ class TestAssetStoreDedup:
 
     def test_different_content_stored_separately(self):
         """Two URLs with different content stored as separate files."""
+
         async def _run():
             config = AssetDownloadConfig(download_assets="images")
             store = AssetStore(config, "https://example.com")
@@ -338,10 +393,14 @@ class TestAssetStoreDedup:
             mock_client.get = AsyncMock(side_effect=[response1, response2])
 
             await store.download_and_store(
-                "https://example.com/a.png", "p1", mock_client,
+                "https://example.com/a.png",
+                "p1",
+                mock_client,
             )
             await store.download_and_store(
-                "https://example.com/b.png", "p1", mock_client,
+                "https://example.com/b.png",
+                "p1",
+                mock_client,
             )
 
             manifest = store.get_downloaded_manifest()
@@ -354,9 +413,11 @@ class TestAssetStoreDedup:
 # Size Limit Tests
 # ---------------------------------------------------------------------------
 
+
 class TestAssetStoreLimits:
     def test_max_asset_bytes_skip(self):
         """File exceeding per-file limit is skipped with reason."""
+
         async def _run():
             config = AssetDownloadConfig(
                 download_assets="images",
@@ -373,7 +434,9 @@ class TestAssetStoreLimits:
             mock_client.get = AsyncMock(return_value=mock_response)
 
             result = await store.download_and_store(
-                "https://example.com/big.png", "p1", mock_client,
+                "https://example.com/big.png",
+                "p1",
+                mock_client,
             )
 
             assert result is None
@@ -386,6 +449,7 @@ class TestAssetStoreLimits:
 
     def test_max_total_bytes_budget(self):
         """Stops downloading after total budget is exhausted."""
+
         async def _run():
             config = AssetDownloadConfig(
                 download_assets="images",
@@ -402,7 +466,9 @@ class TestAssetStoreLimits:
             mock_client.get = AsyncMock(return_value=mock_response)
 
             r1 = await store.download_and_store(
-                "https://example.com/a.png", "p1", mock_client,
+                "https://example.com/a.png",
+                "p1",
+                mock_client,
             )
             assert r1 is not None
             assert r1["status"] == "downloaded"
@@ -413,7 +479,9 @@ class TestAssetStoreLimits:
             mock_client.get = AsyncMock(return_value=mock_response2)
 
             r2 = await store.download_and_store(
-                "https://example.com/b.png", "p1", mock_client,
+                "https://example.com/b.png",
+                "p1",
+                mock_client,
             )
             assert r2 is None
 
@@ -428,9 +496,10 @@ class TestAssetStoreLimits:
 # Markdown Rewrite Tests
 # ---------------------------------------------------------------------------
 
+
 class TestMarkdownRewrite:
     def test_rewrite_markdown_image(self):
-        md = '# Hello\n\n![Logo](https://example.com/logo.png)\n\nSome text.'
+        md = "# Hello\n\n![Logo](https://example.com/logo.png)\n\nSome text."
         url_to_local = {
             "https://example.com/logo.png": "assets/images/abc123.png",
         }
@@ -448,13 +517,13 @@ class TestMarkdownRewrite:
         assert "https://example.com/photo.jpg" not in result
 
     def test_unrewritten_urls_preserved(self):
-        md = '![Banner](https://external.com/banner.jpg)\n'
+        md = "![Banner](https://external.com/banner.jpg)\n"
         url_to_local = {}  # nothing downloaded
         result = rewrite_markdown_images(md, url_to_local, "pages/p1")
         assert "https://external.com/banner.jpg" in result
 
     def test_empty_alt_preserved(self):
-        md = '![](https://example.com/img.png)\n'
+        md = "![](https://example.com/img.png)\n"
         url_to_local = {
             "https://example.com/img.png": "assets/images/xyz.png",
         }
@@ -462,10 +531,7 @@ class TestMarkdownRewrite:
         assert "![](../../assets/images/xyz.png)" in result
 
     def test_multiple_images_rewritten(self):
-        md = (
-            "![A](https://example.com/a.png)\n"
-            "![B](https://example.com/b.png)\n"
-        )
+        md = "![A](https://example.com/a.png)\n![B](https://example.com/b.png)\n"
         url_to_local = {
             "https://example.com/a.png": "assets/images/aaa.png",
             "https://example.com/b.png": "assets/images/bbb.png",
@@ -487,6 +553,7 @@ class TestMarkdownRewrite:
 # ---------------------------------------------------------------------------
 # Bundle Integration Tests
 # ---------------------------------------------------------------------------
+
 
 class TestBundleWithAssets:
     def test_bundle_without_assets_unchanged(self, run_dir):
@@ -516,16 +583,18 @@ class TestBundleWithAssets:
 
         # Mock the download pipeline to return a pre-built url_to_local map
         mock_store = MagicMock()
-        mock_store.get_downloaded_manifest.return_value = [{
-            "original_url": "https://example.com/logo.png",
-            "local_path": "assets/images/test123.png",
-            "sha256": "test123",
-            "mime": "image/png",
-            "bytes": len(PIXEL_PNG),
-            "first_seen_on_page_id": "p1",
-            "status": "downloaded",
-            "referenced_by": ["p1", "p2"],
-        }]
+        mock_store.get_downloaded_manifest.return_value = [
+            {
+                "original_url": "https://example.com/logo.png",
+                "local_path": "assets/images/test123.png",
+                "sha256": "test123",
+                "mime": "image/png",
+                "bytes": len(PIXEL_PNG),
+                "first_seen_on_page_id": "p1",
+                "status": "downloaded",
+                "referenced_by": ["p1", "p2"],
+            }
+        ]
         mock_store.get_file_data.return_value = PIXEL_PNG
         mock_store.get_manifest.return_value = mock_store.get_downloaded_manifest()
 
@@ -543,9 +612,12 @@ class TestBundleWithAssets:
         def patched_build(asset_config=None):
             # We need to actually construct the store properly
             from backend.export.asset_store import AssetStore
+
             builder_store = AssetStore(config, "https://example.com")
             # Replace with our mock data
-            builder_store._manifest = {"test123": mock_store.get_downloaded_manifest()[0]}
+            builder_store._manifest = {
+                "test123": mock_store.get_downloaded_manifest()[0]
+            }
             builder_store._file_data = {"test123": PIXEL_PNG}
             builder_store._url_to_hash = {"https://example.com/logo.png": "test123"}
 

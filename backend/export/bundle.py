@@ -20,6 +20,7 @@ Zip structure:
   graphs/
     links.csv                   — source_url, target_url, type, status
 """
+
 import asyncio
 import hashlib
 import io
@@ -29,10 +30,14 @@ import time
 import zipfile
 from typing import Any, Dict, List, Optional
 
-from backend.export.page_id import make_page_id, normalize_url
+from backend.export.page_id import make_page_id
 from backend.export.sanitizer import sanitize_html
 from backend.export.audit import AuditAggregator
-from backend.export.asset_discovery import discover_image_urls, normalize_asset_url, is_in_scope
+from backend.export.asset_discovery import (
+    discover_image_urls,
+    normalize_asset_url,
+    is_in_scope,
+)
 from backend.export.asset_store import AssetStore, AssetDownloadConfig
 from backend.export.md_rewriter import rewrite_markdown_images
 
@@ -82,7 +87,9 @@ class ExportBundleBuilder:
 
             # count images as assets
             for img in page.get("images", []):
-                img_url = img if isinstance(img, str) else img.get("url", img.get("src", ""))
+                img_url = (
+                    img if isinstance(img, str) else img.get("url", img.get("src", ""))
+                )
                 if img_url:
                     asset_urls.add(img_url)
 
@@ -132,8 +139,7 @@ class ExportBundleBuilder:
 
         # Determine if we should download assets
         should_download = (
-            asset_config is not None
-            and asset_config.download_assets != "none"
+            asset_config is not None and asset_config.download_assets != "none"
         )
 
         # If downloading, run the async download pipeline
@@ -143,7 +149,10 @@ class ExportBundleBuilder:
         if should_download:
             asset_store = AssetStore(asset_config, base_url)
             url_to_local = self._run_asset_downloads(
-                pages, base_url, asset_store, asset_config,
+                pages,
+                base_url,
+                asset_store,
+                asset_config,
             )
 
         buf = io.BytesIO()
@@ -157,7 +166,9 @@ class ExportBundleBuilder:
                 "completed_at": meta.get("completed_at"),
                 "total_pages": len(pages),
                 "exported_at": time.time(),
-                "asset_download": asset_config.download_assets if asset_config else "none",
+                "asset_download": asset_config.download_assets
+                if asset_config
+                else "none",
                 "format": export_format,
             }
             zf.writestr("run.json", json.dumps(run_json, indent=2))
@@ -176,13 +187,15 @@ class ExportBundleBuilder:
                 # Build page index entry
                 text = page.get("text", "") or ""
                 content_hash = self._content_hash(text.encode("utf-8"))
-                pages_index.append({
-                    "page_id": pid,
-                    "url": url,
-                    "title": title,
-                    "status": status,
-                    "content_hash": content_hash,
-                })
+                pages_index.append(
+                    {
+                        "page_id": pid,
+                        "url": url,
+                        "title": title,
+                        "status": status,
+                        "content_hash": content_hash,
+                    }
+                )
 
                 include_json = export_format in ("both", "json")
                 include_md = export_format in ("both", "markdown")
@@ -228,7 +241,9 @@ class ExportBundleBuilder:
                     if should_download and url_to_local:
                         page_dir = f"pages/{pid}"
                         md_content = rewrite_markdown_images(
-                            md_content, url_to_local, page_dir,
+                            md_content,
+                            url_to_local,
+                            page_dir,
                         )
 
                     zf.writestr(f"pages/{pid}/content.md", md_content)
@@ -297,16 +312,21 @@ class ExportBundleBuilder:
                     else:
                         link_url = link.get("url", "")
                     if link_url:
-                        link_type = "internal" if link_url.startswith("/") else "external"
+                        link_type = (
+                            "internal" if link_url.startswith("/") else "external"
+                        )
                         csv_lines.append(f"{src_url},{link_url},{link_type},")
             zf.writestr("graphs/links.csv", "\n".join(csv_lines))
 
             # crawl_graph.json
             crawl_graph = {
                 "nodes": [
-                    {"id": make_page_id(p.get("summary", {}).get("url", "")),
-                     "url": p.get("summary", {}).get("url", "")}
-                    for p in pages if p.get("summary", {}).get("url")
+                    {
+                        "id": make_page_id(p.get("summary", {}).get("url", "")),
+                        "url": p.get("summary", {}).get("url", ""),
+                    }
+                    for p in pages
+                    if p.get("summary", {}).get("url")
                 ],
                 "edges": [],
             }
@@ -318,10 +338,12 @@ class ExportBundleBuilder:
                 for link in page.get("links", []):
                     tgt = link if isinstance(link, str) else link.get("url", "")
                     if tgt:
-                        crawl_graph["edges"].append({
-                            "source": src_id,
-                            "target": make_page_id(tgt),
-                        })
+                        crawl_graph["edges"].append(
+                            {
+                                "source": src_id,
+                                "target": make_page_id(tgt),
+                            }
+                        )
             zf.writestr("graphs/crawl_graph.json", json.dumps(crawl_graph, indent=2))
 
         buf.seek(0)
@@ -351,6 +373,7 @@ class ExportBundleBuilder:
             # We're inside an async context (e.g. FastAPI).
             # Create a new loop in a thread to avoid deadlock.
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(
                     asyncio.run,
@@ -379,14 +402,17 @@ class ExportBundleBuilder:
             for page in pages:
                 summary = page.get("summary", {})
                 page_url = summary.get("url", "")
-                pid = make_page_id(page_url) if page_url else summary.get("pageId", "unknown")
+                pid = (
+                    make_page_id(page_url)
+                    if page_url
+                    else summary.get("pageId", "unknown")
+                )
 
                 # Discover candidate image URLs
                 candidates = discover_image_urls(page)
 
                 for candidate in candidates:
                     raw_url = candidate["url"]
-
 
                     # Normalize relative URLs
                     abs_url = normalize_asset_url(page_url, raw_url)
@@ -401,4 +427,3 @@ class ExportBundleBuilder:
                     await asset_store.download_and_store(abs_url, pid, client)
 
         return asset_store.get_url_to_local_map()
-

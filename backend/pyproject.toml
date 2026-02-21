@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "universal-site-extractor"
-version = "2.0.0"
-description = "Universal Site Extractor v2 - Large-scale site extraction with HTML, PDF, DOCX, and image support"
-authors = ["Site Extractor Team"]
+version = "1.0.0"
+description = "Universal Site Extractor - Large-scale site extraction with HTML, PDF, DOCX, and image support"
+authors = ["Nicholas Burgo"]
 readme = "README.md"
 packages = [{include = "backend"}]
 

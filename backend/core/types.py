@@ -1,14 +1,15 @@
 from pydantic import BaseModel, Field, root_validator
-from typing import Any, List, Optional, Dict, Tuple
+from typing import Any, Optional, Dict
 
 
 class AssetDownloadConfig(BaseModel):
     """Configuration for optional asset downloading during export."""
-    download_assets: str = "none"          # none | images | all
-    assets_scope: str = "same-origin"      # same-origin | include-cdn | all
-    max_asset_bytes: int = 5_242_880       # 5 MB per file
+
+    download_assets: str = "none"  # none | images | all
+    assets_scope: str = "same-origin"  # same-origin | include-cdn | all
+    max_asset_bytes: int = 5_242_880  # 5 MB per file
     max_total_asset_bytes: int = 104_857_600  # 100 MB total
-    request_timeout: int = 15             # seconds per request
+    request_timeout: int = 15  # seconds per request
     max_retries: int = 2
     assets_dir: str = "assets"
 
@@ -21,6 +22,7 @@ class StartRunRequest(BaseModel):
     renderBudget: float | None = None
     botAvoidanceEnabled: bool | None = None
 
+
 class RunProgress(BaseModel):
     runId: str
     queued: int
@@ -28,6 +30,7 @@ class RunProgress(BaseModel):
     errors: int
     etaSeconds: int | None
     hosts: dict[str, int]
+
 
 class PageSummary(BaseModel):
     pageId: str
@@ -53,6 +56,7 @@ class PageSummary(BaseModel):
         elif status_code is None and status is not None:
             values["status_code"] = status
         return values
+
 
 class PageDetail(BaseModel):
     summary: PageSummary
@@ -92,6 +96,7 @@ class PageResult(BaseModel):
             values["status_code"] = status
         return values
 
+
 # Review and Confirmation Models
 class BusinessProfile(BaseModel):
     name: str | None = None
@@ -101,7 +106,8 @@ class BusinessProfile(BaseModel):
     socials: dict[str, str] = {}  # {"facebook": "...", "instagram": "..."}
     logo: str | None = None
     brand_colors: list[str] = []  # hex list
-    sources: list[str] = []       # pageIds
+    sources: list[str] = []  # pageIds
+
 
 class ItemBase(BaseModel):
     id: str
@@ -113,6 +119,7 @@ class ItemBase(BaseModel):
     confidence: float = 0.0
     sources: list[str] = []
 
+
 class Location(BaseModel):
     id: str
     name: str | None = None
@@ -123,10 +130,12 @@ class Location(BaseModel):
     confidence: float = 0.0
     sources: list[str] = []
 
+
 class NavItem(BaseModel):
     label: str
     href: str | None = None
     children: list["NavItem"] = []
+
 
 class DraftModel(BaseModel):
     runId: str
@@ -135,16 +144,19 @@ class DraftModel(BaseModel):
     products: list[ItemBase] = []
     menu: list[ItemBase] = []
     locations: list[Location] = []
-    team: list[ItemBase] = []          # use title as name, description as role
-    faqs: list[dict] = []              # {q,a,confidence,sources}
-    testimonials: list[dict] = []      # {author,text,confidence,sources}
-    policies: list[dict] = []          # privacy/terms
-    media: list[dict] = []             # {src,alt,role}
-    sitemap: dict = Field(default_factory=lambda: {  # proposed navs
-        "primary": [],
-        "secondary": [],
-        "footer": [],
-    })
+    team: list[ItemBase] = []  # use title as name, description as role
+    faqs: list[dict] = []  # {q,a,confidence,sources}
+    testimonials: list[dict] = []  # {author,text,confidence,sources}
+    policies: list[dict] = []  # privacy/terms
+    media: list[dict] = []  # {src,alt,role}
+    sitemap: dict = Field(
+        default_factory=lambda: {  # proposed navs
+            "primary": [],
+            "secondary": [],
+            "footer": [],
+        }
+    )
+
 
 class ConfirmRequest(BaseModel):
     draft: DraftModel

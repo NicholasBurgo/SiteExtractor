@@ -2,6 +2,7 @@
 Asset discovery from extraction JSON.
 Collects candidate asset URLs from page data for optional downloading.
 """
+
 import re
 from urllib.parse import urljoin, urlparse
 from typing import Dict, List, Optional
@@ -128,6 +129,7 @@ def is_in_scope(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _is_http_url(url: str) -> bool:
     """Check if a URL uses http or https scheme (or is protocol-relative)."""

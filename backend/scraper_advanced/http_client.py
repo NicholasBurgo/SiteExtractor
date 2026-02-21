@@ -1,9 +1,8 @@
 import asyncio
-import json
 import time
 import random
 import logging
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -13,6 +12,7 @@ except ImportError:
     curl_requests = None
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class HttpResponse:
@@ -26,20 +26,27 @@ class HttpResponse:
     fingerprint_used: Optional[str] = None
     error: Optional[str] = None
 
+
 class AdvancedHttpClient:
     """Advanced HTTP client with TLS fingerprinting and anti-bot features"""
 
-    def __init__(self, config: Dict[str, Any], proxy_manager=None, fingerprint_spoofer=None,
-                 cf_bypass=None, human_behavior=None):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        proxy_manager=None,
+        fingerprint_spoofer=None,
+        cf_bypass=None,
+        human_behavior=None,
+    ):
         self.config = config
         self.proxy_manager = proxy_manager
         self.fingerprint_spoofer = fingerprint_spoofer
         self.cf_bypass = cf_bypass
         self.human_behavior = human_behavior
 
-        self.timeout = config.get('timeout', 30)
-        self.max_retries = config.get('max_retries', 3)
-        self.retry_delays = config.get('retry_delays', [2, 8, 30])
+        self.timeout = config.get("timeout", 30)
+        self.max_retries = config.get("max_retries", 3)
+        self.retry_delays = config.get("retry_delays", [2, 8, 30])
 
         # Session management
         self.sessions: Dict[str, Dict[str, Any]] = {}
@@ -47,11 +54,20 @@ class AdvancedHttpClient:
 
         # Rate limiting
         self.last_request_time = 0
-        self.request_interval = 1.0 / config.get('performance', {}).get('rate_limit_per_minute', 30)
+        self.request_interval = 1.0 / config.get("performance", {}).get(
+            "rate_limit_per_minute", 30
+        )
 
-    async def request(self, url: str, method: str = "GET", headers: Dict[str, str] = None,
-                     proxy: Optional[Any] = None, session_id: Optional[str] = None,
-                     fingerprint: Optional[Any] = None, is_first_request: bool = False) -> HttpResponse:
+    async def request(
+        self,
+        url: str,
+        method: str = "GET",
+        headers: Dict[str, str] = None,
+        proxy: Optional[Any] = None,
+        session_id: Optional[str] = None,
+        fingerprint: Optional[Any] = None,
+        is_first_request: bool = False,
+    ) -> HttpResponse:
         """
         Make HTTP request with full anti-bot protection
         """
@@ -84,8 +100,14 @@ class AdvancedHttpClient:
                 # Check for Cloudflare challenge
                 if self._is_cloudflare_challenge(response):
                     if self.cf_bypass and attempt < self.max_retries - 1:
-                        logger.info(f"Cloudflare challenge detected, attempting bypass for {url}")
-                        cf_success, cf_content, cf_cookies = await self.cf_bypass.bypass_request(
+                        logger.info(
+                            f"Cloudflare challenge detected, attempting bypass for {url}"
+                        )
+                        (
+                            cf_success,
+                            cf_content,
+                            cf_cookies,
+                        ) = await self.cf_bypass.bypass_request(
                             url, request_headers, proxy.url if proxy else None
                         )
 
@@ -97,13 +119,17 @@ class AdvancedHttpClient:
                     else:
                         # Mark proxy as failed if we got Cloudflare
                         if proxy and self.proxy_manager:
-                            await self.proxy_manager.mark_failure(proxy, "Cloudflare challenge")
+                            await self.proxy_manager.mark_failure(
+                                proxy, "Cloudflare challenge"
+                            )
 
                 # Handle rate limiting
                 if response.status_code == 429:
                     if attempt < self.max_retries - 1:
                         delay = self.retry_delays[attempt] * 2  # Extra delay for 429
-                        logger.info(f"Rate limited (429), waiting {delay}s before retry")
+                        logger.info(
+                            f"Rate limited (429), waiting {delay}s before retry"
+                        )
                         await asyncio.sleep(delay)
                         continue
 
@@ -119,7 +145,9 @@ class AdvancedHttpClient:
 
             except Exception as e:
                 error_msg = str(e)
-                logger.debug(f"Request attempt {attempt + 1} failed for {url}: {error_msg}")
+                logger.debug(
+                    f"Request attempt {attempt + 1} failed for {url}: {error_msg}"
+                )
 
                 # Mark proxy as failed
                 if proxy and self.proxy_manager:
@@ -127,7 +155,11 @@ class AdvancedHttpClient:
 
                 # Retry with different proxy if available
                 if attempt < self.max_retries - 1:
-                    proxy = await self.proxy_manager.get_proxy(urlparse(url).netloc) if self.proxy_manager else None
+                    proxy = (
+                        await self.proxy_manager.get_proxy(urlparse(url).netloc)
+                        if self.proxy_manager
+                        else None
+                    )
                     await asyncio.sleep(self.retry_delays[attempt])
                 else:
                     return HttpResponse(
@@ -137,7 +169,7 @@ class AdvancedHttpClient:
                         headers={},
                         cookies={},
                         response_time=0,
-                        error=error_msg
+                        error=error_msg,
                     )
 
         # Should not reach here, but just in case
@@ -148,17 +180,24 @@ class AdvancedHttpClient:
             headers={},
             cookies={},
             response_time=0,
-            error="Max retries exceeded"
+            error="Max retries exceeded",
         )
 
-    async def _make_request(self, url: str, method: str, headers: Dict[str, str],
-                           proxy: Optional[Any], fingerprint: Optional[Any], attempt: int) -> HttpResponse:
+    async def _make_request(
+        self,
+        url: str,
+        method: str,
+        headers: Dict[str, str],
+        proxy: Optional[Any],
+        fingerprint: Optional[Any],
+        attempt: int,
+    ) -> HttpResponse:
         """Make the actual HTTP request using curl_cffi"""
 
         start_time = time.time()
 
         # Use curl_cffi if available, fallback to requests
-        if curl_cffi:
+        if curl_requests:
             response = self._curl_cffi_request(url, method, headers, proxy, fingerprint)
         else:
             logger.warning("curl_cffi not available, using requests (less stealthy)")
@@ -174,16 +213,22 @@ class AdvancedHttpClient:
             cookies=dict(response.cookies),
             response_time=response_time,
             proxy_used=proxy.url if proxy else None,
-            fingerprint_used=fingerprint.user_agent if fingerprint else None
+            fingerprint_used=fingerprint.user_agent if fingerprint else None,
         )
 
-    def _curl_cffi_request(self, url: str, method: str, headers: Dict[str, str],
-                          proxy: Optional[Any], fingerprint: Optional[Any]) -> Any:
+    def _curl_cffi_request(
+        self,
+        url: str,
+        method: str,
+        headers: Dict[str, str],
+        proxy: Optional[Any],
+        fingerprint: Optional[Any],
+    ) -> Any:
         """Make request with curl_cffi impersonation"""
 
         # Choose impersonation based on fingerprint or default to chrome124
         impersonate = "chrome124"
-        if fingerprint and hasattr(fingerprint, 'user_agent'):
+        if fingerprint and hasattr(fingerprint, "user_agent"):
             if "126" in fingerprint.user_agent:
                 impersonate = "chrome126"
             elif "120" in fingerprint.user_agent:
@@ -198,13 +243,14 @@ class AdvancedHttpClient:
             proxies=proxies,
             timeout=self.timeout,
             impersonate=impersonate,
-            verify=False  # Skip SSL verification for flexibility
+            verify=False,  # Skip SSL verification for flexibility
         )
 
         return response
 
-    def _fallback_request(self, url: str, method: str, headers: Dict[str, str],
-                         proxy: Optional[Any]) -> Any:
+    def _fallback_request(
+        self, url: str, method: str, headers: Dict[str, str], proxy: Optional[Any]
+    ) -> Any:
         """Fallback request using requests library"""
         import requests
 
@@ -216,13 +262,18 @@ class AdvancedHttpClient:
             headers=headers,
             proxies=proxies,
             timeout=self.timeout,
-            verify=False
+            verify=False,
         )
 
         return response
 
-    def _prepare_headers(self, url: str, custom_headers: Dict[str, str] = None,
-                        fingerprint: Optional[Any] = None, session_id: Optional[str] = None) -> Dict[str, str]:
+    def _prepare_headers(
+        self,
+        url: str,
+        custom_headers: Dict[str, str] = None,
+        fingerprint: Optional[Any] = None,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, str]:
         """Prepare request headers"""
 
         headers = {}
@@ -239,12 +290,16 @@ class AdvancedHttpClient:
         if session_id:
             session_cookies = self.session_cookies.get(session_id, {})
             if session_cookies:
-                cookie_header = "; ".join([f"{k}={v}" for k, v in session_cookies.items()])
+                cookie_header = "; ".join(
+                    [f"{k}={v}" for k, v in session_cookies.items()]
+                )
                 headers["Cookie"] = cookie_header
 
         # Add some randomization to avoid detection
         headers["Accept"] = self._randomize_accept_header(headers.get("Accept", ""))
-        headers["Accept-Encoding"] = self._randomize_accept_encoding(headers.get("Accept-Encoding", ""))
+        headers["Accept-Encoding"] = self._randomize_accept_encoding(
+            headers.get("Accept-Encoding", "")
+        )
 
         return headers
 
@@ -263,7 +318,12 @@ class AdvancedHttpClient:
 
     def _randomize_accept_encoding(self, encoding: str) -> str:
         """Randomize Accept-Encoding header"""
-        encodings = ["gzip, deflate, br", "gzip, deflate", "deflate, gzip", "br, gzip, deflate"]
+        encodings = [
+            "gzip, deflate, br",
+            "gzip, deflate",
+            "deflate, gzip",
+            "br, gzip, deflate",
+        ]
 
         if random.random() < 0.4:
             return random.choice(encodings)
@@ -273,7 +333,9 @@ class AdvancedHttpClient:
     def _is_cloudflare_challenge(self, response: HttpResponse) -> bool:
         """Check if response indicates Cloudflare challenge"""
         if self.cf_bypass:
-            return self.cf_bypass.detect_cloudflare_challenge(response.content, response.status_code)
+            return self.cf_bypass.detect_cloudflare_challenge(
+                response.content, response.status_code
+            )
         return False
 
     async def _apply_rate_limit(self):
@@ -290,9 +352,9 @@ class AdvancedHttpClient:
         """Create a new session for domain"""
         session_id = f"{domain}_{int(time.time())}_{random.randint(1000, 9999)}"
         self.sessions[session_id] = {
-            'domain': domain,
-            'created_at': time.time(),
-            'last_used': time.time()
+            "domain": domain,
+            "created_at": time.time(),
+            "last_used": time.time(),
         }
         self.session_cookies[session_id] = {}
         return session_id
@@ -301,7 +363,7 @@ class AdvancedHttpClient:
         """Update cookies for session"""
         if session_id in self.session_cookies:
             self.session_cookies[session_id].update(cookies)
-            self.sessions[session_id]['last_used'] = time.time()
+            self.sessions[session_id]["last_used"] = time.time()
 
     def get_session_cookies(self, session_id: str) -> Dict[str, str]:
         """Get cookies for session"""
@@ -313,7 +375,7 @@ class AdvancedHttpClient:
         expired = []
 
         for session_id, session in self.sessions.items():
-            if current_time - session['last_used'] > max_age:
+            if current_time - session["last_used"] > max_age:
                 expired.append(session_id)
 
         for session_id in expired:

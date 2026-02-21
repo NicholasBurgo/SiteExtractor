@@ -1,18 +1,17 @@
 import asyncio
-import time
 import random
 import logging
 from typing import Optional, Dict, Any, Tuple
-from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.common.exceptions import TimeoutException
 
 try:
     import undetected_chromedriver as uc
     from selenium_stealth import stealth
+
     UNDETECTED_AVAILABLE = True
 except ImportError:
     UNDETECTED_AVAILABLE = False
@@ -21,17 +20,23 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
 class UndetectedChromeFallback:
     """Fallback browser automation using undetected-chromedriver + selenium-stealth"""
 
-    def __init__(self, config: Dict[str, Any], proxy_manager=None, fingerprint_spoofer=None,
-                 human_behavior=None):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        proxy_manager=None,
+        fingerprint_spoofer=None,
+        human_behavior=None,
+    ):
         self.config = config
         self.proxy_manager = proxy_manager
         self.fingerprint_spoofer = fingerprint_spoofer
         self.human_behavior = human_behavior
 
-        self.timeout = config.get('timeout', 30)
+        self.timeout = config.get("timeout", 30)
         self.headless = True  # Run headless for server environment
 
         # Browser instance management
@@ -39,8 +44,13 @@ class UndetectedChromeFallback:
         self.current_proxy = None
         self.current_fingerprint = None
 
-    async def get_page_content(self, url: str, wait_for_selector: Optional[str] = None,
-                              proxy: Optional[Any] = None, fingerprint: Optional[Any] = None) -> Tuple[bool, Optional[str], Optional[Dict[str, str]]]:
+    async def get_page_content(
+        self,
+        url: str,
+        wait_for_selector: Optional[str] = None,
+        proxy: Optional[Any] = None,
+        fingerprint: Optional[Any] = None,
+    ) -> Tuple[bool, Optional[str], Optional[Dict[str, str]]]:
         """
         Get page content using browser automation
 
@@ -76,9 +86,11 @@ class UndetectedChromeFallback:
             # Get cookies
             cookies = {}
             for cookie in self.driver.get_cookies():
-                cookies[cookie['name']] = cookie['value']
+                cookies[cookie["name"]] = cookie["value"]
 
-            logger.info(f"Successfully retrieved content from {url} ({len(html_content)} chars)")
+            logger.info(
+                f"Successfully retrieved content from {url} ({len(html_content)} chars)"
+            )
             return True, html_content, cookies
 
         except Exception as e:
@@ -90,21 +102,25 @@ class UndetectedChromeFallback:
 
             return False, None, None
 
-    async def _ensure_browser_ready(self, proxy: Optional[Any] = None, fingerprint: Optional[Any] = None):
+    async def _ensure_browser_ready(
+        self, proxy: Optional[Any] = None, fingerprint: Optional[Any] = None
+    ):
         """Ensure browser is ready with correct configuration"""
 
         # Check if we need to restart browser (proxy or fingerprint change)
         needs_restart = (
-            self.driver is None or
-            self.current_proxy != proxy or
-            self.current_fingerprint != fingerprint
+            self.driver is None
+            or self.current_proxy != proxy
+            or self.current_fingerprint != fingerprint
         )
 
         if needs_restart:
             await self._close_browser()
             await self._start_browser(proxy, fingerprint)
 
-    async def _start_browser(self, proxy: Optional[Any] = None, fingerprint: Optional[Any] = None):
+    async def _start_browser(
+        self, proxy: Optional[Any] = None, fingerprint: Optional[Any] = None
+    ):
         """Start undetected Chrome browser"""
 
         if not UNDETECTED_AVAILABLE:
@@ -120,18 +136,19 @@ class UndetectedChromeFallback:
             self.driver = uc.Chrome(
                 options=options,
                 version_main=124,  # Use Chrome 124
-                headless=self.headless
+                headless=self.headless,
             )
 
             # Apply selenium-stealth
-            stealth(self.driver,
-                   languages=["en-US", "en"],
-                   vendor="Google Inc.",
-                   platform="Win32",
-                   webgl_vendor="Intel Inc.",
-                   renderer="Intel(R) Iris(TM) Graphics 6100",
-                   fix_hairline=True,
-                   )
+            stealth(
+                self.driver,
+                languages=["en-US", "en"],
+                vendor="Google Inc.",
+                platform="Win32",
+                webgl_vendor="Intel Inc.",
+                renderer="Intel(R) Iris(TM) Graphics 6100",
+                fix_hairline=True,
+            )
 
             # Additional anti-detection measures
             self._apply_additional_stealth()
@@ -145,7 +162,9 @@ class UndetectedChromeFallback:
             logger.error(f"Failed to start browser: {str(e)}")
             self.driver = None
 
-    def _create_chrome_options(self, proxy: Optional[Any] = None, fingerprint: Optional[Any] = None) -> Options:
+    def _create_chrome_options(
+        self, proxy: Optional[Any] = None, fingerprint: Optional[Any] = None
+    ) -> Options:
         """Create Chrome options with anti-detection measures"""
 
         options = uc.ChromeOptions()
@@ -165,14 +184,14 @@ class UndetectedChromeFallback:
         options.add_argument("--allow-running-insecure-content")
 
         # Window size (realistic)
-        if fingerprint and hasattr(fingerprint, 'viewport_size'):
+        if fingerprint and hasattr(fingerprint, "viewport_size"):
             width, height = fingerprint.viewport_size
             options.add_argument(f"--window-size={width},{height}")
         else:
             options.add_argument("--window-size=1366,768")
 
         # User agent
-        if fingerprint and hasattr(fingerprint, 'user_agent'):
+        if fingerprint and hasattr(fingerprint, "user_agent"):
             options.add_argument(f"--user-agent={fingerprint.user_agent}")
 
         # Proxy
@@ -185,11 +204,11 @@ class UndetectedChromeFallback:
         options.add_experimental_option("useAutomationExtension", False)
 
         # Language and locale
-        if fingerprint and hasattr(fingerprint, 'language'):
+        if fingerprint and hasattr(fingerprint, "language"):
             options.add_argument(f"--lang={fingerprint.language}")
 
         # Timezone (if available)
-        if fingerprint and hasattr(fingerprint, 'timezone'):
+        if fingerprint and hasattr(fingerprint, "timezone"):
             options.add_argument(f"--timezone={fingerprint.timezone}")
 
         # Additional anti-detection
@@ -205,7 +224,9 @@ class UndetectedChromeFallback:
 
         try:
             # Remove webdriver property
-            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            self.driver.execute_script(
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+            )
 
             # Mock plugins and languages
             self.driver.execute_script("""
@@ -223,7 +244,7 @@ class UndetectedChromeFallback:
             """)
 
             # Mock hardware concurrency
-            if hasattr(self.current_fingerprint, 'hardware_concurrency'):
+            if hasattr(self.current_fingerprint, "hardware_concurrency"):
                 self.driver.execute_script(f"""
                     Object.defineProperty(navigator, 'hardwareConcurrency', {{
                         get: () => {self.current_fingerprint.hardware_concurrency}
@@ -231,7 +252,7 @@ class UndetectedChromeFallback:
                 """)
 
             # Mock device memory
-            if hasattr(self.current_fingerprint, 'device_memory'):
+            if hasattr(self.current_fingerprint, "device_memory"):
                 self.driver.execute_script(f"""
                     Object.defineProperty(navigator, 'deviceMemory', {{
                         get: () => {self.current_fingerprint.device_memory}
@@ -241,7 +262,9 @@ class UndetectedChromeFallback:
         except Exception as e:
             logger.debug(f"Additional stealth application failed: {str(e)}")
 
-    async def _wait_for_page_load(self, wait_for_selector: Optional[str] = None, timeout: int = 10):
+    async def _wait_for_page_load(
+        self, wait_for_selector: Optional[str] = None, timeout: int = 10
+    ):
         """Wait for page to load"""
 
         if not self.driver:
@@ -250,7 +273,9 @@ class UndetectedChromeFallback:
         try:
             # Wait for document ready
             WebDriverWait(self.driver, timeout).until(
-                lambda driver: driver.execute_script("return document.readyState") == "complete"
+                lambda driver: (
+                    driver.execute_script("return document.readyState") == "complete"
+                )
             )
 
             # Wait for specific selector if provided
@@ -287,8 +312,8 @@ class UndetectedChromeFallback:
 
     def __del__(self):
         """Destructor cleanup"""
-        if hasattr(self, 'driver') and self.driver:
+        if hasattr(self, "driver") and self.driver:
             try:
                 self.driver.quit()
-            except:
+            except Exception:
                 pass

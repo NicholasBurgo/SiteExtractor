@@ -3,6 +3,7 @@ HTML snapshot sanitizer.
 Strips scripts, inline event handlers, and dangerous attributes
 to make snapshots safe to open locally.
 """
+
 import re
 from bs4 import BeautifulSoup
 

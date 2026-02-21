@@ -2,6 +2,7 @@
 Extraction summary — neutral counts only.
 No severity, no findings, no scoring. Just facts about what was extracted.
 """
+
 import json
 import os
 from typing import Any, Dict, List
@@ -54,7 +55,9 @@ class ExtractionSummary:
             for link in links:
                 link_url = link if isinstance(link, str) else link.get("url", "")
                 if link_url:
-                    if link_url.startswith("/") or (url and link_url.startswith(url.split("//")[0])):
+                    if link_url.startswith("/") or (
+                        url and link_url.startswith(url.split("//")[0])
+                    ):
                         internal_links.add(link_url)
                     else:
                         external_links.add(link_url)
@@ -63,7 +66,9 @@ class ExtractionSummary:
             images = page.get("images", [])
             total_images += len(images)
             for img in images:
-                img_url = img if isinstance(img, str) else img.get("url", img.get("src", ""))
+                img_url = (
+                    img if isinstance(img, str) else img.get("url", img.get("src", ""))
+                )
                 if img_url:
                     asset_urls.add(img_url)
 
@@ -73,7 +78,9 @@ class ExtractionSummary:
 
             # Stylesheets
             stylesheets = meta.get("stylesheets", [])
-            total_stylesheets += len(stylesheets) if isinstance(stylesheets, list) else 0
+            total_stylesheets += (
+                len(stylesheets) if isinstance(stylesheets, list) else 0
+            )
 
             # Forms
             forms = meta.get("forms", [])
