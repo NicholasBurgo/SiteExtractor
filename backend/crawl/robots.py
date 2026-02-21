@@ -1,6 +1,5 @@
 import aiohttp
-import asyncio
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 from typing import Optional, Set
 from dataclasses import dataclass
 

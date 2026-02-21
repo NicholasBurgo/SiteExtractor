@@ -7,7 +7,7 @@ keyed by SHA-256 of their content bytes.
 import hashlib
 import mimetypes
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 

@@ -2,9 +2,8 @@ import asyncio
 import aiohttp
 import time
 import random
-from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass, field
-from urllib.parse import urlparse
+from typing import List, Dict, Optional
+from dataclasses import dataclass
 import logging
 
 logger = logging.getLogger(__name__)

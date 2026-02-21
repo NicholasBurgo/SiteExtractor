@@ -241,7 +241,7 @@ class RunStore:
         """Get progress snapshot."""
         try:
             with open(self.pages_file, "r") as f:
-                pages = json.load(f)
+                json.load(f)
 
             with open(self.meta_file, "r") as f:
                 meta = json.load(f)

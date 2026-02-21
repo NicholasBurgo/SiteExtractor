@@ -3,12 +3,14 @@ Aggregation module for building DraftModel from extracted pages.
 Analyzes page content to extract business information, services, locations, etc.
 """
 
+import os
 import re
+import time
 import hashlib
 import json
-from typing import Dict, List, Any, Optional, Tuple
-from urllib.parse import urljoin, urlparse
-from collections import defaultdict, Counter
+from typing import Dict, List, Optional
+from urllib.parse import urlparse
+from collections import Counter
 
 from backend.core.types import (
     DraftModel,
@@ -17,7 +19,6 @@ from backend.core.types import (
     Location,
     NavItem,
     PageDetail,
-    PageSummary,
 )
 from backend.storage.runs import RunStore
 
@@ -280,14 +281,6 @@ class BusinessAggregator:
         services = []
 
         # Look for service-related pages and content
-        service_patterns = [
-            r"services?",
-            r"what we do",
-            r"our services?",
-            r"solutions?",
-            r"expertise",
-            r"capabilities",
-        ]
 
         for page in self.pages:
             # Check if page is service-related
@@ -816,7 +809,7 @@ class BusinessAggregator:
     def _guess_image_role(self, img: Dict) -> str:
         """Guess the role/purpose of an image."""
         alt = img.get("alt", "").lower()
-        src = img.get("src", "").lower()
+        img.get("src", "").lower()
 
         if any(keyword in alt for keyword in ["logo", "brand"]):
             return "logo"

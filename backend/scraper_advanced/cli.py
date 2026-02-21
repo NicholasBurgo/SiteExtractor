@@ -9,11 +9,10 @@ import argparse
 import sys
 import logging
 import json
-from typing import List, Optional
+from typing import Optional
 from pathlib import Path
 
 from .scraper import AdvancedNewsScraper
-from .config_loader import config_loader
 
 # Setup logging
 logging.basicConfig(
@@ -169,7 +168,7 @@ class ScraperCLI:
 
         if "proxy_stats" in stats:
             proxy = stats["proxy_stats"]
-            print(f"\nProxy Stats:")
+            print("\nProxy Stats:")
             print(f"  Total Proxies: {proxy['total_proxies']}")
             print(f"  Healthy Proxies: {proxy['healthy_proxies']}")
             print(f"  Banned Proxies: {proxy['banned_proxies']}")

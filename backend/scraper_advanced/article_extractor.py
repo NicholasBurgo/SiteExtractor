@@ -1,7 +1,5 @@
 import re
-import json
-import time
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from urllib.parse import urlparse
 import logging
@@ -307,7 +305,7 @@ class ArticleExtractor:
                     parsed = self._normalize_date(match.group(1))
                     if parsed:
                         return parsed.isoformat()
-                except:
+                except Exception:
                     continue
 
         return None

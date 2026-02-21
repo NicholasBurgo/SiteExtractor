@@ -1,5 +1,4 @@
-import asyncio
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 from typing import Set, List, Optional
 from collections import deque
 
@@ -78,7 +77,7 @@ class Frontier:
             if parsed.query:
                 normalized += f"?{parsed.query}"
             return normalized
-        except:
+        except Exception:
             return None
 
     def get_stats(self) -> dict:

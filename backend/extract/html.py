@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 from readability import Document
 import trafilatura
 from backend.crawl.fetch import FetchResponse
-from backend.extract.nav_footer import extract_navigation, extract_footer
 from backend.extract.files_words_links import extract_structured_content
 
 
@@ -99,7 +98,6 @@ async def extract_html(resp: FetchResponse, run_id: str = None) -> dict:
 
 def _extract_title(soup: BeautifulSoup, url: str = None) -> str:
     """Extract page title using improved heuristics."""
-    import re
     from urllib.parse import urlparse
 
     # Check if this is the homepage
@@ -321,7 +319,7 @@ def _extract_structured_data(soup: BeautifulSoup) -> list:
 
             data = json.loads(script.string)
             structured.append({"type": "json-ld", "data": data})
-        except:
+        except Exception:
             pass
 
     return structured

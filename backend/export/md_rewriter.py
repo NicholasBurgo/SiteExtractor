@@ -4,7 +4,6 @@ Rewrites remote image URLs in Markdown content to local relative paths
 when assets have been downloaded.
 """
 
-import os
 import re
 from typing import Dict
 
