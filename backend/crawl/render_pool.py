@@ -1,4 +1,3 @@
-import asyncio
 from typing import Optional, List
 from playwright.async_api import async_playwright, Browser, Page
 from backend.core.config import Settings

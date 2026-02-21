@@ -1,9 +1,8 @@
 import asyncio
-import json
 import time
 import random
 import logging
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -198,7 +197,7 @@ class AdvancedHttpClient:
         start_time = time.time()
 
         # Use curl_cffi if available, fallback to requests
-        if curl_cffi:
+        if curl_requests:
             response = self._curl_cffi_request(url, method, headers, proxy, fingerprint)
         else:
             logger.warning("curl_cffi not available, using requests (less stealthy)")

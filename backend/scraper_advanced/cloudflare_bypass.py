@@ -1,8 +1,8 @@
 import asyncio
 import aiohttp
-import json
 import os
 import time
+import random
 import logging
 from typing import Optional, Dict, Any, Tuple
 import cloudscraper
@@ -139,7 +139,7 @@ class CloudflareBypass:
                                 try:
                                     name, value = cookie.split("=", 1)
                                     cookie_dict[name] = value.split(";")[0]
-                                except:
+                                except Exception:
                                     pass
 
                         logger.info(f"FlareSolverr bypass successful for {url}")

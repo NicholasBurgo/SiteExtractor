@@ -7,7 +7,7 @@ import re
 import hashlib
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 
 
 def hash_string(text: str) -> str:
@@ -95,7 +95,7 @@ def buildNavTree(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
             parsed = urlparse(url)
             path = parsed.path.rstrip("/") or "/"
             return path
-        except:
+        except Exception:
             return ""
 
     def is_good_nav_item(label: str) -> bool:

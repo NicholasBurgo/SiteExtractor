@@ -30,7 +30,7 @@ import time
 import zipfile
 from typing import Any, Dict, List, Optional
 
-from backend.export.page_id import make_page_id, normalize_url
+from backend.export.page_id import make_page_id
 from backend.export.sanitizer import sanitize_html
 from backend.export.audit import AuditAggregator
 from backend.export.asset_discovery import (

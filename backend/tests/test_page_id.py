@@ -1,6 +1,5 @@
 """Tests for deterministic page ID generation."""
 
-import pytest
 from backend.export.page_id import make_page_id, normalize_url
 
 

@@ -2,9 +2,9 @@ import asyncio
 import json
 import time
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 import aiofiles
 
 from .config_loader import config_loader
@@ -106,7 +106,7 @@ class AdvancedNewsScraper:
             fingerprint = self.fingerprint_spoofer.generate_fingerprint()
 
             # Check if we should visit homepage first
-            homepage_url = await self._maybe_visit_homepage(
+            await self._maybe_visit_homepage(
                 url, site_name, session_id, fingerprint
             )
 

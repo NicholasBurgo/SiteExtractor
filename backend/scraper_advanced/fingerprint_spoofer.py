@@ -201,7 +201,7 @@ class FingerprintSpoofer:
         webgl_data = {
             "vendor": random.choice(["Intel Inc.", "NVIDIA Corporation", "AMD"]),
             "renderer": f"ANGLE ({random.choice(['Intel', 'NVIDIA', 'AMD'])} {random.choice(['HD Graphics', 'GeForce', 'Radeon'])})",
-            "version": f"WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+            "version": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
             "extensions": random.sample(
                 [
                     "ANGLE_instanced_arrays",

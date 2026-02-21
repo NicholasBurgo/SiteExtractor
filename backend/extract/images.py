@@ -22,9 +22,8 @@ async def extract_images(resp: FetchResponse) -> dict:
         }
 
         # Extract EXIF data if available
-        exif_data = {}
         if hasattr(image, "_getexif") and image._getexif():
-            exif_data = image._getexif()
+            image._getexif()
 
         # Count words (0 for images)
         word_count = 0

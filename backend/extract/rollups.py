@@ -2,13 +2,13 @@
 Rollup generation for cross-page analysis
 """
 
-from typing import Dict, List, Any, Set
+from typing import Dict, List, Any, Optional
 from datetime import datetime
 from collections import Counter, defaultdict
 import re
 
 from backend.core.types import PageResult, RunRollup, ContactInfo, ServiceInfo, NavItem
-from backend.core.utils import extract_emails, extract_phones, clean_text
+from backend.core.utils import clean_text
 
 
 class RollupAggregator:

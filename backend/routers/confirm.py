@@ -4,7 +4,7 @@ Provides endpoints for Prime and Content operations.
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from backend.storage.confirmation import ConfirmationStore
 from backend.routers.runs import manager as run_manager
 

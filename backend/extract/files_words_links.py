@@ -4,7 +4,6 @@ Provides structured data for confirmation UI.
 """
 
 import re
-import hashlib
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from typing import List, Dict, Any, Optional, Tuple
@@ -36,7 +35,6 @@ def extract_structured_content(
 
 def _extract_title(soup: BeautifulSoup, url: str = None) -> Optional[str]:
     """Extract title using heuristics: og:title → <title> → first h1."""
-    import re
     from urllib.parse import urlparse
 
     # Check if this is the homepage
@@ -386,7 +384,6 @@ def _parse_srcset_dimensions(srcset: str) -> Optional[Tuple[int, int]]:
 
     # Look for the largest image in srcset
     largest_width = 0
-    largest_url = None
 
     for entry in srcset.split(","):
         entry = entry.strip()
@@ -397,7 +394,7 @@ def _parse_srcset_dimensions(srcset: str) -> Optional[Tuple[int, int]]:
                     width = int(descriptor[:-1])
                     if width > largest_width and width <= 2000:  # Cap at 2000px
                         largest_width = width
-                        largest_url = url.strip()
+                        url.strip()
                 except ValueError:
                     continue
 

@@ -7,7 +7,7 @@ import re
 import mimetypes
 import magic
 from urllib.parse import urljoin, urlparse, parse_qs, urlunparse
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional
 import tiktoken
 from backend.core.config import settings
 
@@ -61,7 +61,7 @@ def is_same_domain(url1: str, url2: str) -> bool:
         domain1 = urlparse(url1).netloc.lower()
         domain2 = urlparse(url2).netloc.lower()
         return domain1 == domain2
-    except:
+    except Exception:
         return False
 
 
@@ -69,7 +69,7 @@ def extract_domain(url: str) -> str:
     """Extract domain from URL"""
     try:
         return urlparse(url).netloc.lower()
-    except:
+    except Exception:
         return ""
 
 
@@ -78,7 +78,7 @@ def is_internal_link(url: str, base_domain: str) -> bool:
     try:
         url_domain = urlparse(url).netloc.lower()
         return url_domain == base_domain or url_domain.endswith(f".{base_domain}")
-    except:
+    except Exception:
         return False
 
 
@@ -199,7 +199,7 @@ def detect_content_type(
             return "image"
         elif mime_type.startswith("text/"):
             return "text"
-    except:
+    except Exception:
         pass
 
     # Default to html for web content
@@ -222,7 +222,7 @@ def count_tokens(text: str, model: str = None) -> int:
     try:
         encoding = tiktoken.encoding_for_model(model)
         return len(encoding.encode(text))
-    except:
+    except Exception:
         # Fallback to word count estimation
         return len(text.split())
 
@@ -251,7 +251,7 @@ def extract_path_segments(url: str) -> list[str]:
         if not path:
             return ["/"]
         return ["/"] + path.split("/")
-    except:
+    except Exception:
         return ["/"]
 
 
@@ -260,7 +260,7 @@ def is_valid_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
         return bool(parsed.scheme and parsed.netloc)
-    except:
+    except Exception:
         return False
 
 

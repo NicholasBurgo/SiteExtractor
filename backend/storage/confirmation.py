@@ -5,9 +5,7 @@ Handles site-level data (nav, footer) and page-level structured content.
 
 import os
 import json
-import time
 from typing import List, Dict, Any, Optional
-from urllib.parse import urlparse
 from backend.extract.nav_footer import extract_navigation, extract_footer
 
 

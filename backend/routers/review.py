@@ -4,7 +4,7 @@ Review API routes for extraction data review workflow.
 
 import os
 import json
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException
 from backend.core.types import DraftModel, ConfirmRequest
 from backend.extract.aggregate import build_draft_model
 from backend.storage.runs import RunStore
