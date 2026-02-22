@@ -2,6 +2,8 @@
 
 A production-grade web scraper specifically designed for scraping news sites like Newsmax, Breitbart, and OANN that employ sophisticated anti-bot protection including Cloudflare, behavioral fingerprinting, and rate limiting.
 
+> **Authorization required.** Bot avoidance and Cloudflare bypass features are **disabled by default** and should only be enabled on sites where bot protection is present and you have explicit permission to scrape (e.g., you own the site, have a written agreement, or are conducting authorized testing). Do not use these features to circumvent protections on sites you are not authorized to access.
+
 ## Features
 
 ### 🛡️ Anti-Bot Evasion

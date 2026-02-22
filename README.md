@@ -361,6 +361,14 @@ playwright install chromium
 Set `RENDER_ENABLED=true` in your `.env` file.
 
 
+### Bot Avoidance
+
+Bot avoidance is **off by default**. It can be enabled per-run via the **"Enable bot-avoidance safeguards"** checkbox in the UI (under advanced options when starting an extraction).
+
+Only enable it if the target site has bot protection in place **and** you have permission to scrape it (for example, you own the site, have a written agreement, or are conducting authorized testing). When enabled it adds randomized delays, browser fingerprint spoofing, and header randomization, which will slow down crawling.
+
+> **Do not use bot avoidance to bypass protections on sites you are not authorized to scrape.** Circumventing access controls without authorization may violate the site's terms of service and applicable law.
+
 ### Rate Limiting
 
 Configure per-domain rate limits:

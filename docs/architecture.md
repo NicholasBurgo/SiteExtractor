@@ -250,13 +250,14 @@ SiteTestGenerator/
 - Bot avoidance integration
 - Performance tracking (load_time_ms, content_length_bytes)
 
-**Bot Avoidance**
+**Bot Avoidance** *(disabled by default; only use with permission)*
 - Randomized delays (0.6-2.4s default)
 - Per-host request intervals
 - Browser fingerprint spoofing
 - Multiple browser profiles (Chrome, Safari, iOS)
 - Bot detection (CAPTCHA, status codes)
 - Header randomization
+- Only enable when the target site has bot protection and you have explicit permission to scrape it
 
 ### 2. Content Extraction
 
@@ -808,6 +809,8 @@ Located in `backend/scraper_advanced/`, this is a specialized scraper for protec
 - Network isolation
 
 ### 2. Bot Avoidance
+
+> **Disabled by default.** Only enable if the target site has bot protection in place and you have explicit permission to scrape it (e.g., you own the site or have a written agreement). Do not use to bypass access controls on sites you are not authorized to access.
 
 **BotAvoidanceStrategy** (`crawl/bot_avoidance.py`):
 - Randomized delays (0.6-2.4s)
