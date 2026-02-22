@@ -14,7 +14,7 @@ Expect an acknowledgement within **7 days** and a resolution timeline within the
 
 ## Dual-Use Notice
 
-`backend/scraper_advanced/` contains Cloudflare bypass logic, proxy rotation, and browser fingerprint spoofing. These features exist for **authorized testing only** — e.g. testing your own infrastructure, contracted penetration tests, or academic research on systems you have explicit permission to access.
+`backend/scraper_advanced/` contains Cloudflare bypass logic, proxy rotation, and browser fingerprint spoofing. These features exist for **authorized testing only** - e.g. testing your own infrastructure, contracted penetration tests, or academic research on systems you have explicit permission to access.
 
 Contributors must not extend these features to target systems they do not own or have written permission to test. Pull requests that add capabilities primarily useful for unauthorized access will be rejected.
 

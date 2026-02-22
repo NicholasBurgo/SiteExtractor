@@ -22,14 +22,14 @@ python scripts/dev.py
 
 ## Code Standards
 
-**Python** — format and lint before committing:
+**Python** - format and lint before committing:
 
 ```bash
 ruff format backend/
 ruff check backend/
 ```
 
-**TypeScript** — lint before committing:
+**TypeScript** - lint before committing:
 
 ```bash
 cd frontend && npm run lint

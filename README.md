@@ -167,12 +167,12 @@ To download referenced images and rewrite Markdown links to local paths, pass qu
 | `max_total_asset_bytes` | integer (bytes) | `104857600` (100 MB) | Total download budget |
 | `assets_dir` | string | `assets` | Asset folder name in bundle |
 
-**Example — download same-origin images:**
+**Example - download same-origin images:**
 ```
 GET /api/runs/abc123/export?download_assets=images
 ```
 
-**Example — download all images including CDNs:**
+**Example - download all images including CDNs:**
 ```
 GET /api/runs/abc123/export?download_assets=images&assets_scope=include-cdn
 ```

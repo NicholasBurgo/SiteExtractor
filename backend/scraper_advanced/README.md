@@ -11,8 +11,8 @@ A production-grade web scraper specifically designed for scraping news sites lik
 - **Undetected Browser Fallback**: `undetected-chromedriver` + `selenium-stealth` when HTTP fails
 
 ### 🤖 Human Behavior Simulation
-- Random delays (3.2–9.7s) with normal distribution
-- Homepage visits (5–15% chance) before articles
+- Random delays (3.2-9.7s) with normal distribution
+- Homepage visits (5-15% chance) before articles
 - Mouse movements and scrolling in browser mode
 - Session persistence with cookies/localStorage
 
