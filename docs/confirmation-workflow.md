@@ -6,7 +6,7 @@ The Confirmation Page provides a comprehensive multi-tab interface for reviewing
 
 ## Features
 
-### 🏗️ Multi-Tab Interface
+### Multi-Tab Interface
 
 - **Summary Tab**: Run overview with statistics, confidence distribution, and quick actions
 - **Business Info Tab**: Sub-tabs for Identity, Services, Contact, and Legal information
@@ -15,14 +15,14 @@ The Confirmation Page provides a comprehensive multi-tab interface for reviewing
 - **Navbar Tab**: Full navigation tree with nested menu items
 - **Truth Table Tab**: Unified overview of all confirmed values and confidence scores
 
-### ✅ Confirmation System
+### Confirmation System
 
 - Individual field confirmation toggles (✅ / ❌)
 - Bulk confirmation actions for high-confidence items
 - Real-time confirmation counter in header
 - Smart finalize button that warns when no fields are confirmed
 
-### 📊 Persistent Sidebar Summary
+### Persistent Sidebar Summary
 
 - Total extracted fields count
 - Confidence distribution (High/Medium/Low)
@@ -30,7 +30,7 @@ The Confirmation Page provides a comprehensive multi-tab interface for reviewing
 - Last updated timestamp
 - Real-time confirmation progress
 
-### 🎨 UI Features
+### UI Features
 
 - "Extraction Complete" success banner
 - Smooth tab transitions with Tailwind styling
