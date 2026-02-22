@@ -1,6 +1,6 @@
 # Universal Site Extractor v2 - Deep Project Scan
 
-## 📋 Table of Contents
+## Table of Contents
 1. [Project Overview](#project-overview)
 2. [Architecture](#architecture)
 3. [Complete File Structure](#complete-file-structure)
